@@ -36,6 +36,11 @@ import horizon.observatory.core.time.TimestampEngine
 import horizon.observatory.storage.queue.ObservationPersistenceQueue
 import horizon.observatory.storage.repository.SessionRepository
 import horizon.observatory.resilience.EmergencyNavigationController
+import horizon.observatory.resilience.NavigationState
+import horizon.observatory.resilience.ResilienceRuntime
+import horizon.observatory.resilience.ResilienceRuntimeUpdate
+import horizon.observatory.resilience.ResilientLocationSnapshot
+import horizon.observatory.resilience.ResilientLocationStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -63,6 +68,8 @@ class ObservatoryService : Service() {
     private lateinit var healthReporter: HealthReporter
     private lateinit var capabilityScanner: horizon.observatory.core.capability.CapabilityScanner
     private lateinit var emergencyNavigationController: EmergencyNavigationController
+    private lateinit var resilientLocationStore: ResilientLocationStore
+    private var resilienceRuntime: ResilienceRuntime? = null
 
     private var currentSessionId: String? = null
     private var lastClosedSessionId: String? = null
@@ -85,6 +92,7 @@ class ObservatoryService : Service() {
         sensorSource = container.sensorSource
         capabilityScanner = container.capabilityScanner
         emergencyNavigationController = EmergencyNavigationController(this)
+        resilientLocationStore = ResilientLocationStore(this)
         healthReporter = HealthReporter(serviceScope)
 
         serviceScope.launch {
@@ -127,6 +135,7 @@ class ObservatoryService : Service() {
             val sessionId = repository.createSession()
             currentSessionId = sessionId
             sequencer = SessionSequencer()
+            resilienceRuntime = ResilienceRuntime()
 
             val report = capabilityScanner.buildReport()
             val device = report.json.optJSONObject("device")?.toString() ?: "{}"
@@ -169,12 +178,19 @@ class ObservatoryService : Service() {
                         sequenceNumber = seq,
                         ingestionMonotonicTimestampNs = ingressNs
                     )
+                    val resilienceUpdate = resilienceRuntime?.accept(stamped)
+                    if (stamped.type == ObservationType.GNSS_FIX) {
+                        publishObservedGnssFix(stamped)
+                    }
                     // A sequence number is not reusable. Once allocated, the observation must
                     // survive collector cancellation long enough to reach the durable queue.
                     // Otherwise a normal stop can create an artificial gap such as 1..2281
                     // with only 2280 persisted rows.
                     withContext(NonCancellable) {
                         observationQueue.enqueue(sessionId, stamped)
+                        if (resilienceUpdate != null) {
+                            persistResilienceUpdateUnlocked(sessionId, stamped, resilienceUpdate)
+                        }
                     }
                     observationQueue.drain(sessionId)
                 }
@@ -247,6 +263,7 @@ class ObservatoryService : Service() {
             lastClosedSessionId = sessionId
             currentSessionId = null
             sequencer = null
+            resilienceRuntime = null
             Log.i(SERVICE_TAG, "Session COMPLETED session=$sessionId observations=${repository.countObservations(sessionId)}")
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
@@ -254,6 +271,102 @@ class ObservatoryService : Service() {
         }
     }
 
+
+    private fun publishObservedGnssFix(observation: RawObservation) {
+        runCatching {
+            val payload = JSONObject(observation.payloadJson)
+            val lat = payload.optDouble("latitude", Double.NaN)
+            val lon = payload.optDouble("longitude", Double.NaN)
+            if (lat.isNaN() || lon.isNaN()) return
+            val altitude = payload.optDouble("altitude", 0.0).takeUnless { it.isNaN() } ?: 0.0
+            val accuracy = payload.optDouble("accuracyMeters", Double.NaN).takeUnless { it.isNaN() } ?: return
+            resilientLocationStore.publish(
+                ResilientLocationSnapshot(
+                    latitudeDeg = lat,
+                    longitudeDeg = lon,
+                    altitudeM = altitude,
+                    horizontalUncertaintyM = accuracy,
+                    verticalUncertaintyM = accuracy,
+                    timestampMonotonicNs = observation.monotonicTimestampNs ?: return,
+                    navigationState = resilienceRuntime?.navigationState ?: NavigationState.FULL_GNSS,
+                    provenance = "GNSS_OBSERVED"
+                )
+            )
+        }
+    }
+
+    private suspend fun persistResilienceUpdateUnlocked(
+        sessionId: String,
+        sourceObservation: RawObservation,
+        update: ResilienceRuntimeUpdate
+    ) {
+        val seq = sequencer?.nextSequenceNumber() ?: return
+        val now = TimestampEngine.now()
+        val payload = JSONObject().apply {
+            put("sourceSequenceNumber", sourceObservation.sequenceNumber)
+            put("navigationState", update.navigationState.name)
+            put("interferenceState", update.interferenceState.name)
+            put("provenance", update.provenance)
+            update.interferenceAssessment?.let { assessment ->
+                put("interferenceScore", assessment.score)
+                put("interferenceEvidence", org.json.JSONArray().apply {
+                    assessment.evidence.forEach { signal ->
+                        put(JSONObject().put("name", signal.name).put("value", signal.value).put("weight", signal.weight))
+                    }
+                })
+            }
+            put("trustDecisions", org.json.JSONArray().apply {
+                update.trustDecisions.filter { it.decision != horizon.observatory.resilience.TrustDecision.KEEP }.forEach { decision ->
+                    put(JSONObject().put("id", decision.id).put("score", decision.score).put("decision", decision.decision.name).put("rank", decision.rank).put("reasons", org.json.JSONArray(decision.reasons)))
+                }
+            })
+            update.transition?.let { transition ->
+                put("transition", JSONObject().put("from", transition.from.name).put("to", transition.to.name))
+            }
+            update.estimate?.let { estimate ->
+                put("estimate", JSONObject()
+                    .put("latitudeDeg", estimate.latitudeDeg)
+                    .put("longitudeDeg", estimate.longitudeDeg)
+                    .put("altitudeM", estimate.altitudeM)
+                    .put("timestampMonotonicNs", estimate.timestampMonotonicNs)
+                    .put("horizontalUncertaintyM", estimate.horizontalUncertaintyM)
+                    .put("verticalUncertaintyM", estimate.verticalUncertaintyM)
+                    .put("navigationState", estimate.navigationState.name)
+                    .put("provenance", estimate.provenance))
+            }
+        }
+        observationQueue.enqueue(
+            sessionId,
+            RawObservation(
+                type = ObservationType.SYSTEM_EVENT,
+                utcTimestampMs = sourceObservation.utcTimestampMs,
+                monotonicTimestampNs = sourceObservation.monotonicTimestampNs,
+                ingestionMonotonicTimestampNs = now.elapsedRealtimeNanos,
+                provider = "HorizonResilienceRuntime",
+                payloadJson = JSONObject().put("event", "RESILIENCE_UPDATE").put("details", payload).toString(),
+                sequenceNumber = seq,
+                technology = "RESILIENCE",
+                capabilityState = CapabilityState.AVAILABLE_NOW,
+                evidenceStatus = EvidenceStatus.DERIVED,
+                provenance = ObservationProvenance.DERIVED,
+                timestampDomain = sourceObservation.timestampDomain
+            )
+        )
+        update.estimate?.let { estimate ->
+            resilientLocationStore.publish(
+                ResilientLocationSnapshot(
+                    latitudeDeg = estimate.latitudeDeg,
+                    longitudeDeg = estimate.longitudeDeg,
+                    altitudeM = estimate.altitudeM,
+                    horizontalUncertaintyM = estimate.horizontalUncertaintyM,
+                    verticalUncertaintyM = estimate.verticalUncertaintyM,
+                    timestampMonotonicNs = estimate.timestampMonotonicNs,
+                    navigationState = estimate.navigationState,
+                    provenance = estimate.provenance
+                )
+            )
+        }
+    }
 
     private suspend fun persistErrorEvent(sessionId: String, sourceName: String, throwable: Throwable) {
         ingressMutex.withLock {

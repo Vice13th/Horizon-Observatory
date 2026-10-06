@@ -138,3 +138,14 @@ Receipt: `:app:testPrimaryDebugUnitTest :app:testT1DebugUnitTest` — BUILD SUCC
 **K7 Horizon Resilient Location:** explicit read-only `ContentProvider` contract implemented at `content://horizon.observatory.resilient-location/latest`, protected by a dedicated read permission. Published snapshots preserve navigation state and provenance. Android instrumentation verified the provider contract on SM-A075F. Android mock/test-location injection is intentionally not implemented/claimed.
 
 Receipt: `:app:connectedPrimaryDebugAndroidTest` — 14 tests completed, 0 failures; 2 migration tests skipped by existing contract.
+
+
+## K0-K7 INTEGRATION / K8 CONTROLLED-LOSS RECEIPT — 2026-10-06
+
+**K0-K7 SOFTWARE INTEGRATION: VERIFIED. K8 HARDWARE VALIDATION: PENDING.**
+
+`ResilienceRuntime` is wired into the serialized `ObservatoryService` ingress. Raw observations remain unchanged; resilience transitions, interference evidence, and non-KEEP trust decisions are persisted as DERIVED `SYSTEM_EVENT` rows. The runtime is session-scoped and deterministic replay is tested.
+
+Device evidence on SM-A075F / Android 16: JVM regression green; Android instrumentation green (14 tests finished, 2 migration tests skipped); APK SHA-256 `D9E8C5838E3AE27D46706E5083184094B38489B58FB4B18D926615EC039B0B28`; controlled Location-off run produced `FULL_GNSS -> GNSS_DEGRADED -> GNSS_LOST -> INERTIAL_BRIDGING -> MULTI_SOURCE_FUSION -> RECOVERY -> FULL_GNSS`; clean-stop log recorded `Session COMPLETED`; WAL-consistent Room snapshot recorded 18 DERIVED rows in the latest 270-observation completed session.
+
+The run did **not** validate physical interference/jamming/spoofing. Background/screen-off long-run and resource/battery measurements remain K8 follow-up gates.

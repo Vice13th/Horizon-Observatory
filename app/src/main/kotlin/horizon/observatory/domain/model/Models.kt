@@ -65,7 +65,8 @@ enum class EvidenceStatus {
     NOT_OBSERVED,
     UNAVAILABLE,
     PERMISSION_DENIED,
-    FAILED
+    FAILED,
+    DERIVED
 }
 
 enum class ObservationProvenance {

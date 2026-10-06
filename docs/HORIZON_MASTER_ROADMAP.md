@@ -1589,3 +1589,30 @@ K0 capability contract and K1-K4 deterministic domain engines are implemented an
 - K6: software-only Reception Optimization policy implemented; no RF/antenna claim.
 - K7: explicit read-only Horizon Resilient Location ContentProvider implemented and instrumented on SM-A075F.
 - Current blocker before K software-complete claim: integrate K1-K4 runtime engines with observation ingress/derived persistence and verify deterministic replay.
+
+
+# 28.3 PHASE K INTEGRATION + CONTROLLED LOSS RECEIPT — 2026-10-06
+
+**STATUS: K0-K7 SOFTWARE INTEGRATION VERIFIED / K8 HARDWARE VALIDATION PENDING**
+
+The resilience runtime is now wired directly into `ObservatoryService` at the serialized raw-observation ingress. Raw observations are persisted unchanged; meaningful resilience transitions, interference assessments, and non-KEEP trust decisions are persisted as separate `SYSTEM_EVENT` rows with `ObservationProvenance.DERIVED` and `EvidenceStatus.DERIVED`. The runtime is session-scoped and deterministic replay is covered by JVM tests.
+
+Device receipt on SM-A075F / Android 16:
+
+- APK SHA-256: `D9E8C5838E3AE27D46706E5083184094B38489B58FB4B18D926615EC039B0B28`.
+- `:app:connectedPrimaryDebugAndroidTest`: BUILD SUCCESSFUL; 14 tests finished, 2 existing migration tests skipped.
+- Active runtime session produced raw GNSS/status/fix/cellular/sensor observations plus 66 derived resilience events.
+- A controlled Location-off interval produced real transitions: `FULL_GNSS -> GNSS_DEGRADED -> GNSS_LOST -> INERTIAL_BRIDGING -> MULTI_SOURCE_FUSION`; after Location restoration, `RECOVERY -> FULL_GNSS` was observed.
+- The WAL-consistent closed Room snapshot for the latest clean-stop session reports `COMPLETED`, with 44 GNSS_RAW_MEASUREMENT, 10 GNSS_STATUS, 1 GNSS_FIX, 5 CELLULAR_INFO, 172 SENSOR_ACCEL, 20 SYSTEM_EVENT, and 18 DERIVED rows.
+- Clean-stop service receipt: `HorizonService: Session COMPLETED ... observations=270`.
+- Earlier interrupted-stop evidence was reconciled via the service recovery path; a subsequent app/service start showed the interrupted session as COMPLETED.
+- No Horizon crash-buffer entries were observed in the controlled-loss/clean-stop run.
+- The device Location setting was restored from `3` to `0` and back to the original `3`; no persistent device setting change was left behind.
+
+Scientific boundary:
+
+- This is controlled GNSS-loss/resilience evidence, **not physical jamming/spoofing validation**.
+- K1 labels remain hypotheses.
+- K8 physical interference classification, open-sky truth comparison, long-run resource/battery characterization, and screen-off/background service validation remain pending.
+
+**NEXT UNBLOCKED TARGET: K8 batched physical/long-run validation when suitable hardware/control conditions are available.**

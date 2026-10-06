@@ -23,6 +23,7 @@ class NavigationContinuityStateMachine(
     private fun nextTarget(s: NavigationState, e: NavigationEvidence): NavigationState? = when (s) {
         NavigationState.FULL_GNSS -> when {
             e.recoveryGnss -> NavigationState.RECOVERY
+            e.gnssLost -> NavigationState.GNSS_DEGRADED
             e.degradedGnss -> NavigationState.GNSS_DEGRADED
             else -> NavigationState.FULL_GNSS
         }

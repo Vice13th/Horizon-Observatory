@@ -45,3 +45,10 @@
 | K6 Reception Optimization | IMPLEMENTED / TESTED | Explicit ON/OFF software policy + deterministic trust-policy reuse; no physical RF gain claimed |
 | K7 Resilient Location | IMPLEMENTED / DEVICE-VERIFIED CONTRACT | Read-only ContentProvider with dedicated permission; instrumentation verified explicit snapshot/provenance contract; mock/test-location bridge remains unimplemented |
 | K8 hardware validation | BLOCKED / PENDING | Requires batched real-device degradation/loss/recovery and long-run evidence |
+
+| K0-K4 live service integration | VERIFIED / DEVICE-OBSERVED | `ResilienceRuntime` wired at serialized observation ingress; raw evidence unchanged; DERIVED resilience events persisted; controlled-loss device receipt |
+| K5 Emergency Navigation lifecycle | DEVICE-PARTIAL / VERIFIED RECOVERY | Service recovery closed interrupted session; clean stop completed; background/screen-off long-run remains unverified |
+| K6 Reception Optimization | IMPLEMENTED / TESTED | Software-only policy; no RF/antenna gain claim |
+| K7 Resilient Location | DEVICE-VERIFIED CONTRACT / INTEGRATED FEED | Explicit provider contract instrumented; runtime publishes observed GNSS and dead-reckoned snapshots; shell consumer denied by required read permission as designed |
+| K8 controlled GNSS-loss resilience | VERIFIED CONTROLLED LOSS | Location mode 3→0→3; observed transitions through GNSS degraded/lost/inertial/multi-source and recovery; not physical interference validation |
+| K8 physical interference / long-run validation | PENDING | Requires controlled physical interference/degradation, truth comparison, long-run background/screen-off and resource/battery receipts |

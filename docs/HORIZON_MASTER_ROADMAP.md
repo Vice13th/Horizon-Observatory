@@ -1580,7 +1580,7 @@ This document is a living engineering ledger, not a marketing roadmap.
 
 # 28.1 PHASE K EXECUTION RECEIPT — 2026-10-06
 
-K0 capability contract and K1-K4 deterministic domain engines are implemented and covered by a green JVM regression receipt. These are not promoted to full PASS until live ObservatoryService integration is verified. Next unblocked gate: wire the resilience runtime to the existing observation ingress without altering raw evidence, then verify K1-K4 against replay/synthetic evidence.
+K0 capability contract and K1-K4 deterministic domain engines were implemented and covered by a green JVM regression receipt at the time of this historical receipt. The live-ingress gap described here was subsequently closed by receipt 28.3.
 
 
 # 28.2 K5-K7 RECEIPT — 2026-10-06
@@ -1588,7 +1588,7 @@ K0 capability contract and K1-K4 deterministic domain engines are implemented an
 - K5: persistent Emergency Navigation mode and existing foreground-service wiring implemented; device lifecycle/background verification remains pending.
 - K6: software-only Reception Optimization policy implemented; no RF/antenna claim.
 - K7: explicit read-only Horizon Resilient Location ContentProvider implemented and instrumented on SM-A075F.
-- Current blocker before K software-complete claim: integrate K1-K4 runtime engines with observation ingress/derived persistence and verify deterministic replay.
+- Historical blocker at the time of this receipt: integrate K1-K4 runtime engines with observation ingress/derived persistence and verify deterministic replay. This was subsequently closed by receipt 28.3.
 
 
 # 28.3 PHASE K INTEGRATION + CONTROLLED LOSS RECEIPT — 2026-10-06

@@ -1,7 +1,7 @@
 # HORIZON — CANONICAL CURRENT STATUS / 2026-10-06
 
 > **Canonical remote source:** Vice13th/Horizon-Observatory / main  
-> **Current remote HEAD at reconciliation:** e719d88f6cd7e4dc2c83fa29750009356ce7154e  
+> **Current remote HEAD: **inspect `main` directly; do not hard-code a SHA inside status documents.**
 > **Current checkpoint:** HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED
 
 ## Current verdict

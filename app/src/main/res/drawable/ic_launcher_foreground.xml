@@ -5,9 +5,19 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,20 A34,34 0 1 1 53.9,20 Z M54,28 A26,26 0 1 0 54.1,28 Z" />
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/horizon_observed"
+        android:strokeWidth="5"
+        android:pathData="M54,18 A36,36 0,1 1,53.9,18" />
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,38 L62,54 L54,70 L46,54 Z" />
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/horizon_signal"
+        android:strokeWidth="3"
+        android:pathData="M54,28 A26,26 0,1 1,53.9,28" />
+    <path
+        android:fillColor="@color/horizon_observed"
+        android:pathData="M54,38 L66,54 L54,70 L42,54 Z" />
+    <path
+        android:fillColor="@color/horizon_background"
+        android:pathData="M54,46 L60,54 L54,62 L48,54 Z" />
 </vector>

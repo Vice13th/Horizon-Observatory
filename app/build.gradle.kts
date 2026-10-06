@@ -82,8 +82,10 @@ dependencies {
     add("t1Implementation", project(":orbitcore-bridge"))
 
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.service)
 
     implementation(platform(libs.androidx.compose.bom))

@@ -65,7 +65,9 @@ class ResilienceEngineTest {
         assertEquals("DEAD_RECKONED_FROM_LAST_TRUSTED_PVT", a.provenance)
         assertEquals(NavigationState.INERTIAL_BRIDGING, a.navigationState)
         assertTrue(a.horizontalUncertaintyM > last.horizontalUncertaintyM)
-        assertTrue(a.verticalUncertaintyM > last.verticalUncertaintyM)
+        val lastVerticalUncertaintyM = checkNotNull(last.verticalUncertaintyM)
+        val actualVerticalUncertaintyM = checkNotNull(a.verticalUncertaintyM)
+        assertTrue(actualVerticalUncertaintyM > lastVerticalUncertaintyM)
         assertEquals(last.latitudeDeg, a.latitudeDeg, 0.000001)
     }
 

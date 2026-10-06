@@ -19,7 +19,7 @@
         android:label="${appLabel}"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+        android:theme="@style/Theme.Horizon.Starting">
 
         <activity android:name=".ui.MainActivity" android:exported="true">
             <intent-filter>

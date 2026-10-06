@@ -1678,3 +1678,35 @@ Reference fixtures `SGP4-VER.TLE` and `tcppver.out` are vendored from the public
 **Fresh verification:** primary JVM suite `163` tests, `0` failures, `0` errors, `3` existing reference-vector skips; fresh primary APK SHA-256 `9EB1F04505DEA594C4D1789A0BFD6B8CCA51ACFA953E9D8BDC80C3B2D6E2995A`; `:app:connectedPrimaryDebugAndroidTest` BUILD SUCCESSFUL on `SM-A075F / Android 16`, `14` tests finished, `2` existing migration tests skipped; OrbitCore bridge debug suite `2` tests, `0` failures, `0` errors.
 
 **Scientific boundary:** `SGP4-VER.TLE` and `tcppver.out` are now vendored with verified SHA-256 (`D246D1D9D768ACE445A38A965713FA9BA52D80FD8A41A0502FF83D7ACFFE2881`, `687BF28DBE52DF86E8E60AB5CB4A08D1AA3DBCAF4E63B1F7AB95F044FBE3833B`). The files are provenance fixtures only at this receipt. No SGP4/SDP4 numerical accuracy claim is made until Horizon's dedicated vector runner compares OrbitCore states against the fixture rows.
+---
+
+# 2026-10-07 FINAL RECONCILIATION
+
+## Current checkpoint
+`HORIZON_CHECKPOINT_2026-10-07_FINAL`
+
+## Closed
+- B3 live observation refresh path is verified.
+- B4 satellite-count presentation cap is removed and device-verified at 60 observed / 60 shown.
+- Horizon startup splash/launcher branding is integrated and cold-start verified.
+- ResilienceEngineTest nullable `verticalUncertaintyM` failure is fixed without changing production null semantics.
+- `:app:testPrimaryDebugUnitTest` PASS.
+- `:app:assemblePrimaryDebug` PASS.
+- APK install and launch smoke verification PASS on SM-A075F / Android 16 / API 36.
+
+## Evidence boundary
+- Room/persisted observations remain authoritative.
+- LiveObservationBus is a UI trigger only.
+- No synthetic geometry or missing measurements were introduced.
+- No heading-up orientation claim is made on a device without a rotation-vector sensor.
+- Scientific propagation foundations remain frozen.
+
+## Next active gates
+1. Complete any remaining export/readback reconciliation with explicit counts/checksums.
+2. Resolve SVID-to-NORAD identity only from authoritative provenance-carrying evidence.
+3. Exercise UTC/timestamp edge cases.
+4. Run bounded long-run K8/interference validation.
+5. Re-enter geographic visualization only with fresh evidence receipts.
+
+## Build/environment note
+Gradle 8.11.1 deprecation and SDK XML mismatch warnings remain non-blocking. Do not alter toolchain solely for this checkpoint.

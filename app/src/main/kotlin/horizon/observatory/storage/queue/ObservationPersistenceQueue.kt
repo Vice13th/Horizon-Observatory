@@ -52,6 +52,11 @@ class RoomObservationPersistenceQueue(
             if (!didDrain) break
             drained++
         }
+        if (drained > 0) {
+            // Room normally refreshes invalidation at transaction end. Keep this explicit because
+            // the live UI audit demonstrated a missed observable-query emission in this runtime.
+            database.invalidationTracker.refreshAsync()
+        }
         drained
     }
 

@@ -35,6 +35,7 @@ import horizon.observatory.domain.model.TimestampDomain
 import horizon.observatory.core.time.TimestampEngine
 import horizon.observatory.storage.queue.ObservationPersistenceQueue
 import horizon.observatory.storage.repository.SessionRepository
+import horizon.observatory.storage.repository.toObservationEntity
 import horizon.observatory.resilience.EmergencyNavigationController
 import horizon.observatory.resilience.NavigationState
 import horizon.observatory.resilience.ResilienceRuntime
@@ -61,6 +62,7 @@ class ObservatoryService : Service() {
 
     private lateinit var repository: SessionRepository
     private lateinit var observationQueue: ObservationPersistenceQueue
+    private lateinit var liveObservationBus: horizon.observatory.live.LiveObservationBus
     private lateinit var gnssFixSource: LocationFixSource
     private lateinit var gnssRawSource: GnssObservationSource
     private lateinit var cellularSource: CellInfoSource
@@ -86,6 +88,7 @@ class ObservatoryService : Service() {
         val container = (application as HorizonApplication).container
         repository = container.sessionRepository
         observationQueue = container.observationQueue
+        liveObservationBus = container.liveObservationBus
         gnssFixSource = container.gnssFixSource
         gnssRawSource = container.gnssObservationSource
         cellularSource = container.cellularSource
@@ -193,6 +196,9 @@ class ObservatoryService : Service() {
                         }
                     }
                     observationQueue.drain(sessionId)
+                    // Publish only after the observation has reached the durable evidence table.
+                    // The bus is a live UI trigger; Room remains the authoritative data source.
+                    liveObservationBus.publish(sessionId, stamped.toObservationEntity(sessionId))
                 }
             }
         } catch (ce: CancellationException) {

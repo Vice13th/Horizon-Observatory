@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="288dp"
+    android:height="288dp"
+    android:viewportWidth="288"
+    android:viewportHeight="288">
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/horizon_observed"
+        android:strokeWidth="8"
+        android:strokeLineCap="round"
+        android:pathData="M144,48 A96,96 0,1 1,143.9,48" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/horizon_signal"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M144,76 A68,68 0,1 1,143.9,76" />
+    <path
+        android:fillColor="@color/horizon_observed"
+        android:pathData="M144,92 L180,144 L144,196 L108,144 Z" />
+    <path
+        android:fillColor="@color/horizon_background"
+        android:pathData="M144,112 L166,144 L144,176 L122,144 Z" />
+</vector>

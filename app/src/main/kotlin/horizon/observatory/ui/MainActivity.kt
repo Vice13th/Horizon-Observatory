@@ -11,12 +11,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,12 +41,14 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -49,7 +56,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
@@ -61,9 +67,10 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -78,6 +85,7 @@ import horizon.observatory.domain.gnss.SatelliteEvidence
 import horizon.observatory.domain.gnss.SatelliteEvidenceMatch
 import horizon.observatory.storage.entity.ObservationEntity
 import horizon.observatory.storage.entity.SessionEntity
+import horizon.observatory.live.LiveObservationSignal
 import horizon.observatory.live.MagneticDeclinationProvider
 import horizon.observatory.live.ObservedSkyState
 import horizon.observatory.live.ObservedSkyPoint
@@ -89,7 +97,7 @@ import horizon.observatory.domain.model.RawObservationView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import org.json.JSONObject
 import java.io.FileInputStream
@@ -102,6 +110,7 @@ import kotlin.math.sin
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         setContent { HorizonTheme { ObservatoryApp() } }
     }
@@ -112,21 +121,45 @@ class MainActivity : ComponentActivity() {
         val container = (application as HorizonApplication).container
         var section by rememberSaveable { mutableStateOf(0) }
         var message by rememberSaveable { mutableStateOf("Ready") }
-        val sessions by container.sessionRepository.observeAllSessions().collectAsStateCompat(emptyList())
+        val sessions by container.sessionRepository.observeAllSessions().collectAsStateWithLifecycle(emptyList())
         val latest = sessions.firstOrNull()
         val latestStateKey = latest?.let { "${it.sessionId}:${it.lifecycleState}" }
-        val latestIsActive = latest?.lifecycleState == "RECORDING" || latest?.lifecycleState == "STOPPING"
-        val observations by produceState<List<ObservationEntity>>(initialValue = emptyList(), key1 = latestStateKey) {
-            if (latest == null) {
-                value = emptyList()
+        // Live UI is triggered by the post-persistence observation bus. Room remains the
+        // authoritative store; this avoids making Room invalidation the sole real-time transport.
+        val liveSignalFlow: Flow<LiveObservationSignal> = remember {
+            container.liveObservationBus.sampledAll()
+        }
+        val liveSignal by liveSignalFlow.collectAsStateWithLifecycle(initialValue = null as LiveObservationSignal?)
+        var liveSession by remember { mutableStateOf<SessionEntity?>(null) }
+        LaunchedEffect(latestStateKey) {
+            liveSession = latest
+        }
+        LaunchedEffect(liveSignal?.sequenceNumber) {
+            if (liveSignal != null) {
+                liveSession = container.sessionRepository.getLatestSession()
+            }
+        }
+        val currentSession = liveSession ?: latest
+        val latestIsActive = currentSession?.lifecycleState == "RECORDING" || currentSession?.lifecycleState == "STOPPING"
+        var observations by remember(currentSession?.sessionId) { mutableStateOf<List<ObservationEntity>>(emptyList()) }
+        LaunchedEffect(currentSession?.sessionId, currentSession?.lifecycleState, liveSignal?.sequenceNumber) {
+            val session = currentSession
+            if (session == null) {
+                observations = emptyList()
             } else {
-                container.sessionRepository.getObservations(latest.sessionId).collectLatest { rows ->
-                    value = if (latestIsActive) rows.takeLast(LIVE_OBSERVATION_WINDOW) else rows
+                val snapshot = if (latestIsActive) {
+                    container.sessionRepository.getRecentObservationsSnapshot(session.sessionId, LIVE_OBSERVATION_WINDOW).asReversed()
+                } else {
+                    container.sessionRepository.getObservationsSnapshot(session.sessionId)
                 }
+                observations = snapshot
             }
         }
         val analysisEngine = remember { SessionAnalysisEngine() }
         var analysis by remember { mutableStateOf(analysisEngine.analyze(emptyList())) }
+        val observedSky = remember(analysis.gnssDomain.latestSatelliteEvidence) {
+            observedSkyStateForUi(analysis.gnssDomain)
+        }
         val observationVersion = observations.lastOrNull()?.sequenceNumber
         LaunchedEffect(latest?.sessionId, latest?.lifecycleState, observationVersion) {
             analysis = withContext(Dispatchers.Default) {
@@ -248,15 +281,45 @@ class MainActivity : ComponentActivity() {
         }
 
         Scaffold(
-            topBar = { TopAppBar(title = { Text(currentSectionTitle, fontWeight = FontWeight.SemiBold) }) },
+            containerColor = HorizonColors.background,
+            topBar = {
+                InstrumentTopBar(
+                    title = currentSectionTitle,
+                    active = latestIsActive
+                )
+            },
             bottomBar = {
-                NavigationBar {
+                NavigationBar(
+                    modifier = Modifier.navigationBarsPadding(),
+                    containerColor = HorizonColors.instrument,
+                    contentColor = HorizonColors.text,
+                    tonalElevation = 0.dp
+                ) {
                     listOf("Overview", "GNSS", "Sessions", "System", "More").forEachIndexed { index, label ->
                         NavigationBarItem(
                             selected = selectedNav == index,
                             onClick = { section = index },
-                            icon = { Text(label.take(1)) },
-                            label = { Text(label) }
+                            icon = {
+                                Text(
+                                    label.take(2).uppercase(),
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            label = {
+                                Text(
+                                    label.uppercase(),
+                                    fontFamily = FontFamily.Monospace,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = HorizonColors.background,
+                                selectedTextColor = HorizonColors.observed,
+                                indicatorColor = HorizonColors.observed.copy(alpha = 0.16f),
+                                unselectedIconColor = HorizonColors.muted,
+                                unselectedTextColor = HorizonColors.muted
+                            )
                         )
                     }
                 }
@@ -266,21 +329,23 @@ class MainActivity : ComponentActivity() {
                 when (section) {
                     0 -> Column(Modifier.fillMaxSize()) {
                         SessionControls(
-                            session = latest,
+                            session = currentSession,
                             onPermissions = { permissionLauncher.launch(requestablePermissions()) },
                             onStart = {
-                                if (latest?.lifecycleState == "RECORDING" || latest?.lifecycleState == "STOPPING") {
-                                    message = "A session is already active."
-                                } else if (!hasFineLocationPermission()) {
+                                if (!hasFineLocationPermission()) {
                                     message = "Grant precise (fine) location permission to start GNSS/cellular observation."
                                 } else {
                                     val intent = Intent(this@MainActivity, ObservatoryService::class.java).setAction(ObservatoryService.ACTION_START)
                                     ContextCompat.startForegroundService(this@MainActivity, intent)
-                                    message = "Observation start requested."
+                                    message = if (currentSession?.lifecycleState == "RECORDING" || currentSession?.lifecycleState == "STOPPING") {
+                                        "Observation recovery/start requested."
+                                    } else {
+                                        "Observation start requested."
+                                    }
                                 }
                             },
                             onStop = {
-                                if (latest?.lifecycleState == "RECORDING" || latest?.lifecycleState == "STOPPING") {
+                                if (currentSession?.lifecycleState == "RECORDING" || currentSession?.lifecycleState == "STOPPING") {
                                     startService(Intent(this@MainActivity, ObservatoryService::class.java).setAction(ObservatoryService.ACTION_STOP))
                                     message = "Observation stop requested."
                                 } else {
@@ -291,14 +356,26 @@ class MainActivity : ComponentActivity() {
                         if (message != "Ready") {
                             Text(message, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium)
                         }
-                        OverviewScreen(latest, analysis, gnssCn0Samples(observations))
+                        OverviewScreen(
+                            session = currentSession,
+                            analysis = analysis,
+                            cnoSamples = gnssCn0Samples(observations),
+                            orientationSource = container.deviceOrientationSource,
+                            declinationProvider = container.magneticDeclinationProvider,
+                            isLive = latestIsActive,
+                            observed = observedSky,
+                            observerLat = observations.lastOrNull { it.type == "GNSS_FIX" }?.let { numericFieldLocal(it, "latitude") },
+                            observerLon = observations.lastOrNull { it.type == "GNSS_FIX" }?.let { numericFieldLocal(it, "longitude") },
+                            observerAlt = observations.lastOrNull { it.type == "GNSS_FIX" }?.let { numericFieldLocal(it, "altitude") }
+                        )
                     }
                     1 -> GnssScreen(
                         obs = observations,
                         analysis = analysis,
                         orientationSource = container.deviceOrientationSource,
                         declinationProvider = container.magneticDeclinationProvider,
-                        isLive = latestIsActive
+                        isLive = latestIsActive,
+                        observedSky = observedSky
                     )
                     2 -> SessionScreen(sessions)
                     3 -> SystemScreen(
@@ -417,7 +494,7 @@ private fun SessionControls(
     val active = session?.lifecycleState == "RECORDING" || session?.lifecycleState == "STOPPING"
     Card(
         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))
+        colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -427,12 +504,12 @@ private fun SessionControls(
                 }
                 Text(
                     if (active) "ACTIVE" else "IDLE",
-                    color = if (active) Color(0xFFE1A4FF) else Color(0xFFB8AEBE),
+                    color = if (active) HorizonColors.observed else HorizonColors.muted,
                     fontWeight = FontWeight.Bold
                 )
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onStart, enabled = !active, modifier = Modifier.weight(1f)) { Text("START") }
+                Button(onClick = onStart, enabled = true, modifier = Modifier.weight(1f)) { Text("START") }
                 OutlinedButton(onClick = onStop, enabled = active, modifier = Modifier.weight(1f)) { Text("STOP") }
                 OutlinedButton(onClick = onPermissions, modifier = Modifier.weight(1.3f)) { Text("PERMISSIONS") }
             }
@@ -453,7 +530,7 @@ private fun MoreScreen(onNavigate: (Int) -> Unit, hasCompletedSession: Boolean) 
     )
     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("OBSERVATORY MODULES", style = MaterialTheme.typography.titleMedium)
                     Text("Secondary views are kept out of the primary navigation so the mobile layout remains readable.", style = MaterialTheme.typography.bodySmall)
@@ -477,7 +554,7 @@ private fun SystemScreen(session: SessionEntity?, capabilityJson: String) {
         item { MetricCard("Device", "${session?.deviceManufacturer ?: "UNKNOWN"} ${session?.deviceModel ?: "UNKNOWN"}", "Android ${session?.androidVersion ?: "UNKNOWN"} / API ${session?.sdkVersion ?: 0}") }
         item { MetricCard("Session", session?.sessionId ?: "NONE", session?.lifecycleState ?: "NO SESSION") }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text("CAPABILITY REPORT", style = MaterialTheme.typography.titleMedium)
                     Text(capabilityJson, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
@@ -485,7 +562,7 @@ private fun SystemScreen(session: SessionEntity?, capabilityJson: String) {
             }
         }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text("PERMISSION STATE", style = MaterialTheme.typography.titleMedium)
                     Text(session?.permissionStateJson ?: "{}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
@@ -496,13 +573,42 @@ private fun SystemScreen(session: SessionEntity?, capabilityJson: String) {
 }
 
 @Composable
-private fun OverviewScreen(session: SessionEntity?, analysis: AnalysisSnapshot, cnoSamples: List<Double>) {
+private fun OverviewScreen(
+    session: SessionEntity?,
+    analysis: AnalysisSnapshot,
+    cnoSamples: List<Double>,
+    orientationSource: ControllableOrientationSource,
+    declinationProvider: MagneticDeclinationProvider,
+    isLive: Boolean,
+    observed: ObservedSkyState,
+    observerLat: Double?,
+    observerLon: Double?,
+    observerAlt: Double?
+) {
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 12.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        item { MetricCard("Session", session?.sessionId ?: "NONE", session?.lifecycleState ?: "NO SESSION") }
+        item {
+            InstrumentObservationHeader(
+                active = isLive,
+                session = session,
+                observedCount = observed.points.size
+            )
+        }
+        item {
+            LiveSkyObservatory(
+                observed = observed,
+                observerLat = observerLat,
+                observerLon = observerLon,
+                observerAlt = observerAlt,
+                orientationSource = orientationSource,
+                declinationProvider = declinationProvider,
+                isLive = isLive
+            )
+        }
+        item { InstrumentTelemetry(observed) }
         item { MetricGrid(analysis) }
         item { SignalCard("GNSS C/N0 history", "dB-Hz", analysis.averageCn0DbHz, cnoSamples) }
         item { SignalSummary(analysis) }
@@ -511,8 +617,92 @@ private fun OverviewScreen(session: SessionEntity?, analysis: AnalysisSnapshot, 
 }
 
 @Composable
+private fun InstrumentObservationHeader(active: Boolean, session: SessionEntity?, observedCount: Int) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = HorizonColors.instrument),
+        border = androidx.compose.foundation.BorderStroke(2.dp, HorizonColors.border),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    "OBSERVATION BUS",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = HorizonColors.observed,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "${if (active) "LIVE" else "IDLE"}  /  ${session?.lifecycleState ?: "NO SESSION"}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontFamily = FontFamily.Monospace,
+                    color = HorizonColors.text
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    "OBSERVED",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = HorizonColors.muted,
+                    fontFamily = FontFamily.Monospace
+                )
+                Text(
+                    observedCount.toString(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = HorizonColors.observed,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InstrumentTelemetry(observed: ObservedSkyState) {
+    val best = observed.points.maxByOrNull { it.cn0DbHz ?: Double.NEGATIVE_INFINITY }
+    Card(
+        colors = CardDefaults.cardColors(containerColor = HorizonColors.instrument),
+        border = androidx.compose.foundation.BorderStroke(2.dp, HorizonColors.border),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text(
+                "TELEMETRY",
+                style = MaterialTheme.typography.titleSmall,
+                color = HorizonColors.observed,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                InstrumentValue("C/N0", best?.cn0DbHz?.let { "%.1f dB-Hz".format(it) } ?: "UNAVAILABLE")
+                InstrumentValue("ELEVATION", best?.elevationDeg?.let { "%.1f°".format(it) } ?: "UNAVAILABLE")
+                InstrumentValue("AZIMUTH", best?.azimuthDeg?.let { "%.1f°".format(it) } ?: "UNAVAILABLE")
+            }
+            Text(
+                if (best != null) "SOURCE: OBSERVED SATELLITE FIELD" else "SOURCE: NO OBSERVED GEOMETRY",
+                style = MaterialTheme.typography.labelSmall,
+                color = HorizonColors.muted,
+                fontFamily = FontFamily.Monospace
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.InstrumentValue(label: String, value: String) {
+    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = HorizonColors.muted, fontFamily = FontFamily.Monospace)
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = HorizonColors.text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
 private fun MetricGrid(a: AnalysisSnapshot) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("OBSERVATION MATRIX", style = MaterialTheme.typography.titleMedium)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -539,7 +729,7 @@ private fun Metric(label: String, value: String, modifier: Modifier = Modifier) 
 
 @Composable
 private fun MetricCard(title: String, value: String, state: String) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF211526))) {
+    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(16.dp)) {
             Text(title, style = MaterialTheme.typography.labelSmall)
             Text(value, style = MaterialTheme.typography.bodyLarge, fontFamily = FontFamily.Monospace, maxLines = 2)
@@ -550,7 +740,7 @@ private fun MetricCard(title: String, value: String, state: String) {
 
 @Composable
 private fun SignalCard(title: String, unit: String, value: Double?, samples: List<Double> = emptyList()) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
@@ -573,7 +763,7 @@ private fun SignalCard(title: String, unit: String, value: Double?, samples: Lis
 
 @Composable
 private fun SignalSummary(a: AnalysisSnapshot) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("DERIVED ANALYSIS", style = MaterialTheme.typography.titleMedium)
             Text("Average C/N0: ${a.averageCn0DbHz?.let { "%.2f dB-Hz".format(it) } ?: "UNAVAILABLE"}")
@@ -589,7 +779,7 @@ private fun SignalSummary(a: AnalysisSnapshot) {
 
 @Composable
 private fun EvidenceCard(session: SessionEntity?) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("EVIDENCE", style = MaterialTheme.typography.titleMedium)
             Text("Device: ${session?.deviceManufacturer ?: "UNKNOWN"} ${session?.deviceModel ?: "UNKNOWN"}")
@@ -606,18 +796,14 @@ private fun GnssScreen(
     analysis: AnalysisSnapshot,
     orientationSource: ControllableOrientationSource,
     declinationProvider: MagneticDeclinationProvider,
-    isLive: Boolean
+    isLive: Boolean,
+    observedSky: ObservedSkyState
 ) {
     val domain = analysis.gnssDomain
     val rawRows = obs.filter { it.type == "GNSS_RAW_MEASUREMENT" }.takeLast(160)
     val cnoHistory = rawRows.mapNotNull { numericFieldLocal(it, "cn0DbHz") }.filter { it.isFinite() }
     val agcHistory = rawRows.mapNotNull { numericFieldLocal(it, "automaticGainControlLevelDb") }.filter { it.isFinite() }
     val navigationMessages = obs.filter { it.type == "GNSS_NAVIGATION_MESSAGE" }.takeLast(40)
-    val matrix = domain.latestSatelliteEvidence
-        .filter { it.svid >= 0 && (it.elevationDegrees?.isFinite() != false) && (it.azimuthDegrees?.isFinite() != false) }
-        .sortedWith(compareByDescending<SatelliteEvidence> { it.cn0DbHz ?: Double.NEGATIVE_INFINITY }.thenBy { it.constellationType }.thenBy { it.svid })
-        .take(18)
-    val observedSky = remember(matrix) { ObservedSkyState.from(matrix) }
     val fixRow = obs.lastOrNull { it.type == "GNSS_FIX" }
     val observerLat = fixRow?.let { numericFieldLocal(it, "latitude") }
     val observerLon = fixRow?.let { numericFieldLocal(it, "longitude") }
@@ -653,7 +839,7 @@ private fun GnssScreen(
         item { MetricCard("Raw measurements", analysis.gnssRawCount.toString(), if (rawRows.isEmpty()) "NOT OBSERVED IN THIS SESSION" else "MEASURED — RAW EVIDENCE PRESERVED") }
         if (rawRows.isEmpty()) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+                Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("GNSS RAW MEASUREMENTS", style = MaterialTheme.typography.titleMedium)
                         Text("No persisted GNSS_RAW_MEASUREMENT records are available for this session.", style = MaterialTheme.typography.bodySmall)
@@ -670,6 +856,17 @@ private fun GnssScreen(
  * rate. The pose is a presentation input: it is read here, turned into an orientation decision, and
  * never written into any observation or evidence.
  */
+private fun observedSkyStateForUi(domain: GnssDomainSnapshot): ObservedSkyState {
+    val matrix = domain.latestSatelliteEvidence
+        .filter { it.svid >= 0 && (it.elevationDegrees?.isFinite() != false) && (it.azimuthDegrees?.isFinite() != false) }
+        .sortedWith(
+            compareByDescending<SatelliteEvidence> { it.cn0DbHz ?: Double.NEGATIVE_INFINITY }
+                .thenBy { it.constellationType }
+                .thenBy { it.svid }
+        )
+    return ObservedSkyState.from(matrix)
+}
+
 @Composable
 private fun LiveSkyObservatory(
     observed: ObservedSkyState,
@@ -698,7 +895,7 @@ private fun LiveSkyObservatory(
             orientationSource.stop()
         }
     }
-    val pose by orientationSource.orientation.collectAsState()
+    val pose by orientationSource.orientation.collectAsStateWithLifecycle()
     val declinationDeg = remember(observerLat, observerLon, observerAlt) {
         if (observerLat != null && observerLon != null) {
             declinationProvider.declinationDeg(observerLat, observerLon, observerAlt, System.currentTimeMillis())
@@ -708,25 +905,36 @@ private fun LiveSkyObservatory(
     }
     val decision = SkyProjection.decide(pose, declinationDeg, isLive)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        CorrelatedSkyPlot(observed, decision)
+        CorrelatedSkyPlot(observed, decision, isLive)
         SatellitePanelField(observed, decision)
     }
 }
 
 @Composable
-private fun CorrelatedSkyPlot(observed: ObservedSkyState, orientation: SkyOrientationDecision) {
+private fun CorrelatedSkyPlot(observed: ObservedSkyState, orientation: SkyOrientationDecision, isLive: Boolean) {
     val mode = orientation.mode
     val labelPaint = remember {
         android.graphics.Paint().apply {
-            color = android.graphics.Color.LTGRAY
+            color = android.graphics.Color.rgb(99, 226, 222)
             textSize = 28f
             textAlign = android.graphics.Paint.Align.CENTER
             isAntiAlias = true
+            typeface = android.graphics.Typeface.MONOSPACE
         }
     }
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("SATELLITE SKY PLOT", style = MaterialTheme.typography.titleMedium)
+    Card(
+        colors = CardDefaults.cardColors(containerColor = HorizonColors.canvas),
+        border = androidx.compose.foundation.BorderStroke(2.dp, HorizonColors.border),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Text(
+                if (isLive) "LIVE SKY" else "OBSERVED SKY",
+                style = MaterialTheme.typography.titleMedium,
+                color = HorizonColors.observed,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold
+            )
             Text(
                 "Correlated observed azimuth/elevation · ${observed.points.size} latest satellites" +
                     if (observed.excludedWithoutGeometry > 0) " · ${observed.excludedWithoutGeometry} without az/el not plotted" else "",
@@ -737,21 +945,21 @@ private fun CorrelatedSkyPlot(observed: ObservedSkyState, orientation: SkyOrient
                 else "Orientation: north-up · ${orientation.detail}",
                 style = MaterialTheme.typography.labelSmall
             )
-            Box(Modifier.fillMaxWidth().height(250.dp).background(Color(0xFF0D0B10))) {
+            Box(Modifier.fillMaxWidth().height(250.dp).background(HorizonColors.canvas)) {
                 Canvas(Modifier.fillMaxSize().padding(12.dp)) {
                     val diameter = min(size.width, size.height) * 0.82f
                     val radius = diameter / 2f
                     val center = Offset(size.width / 2f, size.height / 2f)
                     val ringFractions = floatArrayOf(1f, 2f / 3f, 1f / 3f)
                     ringFractions.forEach { fraction ->
-                        drawCircle(Color(0xFF3A3440), radius * fraction, center, style = Stroke(width = 1f))
+                        drawCircle(HorizonColors.grid, radius * fraction, center, style = Stroke(width = 1f))
                     }
                     observed.points.forEach { point ->
                         val p = SkyProjection.project(point.azimuthDeg, point.elevationDeg, mode) ?: return@forEach
                         val x = center.x + (p.x * radius).toFloat()
                         val y = center.y - (p.y * radius).toFloat()
                         val r = if (point.usedInFix == true) 6f else 4f
-                        drawCircle(Color(0xFFC875FF), r, Offset(x, y))
+                        drawCircle(HorizonColors.observed, r, Offset(x, y))
                     }
                     if (mode is SkyOrientationMode.HeadingUp) {
                         drawIntoCanvas { canvas ->
@@ -783,7 +991,11 @@ private fun SatellitePanelField(
     observed: ObservedSkyState,
     orientation: SkyOrientationDecision
 ) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = HorizonColors.instrument),
+        border = androidx.compose.foundation.BorderStroke(2.dp, HorizonColors.border),
+        shape = RoundedCornerShape(8.dp)
+    ) {
         Column(
             Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -846,11 +1058,11 @@ private fun SatellitePanelCard(
 ) {
     val constellationCode = satelliteShortCode(point.satelliteId.constellationType)
     val satelliteCode = "$constellationCode${point.satelliteId.svid}"
-    val observedAccent = Color(0xFFE45756)
-    val neutral = Color(0xFF3A3434)
+    val observedAccent = HorizonColors.observed
+    val neutral = HorizonColors.border
     Card(
         modifier = modifier.height(46.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF151112)),
+        colors = CardDefaults.cardColors(containerColor = HorizonColors.instrument),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
             if (point.usedInFix == true) observedAccent else neutral
@@ -914,11 +1126,11 @@ private fun CnoElevationPlot(domain: GnssDomainSnapshot) {
     val points = domain.historyPoints.filter {
         it.cn0DbHz?.isFinite() == true && it.elevationDegrees?.isFinite() == true
     }.takeLast(220)
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("C/N0 VS ELEVATION", style = MaterialTheme.typography.titleMedium)
             Text("Observed correlated points · n=${points.size}", style = MaterialTheme.typography.labelSmall)
-            Box(Modifier.fillMaxWidth().height(210.dp).background(Color(0xFF0D0B10))) {
+            Box(Modifier.fillMaxWidth().height(210.dp).background(HorizonColors.canvas)) {
                 Canvas(Modifier.fillMaxSize().padding(18.dp)) {
                     if (points.isNotEmpty()) {
                         val minCno = points.mapNotNull { it.cn0DbHz }.minOrNull() ?: 0.0
@@ -929,7 +1141,7 @@ private fun CnoElevationPlot(domain: GnssDomainSnapshot) {
                             val c = point.cn0DbHz ?: return@forEach
                             val x = (e / 90.0 * size.width).toFloat()
                             val y = (1.0 - ((c - minCno) / cnoRange)).toFloat() * size.height
-                            drawCircle(Color(0xFFE1A4FF), 3.5f, Offset(x, y))
+                            drawCircle(HorizonColors.observed, 3.5f, Offset(x, y))
                         }
                     }
                 }
@@ -941,7 +1153,7 @@ private fun CnoElevationPlot(domain: GnssDomainSnapshot) {
 
 @Composable
 private fun ConstellationSummaryPanel(domain: GnssDomainSnapshot) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text("CONSTELLATION SUMMARY", style = MaterialTheme.typography.titleMedium)
             if (domain.constellationSummaries.isEmpty()) {
@@ -966,7 +1178,7 @@ private fun ConstellationSummaryPanel(domain: GnssDomainSnapshot) {
 
 @Composable
 private fun SatelliteEvidenceMatrix(points: List<SatelliteEvidence>) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text("CORRELATED SATELLITE EVIDENCE", style = MaterialTheme.typography.titleMedium)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1001,7 +1213,7 @@ private fun SatelliteEvidenceMatrix(points: List<SatelliteEvidence>) {
 
 @Composable
 private fun AntennaEvidencePanel(domain: GnssDomainSnapshot) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text("GNSS ANTENNA EVIDENCE", style = MaterialTheme.typography.titleMedium)
             if (domain.antennaEvidence.isEmpty()) {
@@ -1034,7 +1246,7 @@ private fun constellationLabel(type: Int): String = when (type) {
 
 @Composable
 private fun NavigationMessagePanel(count: Int, latest: ObservationEntity?) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text("NAVIGATION MESSAGE STREAM", style = MaterialTheme.typography.titleMedium)
             Text("Observed messages: $count", style = MaterialTheme.typography.labelMedium)
@@ -1094,7 +1306,7 @@ private fun CellularScreen(obs: List<ObservationEntity>, analysis: AnalysisSnaps
         }
         if (latestJson != null) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+                Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("SERVING CELL", style = MaterialTheme.typography.titleMedium)
                         Text("${latest?.technology ?: "UNKNOWN"}  MCC ${latestJson.optString("mcc", "—")}  MNC ${latestJson.optString("mnc", "—")}")
@@ -1138,7 +1350,7 @@ private fun TimelineScreen(obs: List<ObservationEntity>, analysis: AnalysisSnaps
     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         item { MetricCard("Unified timeline", timeline.size.toString(), "monotonic ordering preferred") }
         items(timeline) { p ->
-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("#${p.sequence} ${p.type}", fontFamily = FontFamily.Monospace)
                     Text(p.technology)
@@ -1152,7 +1364,7 @@ private fun TimelineScreen(obs: List<ObservationEntity>, analysis: AnalysisSnaps
 private fun SessionScreen(sessions: List<SessionEntity>) {
     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(sessions) { session ->
-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Column(Modifier.padding(12.dp)) {
                     Text(session.sessionId, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
                     Text(session.lifecycleState)
@@ -1185,7 +1397,7 @@ private fun AntennaScreen(domain: GnssDomainSnapshot) {
             )
         }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text("OBSERVED FREQUENCIES", style = MaterialTheme.typography.titleMedium)
                     Text(
@@ -1199,7 +1411,7 @@ private fun AntennaScreen(domain: GnssDomainSnapshot) {
             }
         }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("ANTENNA HARDWARE EVIDENCE", style = MaterialTheme.typography.titleMedium)
                     if (domain.antennaEvidence.isEmpty()) {
@@ -1243,7 +1455,7 @@ private fun LogsScreen(obs: List<ObservationEntity>) {
 
         if (entries.isEmpty()) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+                Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                     Column(
                         Modifier.padding(14.dp),
                         verticalArrangement = Arrangement.spacedBy(5.dp)
@@ -1272,7 +1484,7 @@ private fun LogsScreen(obs: List<ObservationEntity>) {
                     payload?.optJSONObject("details")?.toString() ?: payload?.optString("details", "") ?: ""
                 }
 
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+                Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                     Column(
                         Modifier.padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -1334,7 +1546,7 @@ private fun ExportScreen(
     ) {
         MetricCard("Export", if (exportPath != null) "READY" else "NOT GENERATED", exportStatus)
         MetricCard("Session", session?.sessionId ?: "NONE", session?.lifecycleState ?: "NO SESSION")
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+        Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text("EXPORT INTEGRITY", style = MaterialTheme.typography.titleMedium)
                 Text("Integrity clean: ${audit.isClean}")
@@ -1349,7 +1561,7 @@ private fun ExportScreen(
             Button(onClick = onGenerate, modifier = Modifier.weight(1f)) { Text("GENERATE PACKAGE") }
             OutlinedButton(onClick = onSave, enabled = exportPath != null, modifier = Modifier.weight(1f)) { Text("CHOOSE FOLDER & SAVE ZIP") }
         }
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF0D0B10))) {
+        Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.canvas)) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("PACKAGE CONTENTS", style = MaterialTheme.typography.titleMedium)
                 Text("dataset_manifest.json")
@@ -1378,7 +1590,7 @@ private fun DiagnosticsScreen(session: SessionEntity?, capabilityJson: String, a
     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { MetricCard("Diagnostics", session?.lifecycleState ?: "NONE", "Sequence gaps ${analysis.sequenceGapCount}; timestamp violations ${analysis.timestampMonotonicViolations}") }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF0D0B10))) {
+            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.canvas)) {
                 Text(capabilityJson, Modifier.padding(12.dp), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
             }
         }
@@ -1387,7 +1599,7 @@ private fun DiagnosticsScreen(session: SessionEntity?, capabilityJson: String, a
 
 @Composable
 private fun ObservationRow(item: ObservationEntity) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text("#${item.sequenceNumber}  ${item.type}", fontWeight = FontWeight.SemiBold)
             Text("${item.technology} / ${item.provider}", style = MaterialTheme.typography.labelSmall)
@@ -1400,7 +1612,7 @@ private fun ObservationRow(item: ObservationEntity) {
 @Composable
 private fun MiniLineChart(samples: List<Double>) {
     Box(
-        Modifier.fillMaxWidth().height(104.dp).background(Color(0xFF0D0B10)),
+        Modifier.fillMaxWidth().height(104.dp).background(HorizonColors.canvas),
         contentAlignment = Alignment.Center
     ) {
         when {
@@ -1425,12 +1637,12 @@ private fun MiniLineChart(samples: List<Double>) {
                     if (samples.size == 1) {
                         val y = size.height * 0.5f
                         drawCircle(
-                            color = Color(0xFFE1A4FF),
+                            color = HorizonColors.observed,
                             radius = 5.5f,
                             center = Offset(size.width * 0.5f, y)
                         )
                     } else {
-                        drawPath(path, color = Color(0xFFE1A4FF), style = Stroke(width = 3f))
+                        drawPath(path, color = HorizonColors.observed, style = Stroke(width = 3f))
                     }
                 }
             }
@@ -1440,20 +1652,112 @@ private fun MiniLineChart(samples: List<Double>) {
 
 private fun formatUtc(ms: Long): String = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date(ms))
 
-@Composable
-private fun HorizonTheme(content: @Composable () -> Unit) {
-    val colors = darkColorScheme(
-        primary = Color(0xFFC875FF),
-        secondary = Color(0xFF9C4D83),
-        background = Color(0xFF0D0B10),
-        surface = Color(0xFF151218)
-    )
-    MaterialTheme(colorScheme = colors, content = content)
+private object HorizonColors {
+    val background = Color(0xFF050B0D)
+    val canvas = Color(0xFF071316)
+    val surface = Color(0xFF0B1B1F)
+    val instrument = Color(0xFF091417)
+    val border = Color(0xFF2D6864)
+    val grid = Color(0xFF245B58)
+    val observed = Color(0xFF63E2DE)
+    val signal = Color(0xFF4FC3B8)
+    val derived = Color(0xFF7FD6B0)
+    val propagated = Color(0xFF59C9A7)
+    val warning = Color(0xFFE4B25D)
+    val critical = Color(0xFFE16D69)
+    val text = Color(0xFFD9E8EA)
+    val muted = Color(0xFF789B98)
 }
 
 @Composable
-private fun <T> kotlinx.coroutines.flow.Flow<T>.collectAsStateCompat(initial: T): androidx.compose.runtime.State<T> {
-    return produceState(initialValue = initial, key1 = this) {
-        collectLatest { value = it }
+private fun InstrumentTopBar(title: String, active: Boolean) {
+    Surface(
+        modifier = Modifier.statusBarsPadding(),
+        color = HorizonColors.instrument,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .height(58.dp)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "HORIZON // OBSERVATORY",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = HorizonColors.observed,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = HorizonColors.text,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        Modifier
+                            .size(7.dp)
+                            .background(
+                                if (active) HorizonColors.observed else HorizonColors.muted,
+                                RoundedCornerShape(50)
+                            )
+                    )
+                    Text(
+                        if (active) "LIVE" else "IDLE",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (active) HorizonColors.observed else HorizonColors.muted,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(HorizonColors.border)
+            )
+        }
     }
+}
+
+@Composable
+private fun HorizonTheme(content: @Composable () -> Unit) {
+    val colors = darkColorScheme(
+        primary = HorizonColors.observed,
+        onPrimary = HorizonColors.background,
+        secondary = HorizonColors.signal,
+        onSecondary = HorizonColors.background,
+        tertiary = HorizonColors.derived,
+        background = HorizonColors.background,
+        onBackground = HorizonColors.text,
+        surface = HorizonColors.surface,
+        onSurface = HorizonColors.text,
+        surfaceVariant = HorizonColors.instrument,
+        onSurfaceVariant = HorizonColors.muted,
+        outline = HorizonColors.border,
+        error = HorizonColors.critical,
+        onError = HorizonColors.background
+    )
+    MaterialTheme(
+        colorScheme = colors,
+        shapes = Shapes(
+            extraSmall = RoundedCornerShape(4.dp),
+            small = RoundedCornerShape(6.dp),
+            medium = RoundedCornerShape(7.dp),
+            large = RoundedCornerShape(9.dp)
+        ),
+        content = content
+    )
 }

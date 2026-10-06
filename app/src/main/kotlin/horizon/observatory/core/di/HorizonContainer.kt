@@ -16,6 +16,7 @@ import horizon.observatory.astronomy.identity.SatelliteIdentityResolver
 import horizon.observatory.astronomy.identity.TableSatelliteIdentityResolver
 import horizon.observatory.astronomy.orientation.ControllableOrientationSource
 import horizon.observatory.live.GeomagneticFieldDeclinationProvider
+import horizon.observatory.live.LiveObservationBus
 import horizon.observatory.live.MagneticDeclinationProvider
 import horizon.observatory.live.RotationVectorOrientationSource
 import horizon.observatory.astronomy.prediction.PredictionLayerStateHolder
@@ -38,6 +39,7 @@ class HorizonContainer(context: Context) {
     val database: AppDatabase = AppDatabase.getInstance(appContext)
     val sessionRepository: SessionRepository = SessionRepositoryImpl(database.sessionDao(), database.observationDao())
     val observationQueue: ObservationPersistenceQueue = RoomObservationPersistenceQueue(database)
+    val liveObservationBus = LiveObservationBus()
     val exportEngine: ExportEngine = ExportEngine(appContext, sessionRepository)
     val capabilityScanner = CapabilityScanner(appContext)
     val gnssFixSource = LocationFixSource(appContext)

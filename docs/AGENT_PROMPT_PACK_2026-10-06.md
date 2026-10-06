@@ -287,3 +287,26 @@ Scientific truth may not.
 The redesigned interface should look like a serious scientific observation instrument before a reviewer reads the source code.
 It must also make the boundary between observed, derived and predicted state visually obvious.
 If either condition fails, the redesign is not finished.
+
+
+---
+
+# UI TOOL-FIRST EXECUTION OVERRIDE — CANONICAL
+
+For B1/B2, do not implement the visual redesign directly from imagination before producing a real visual design/prototype.
+
+Read and follow:
+`docs/TOOL_FIRST_UI_DESIGN_EXECUTION_CONTRACT_2026-10-06.md`
+
+Mandatory order:
+INSPECT → REPRODUCE → DESIGN TOOL → VISUAL REVIEW → IMPLEMENT → TEST → BUILD → DEVICE VERIFY → VISUAL QA → DOCUMENT
+
+Preferred design-tool order:
+Figma → MagicPath → tldraw → Canva/Adobe (assets only) → image generation (assets only).
+
+Use only tools actually exposed by the current runtime. Never claim unavailable or unused tools.
+
+A compile-successful Compose patch is not sufficient evidence of visual completion.
+The design output itself must be demonstrable and referenced in the design receipt.
+
+If a design tool is available but deliberately not used, record the concrete reason in the final receipt.

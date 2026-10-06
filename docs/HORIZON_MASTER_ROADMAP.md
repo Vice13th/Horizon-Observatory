@@ -1506,3 +1506,7 @@ NO VERIFIED END STATE Ã¢â€ â€™ TASK NOT COMPLETE
 ```
 
 This document is a living engineering ledger, not a marketing roadmap.
+
+# 28.1 PHASE K EXECUTION RECEIPT — 2026-10-06
+
+K0 capability contract and K1-K4 deterministic domain engines are implemented and covered by a green JVM regression receipt. These are not promoted to full PASS until live ObservatoryService integration is verified. Next unblocked gate: wire the resilience runtime to the existing observation ingress without altering raw evidence, then verify K1-K4 against replay/synthetic evidence.

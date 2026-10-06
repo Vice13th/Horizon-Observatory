@@ -112,3 +112,18 @@ The package should not be labelled field-verified until all of the following are
 Live RECORDING UI now consumes a maximum 512-observation projection. Completed sessions continue to consume the full Room snapshot. Real-device instrumentation completed 11 tests with zero failures; the active session reached 512 live observations and later completed with 9,522 persisted observations. APK SHA-256: `4CCE1A611F596A574C6FE9A215A588A189C61843C0FE8B8F4564BA66D8D4B3DA`. Launch/record/complete crash buffers were empty.
 
 **UNVERIFIED/BLOCKED:** physical heading/panel rotation on this target because no rotation-vector sensor is available. Performance remains a follow-up measurement: the debug gfxinfo aggregate showed 1,139 frames and 94 janky frames (8.25%).
+
+
+## K FAST-TRACK — 2026-10-06 FOUNDATION RECEIPT
+
+**K0: IMPLEMENTED / DEVICE CAPABILITY OBSERVED**
+
+The existing capability scanner already persists a session-start capability report. A typed `CapabilityContract` now provides explicit AVAILABLE / UNAVAILABLE / UNKNOWN states with provenance and observation time for raw GNSS, C/N0, AGC, pseudorange/received-SV-time, Doppler, ADR/carrier phase, navigation messages, multi-constellation/frequency, IMU/orientation, cellular, last-trusted PVT, timestamps and measurement age. No unavailable hardware capability is inferred.
+
+**K1-K4: DOMAIN ENGINES IMPLEMENTED + JVM TESTED; SERVICE INTEGRATION PENDING**
+
+Implemented deterministic interference evidence assessment, measurement trust ranking, debounced navigation continuity state machine, and last-trusted-PVT dead-reckoning bridge. Raw evidence is not mutated. Interference labels remain hypotheses. Dead-reckoned estimates carry explicit `DEAD_RECKONED_FROM_LAST_TRUSTED_PVT` provenance and growing uncertainty.
+
+Receipt: `:app:testPrimaryDebugUnitTest :app:testT1DebugUnitTest` — BUILD SUCCESSFUL, including `ResilienceEngineTest` 6/6. A prior RED receipt caught and fixed an empty-evidence state-classification bug before this green run.
+
+**Not yet a K0-K4 PASS:** the new engines are not yet wired into `ObservatoryService`/Room-derived resilience events.

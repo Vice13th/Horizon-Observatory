@@ -63,6 +63,7 @@ data class MeasurementCandidate(
     val signalStability: Double? = null,
     val temporalContinuity: Double? = null,
     val freshness: Double? = null,
+    val ageMs: Long? = null,
     val dopplerConsistency: Double? = null,
     val adrConsistency: Double? = null,
     val geometry: Double? = null,

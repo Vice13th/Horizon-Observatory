@@ -1616,3 +1616,16 @@ Scientific boundary:
 - K8 physical interference classification, open-sky truth comparison, long-run resource/battery characterization, and screen-off/background service validation remain pending.
 
 **NEXT UNBLOCKED TARGET: K8 batched physical/long-run validation when suitable hardware/control conditions are available.**
+
+# 28.4 K0-K7 RUNTIME HARDENING RECEIPT — 2026-10-06
+
+The resilience runtime was hardened after source-level audit. Reception Optimization now derives freshness from measurement age while preserving raw evidence; stale candidates are deterministically rejected; explicit recovery is reachable before NORMAL classification; and unchanged GNSS interference state no longer produces duplicate DERIVED resilience events. Regression and device verification are green.
+
+Receipt: 162 JVM tests / 0 failures / 0 errors / 3 existing reference-vector skips; Android instrumentation 14 finished / 0 reported failures / 2 existing migration skips; APK SHA-256 `2F3C43B74CBFF7D9D79C3415B19E1517E2F8D3ABE59092A9203B89DB797B0AB2`.
+
+K8 physical interference, open-sky truth comparison, long-run background/screen-off and resource/battery validation remain pending.
+## FINAL K RUNTIME HARDENING RECEIPT — 2026-10-06
+
+Final source correction after review: interference classification ordering now gives strong JAM/SPOOF/DEGRADED evidence precedence over recovery flags, with explicit recovery remaining reachable before NORMAL. Regression coverage was extended for this precedence boundary.
+
+Final receipt: `:app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug` BUILD SUCCESSFUL; 163 unit tests, 0 failures, 0 errors, 3 existing reference-vector skips. APK SHA-256: `4641C4F855C8EB92E769E404171237CFBC11D2F345F611CBBB6DE92E590DBE0C`. `:app:connectedPrimaryDebugAndroidTest` BUILD SUCCESSFUL; 14 tests finished on SM-A075F / Android 16, 2 existing migration tests skipped. No new K8 physical-interference claim is made.

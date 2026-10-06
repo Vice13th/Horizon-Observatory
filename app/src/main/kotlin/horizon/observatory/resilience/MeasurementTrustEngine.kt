@@ -19,7 +19,9 @@ class MeasurementTrustEngine {
                 available.filter { it.second < 0.25 }.forEach { add("LOW_${it.first.uppercase()}") }
                 if (available.isEmpty()) add("NO_TRUST_EVIDENCE")
             }
+            val stale = c.ageMs?.let { it > 5_000L } == true || c.freshness?.let { it <= 0.0 } == true
             val decision = when {
+                stale -> TrustDecision.REJECT
                 available.isEmpty() -> TrustDecision.DOWN_WEIGHT
                 score < 0.25 -> TrustDecision.REJECT
                 score < 0.55 -> TrustDecision.DOWN_WEIGHT

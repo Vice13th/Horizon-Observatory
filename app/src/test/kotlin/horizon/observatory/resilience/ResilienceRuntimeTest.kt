@@ -83,4 +83,11 @@ class ResilienceRuntimeTest {
         assertEquals(50.0, update.estimate.latitudeDeg, 0.000001)
         assertEquals(8.0, update.estimate.longitudeDeg, 0.000001)
     }
-}
+
+    @Test fun repeatedGnssStatus_withoutStateChange_doesNotEmitDuplicateResilienceEvent() {
+        val runtime = ResilienceRuntime()
+        val first = runtime.accept(obs(ObservationType.GNSS_STATUS, """{"satelliteCount":8,"satellites":[{"cn0DbHz":35,"usedInFix":true}]}""", 1_000_000_000L))
+        val second = runtime.accept(obs(ObservationType.GNSS_STATUS, """{"satelliteCount":8,"satellites":[{"cn0DbHz":35,"usedInFix":true}]}""", 2_000_000_000L))
+        assertNotNull(first)
+        assertNull(second)
+    }}

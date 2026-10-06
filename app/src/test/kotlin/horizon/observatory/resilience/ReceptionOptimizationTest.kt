@@ -1,4 +1,4 @@
-﻿package horizon.observatory.resilience
+package horizon.observatory.resilience
 
 import org.junit.Assert.*
 import org.junit.Test
@@ -21,4 +21,17 @@ class ReceptionOptimizationTest {
         )
         assertEquals("A", result.first().id)
     }
-}
+
+    @Test fun enabledPolicy_marksStaleDerivedMeasurement_asRejectable() {
+        val candidate = MeasurementCandidate("STALE", signalStability = 0.9, ageMs = 6_000L)
+        val result = ReceptionOptimizationEngine(ReceptionOptimizationPolicy(true)).rank(listOf(candidate))
+        assertEquals(TrustDecision.REJECT, result.single().decision)
+        assertTrue(result.single().reasons.any { it.contains("LOW_FRESHNESS") })
+    }
+
+    @Test fun enabledPolicy_derivesFreshness_without_mutatingCandidate() {
+        val candidate = MeasurementCandidate("FRESH", signalStability = 0.9, ageMs = 1_000L)
+        val result = ReceptionOptimizationPolicy(true).apply(listOf(candidate))
+        assertEquals(null, candidate.freshness)
+        assertEquals(0.8, result.single().freshness!!, 0.000001)
+    }}

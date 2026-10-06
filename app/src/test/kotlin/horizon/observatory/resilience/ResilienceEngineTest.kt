@@ -1,4 +1,4 @@
-﻿package horizon.observatory.resilience
+package horizon.observatory.resilience
 
 import org.junit.Assert.*
 import org.junit.Test
@@ -68,4 +68,19 @@ class ResilienceEngineTest {
         assertTrue(a.verticalUncertaintyM > last.verticalUncertaintyM)
         assertEquals(last.latitudeDeg, a.latitudeDeg, 0.000001)
     }
-}
+
+    @Test fun interferenceEngine_reportsRecovery_beforeNormal_whenExplicitRecoveryEvidenceExists() {
+        val a = InterferenceEvidenceEngine().assess(InterferenceSnapshot(
+            cn0MedianDbHz = 36.0, baselineCn0MedianDbHz = 35.0,
+            pvtDegraded = false, measurementContinuityLost = false
+        ))
+        assertEquals(InterferenceState.RECOVERY, a.state)
+    }
+    @Test fun interferenceEngine_strongCollapse_dominatesRecoveryFlags() {
+        val a = InterferenceEvidenceEngine().assess(InterferenceSnapshot(
+            cn0MedianDbHz = 20.0, baselineCn0MedianDbHz = 35.0,
+            trackedSatelliteCount = 5, baselineTrackedSatelliteCount = 20,
+            pvtDegraded = true, measurementContinuityLost = true
+        ))
+        assertEquals(InterferenceState.JAM_LIKELY, a.state)
+    }}

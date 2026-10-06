@@ -149,3 +149,16 @@ Receipt: `:app:connectedPrimaryDebugAndroidTest` — 14 tests completed, 0 failu
 Device evidence on SM-A075F / Android 16: JVM regression green; Android instrumentation green (14 tests finished, 2 migration tests skipped); APK SHA-256 `D9E8C5838E3AE27D46706E5083184094B38489B58FB4B18D926615EC039B0B28`; controlled Location-off run produced `FULL_GNSS -> GNSS_DEGRADED -> GNSS_LOST -> INERTIAL_BRIDGING -> MULTI_SOURCE_FUSION -> RECOVERY -> FULL_GNSS`; clean-stop log recorded `Session COMPLETED`; WAL-consistent Room snapshot recorded 18 DERIVED rows in the latest 270-observation completed session.
 
 The run did **not** validate physical interference/jamming/spoofing. Background/screen-off long-run and resource/battery measurements remain K8 follow-up gates.
+
+## K0-K7 RUNTIME HARDENING RECEIPT — 2026-10-06
+
+**IMPLEMENTED / REGRESSION VERIFIED:** fixed three concrete resilience-runtime defects found by source audit: Reception Optimization now derives freshness from measurement age without mutating raw observations; stale measurements are deterministically rejected; explicit recovery classification is evaluated before NORMAL so recovery is reachable; and repeated unchanged GNSS interference state no longer emits duplicate DERIVED resilience events.
+
+**Verification:** `:app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug` BUILD SUCCESSFUL; 162 unit tests, 0 failures, 0 errors, 3 existing reference-vector tests skipped. `:app:connectedPrimaryDebugAndroidTest` BUILD SUCCESSFUL; 14 tests finished on SM-A075F / Android 16, with 2 existing migration tests skipped. APK SHA-256: `2F3C43B74CBFF7D9D79C3415B19E1517E2F8D3ABE59092A9203B89DB797B0AB2`.
+
+**Boundary:** no new physical-interference claim is made. K8 hardware/long-run validation remains pending.
+## FINAL K RUNTIME HARDENING RECEIPT — 2026-10-06
+
+Final source correction after review: interference classification ordering now gives strong JAM/SPOOF/DEGRADED evidence precedence over recovery flags, with explicit recovery remaining reachable before NORMAL. Regression coverage was extended for this precedence boundary.
+
+Final receipt: `:app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug` BUILD SUCCESSFUL; 163 unit tests, 0 failures, 0 errors, 3 existing reference-vector skips. APK SHA-256: `4641C4F855C8EB92E769E404171237CFBC11D2F345F611CBBB6DE92E590DBE0C`. `:app:connectedPrimaryDebugAndroidTest` BUILD SUCCESSFUL; 14 tests finished on SM-A075F / Android 16, 2 existing migration tests skipped. No new K8 physical-interference claim is made.

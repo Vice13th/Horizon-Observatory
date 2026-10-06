@@ -6,7 +6,7 @@ import org.json.JSONObject
 
 class ResilienceRuntime {
     private val interferenceEngine = InterferenceEvidenceEngine()
-    private val measurementTrustEngine = MeasurementTrustEngine()
+    private val receptionOptimization = ReceptionOptimizationEngine(ReceptionOptimizationPolicy(enabled = true))
     private val stateMachine = NavigationContinuityStateMachine(transitionDebounceSamples = 2)
     private val deadReckoning = DeadReckoningBridge()
     private val previousMeasurements = mutableMapOf<String, PreviousMeasurement>()
@@ -77,13 +77,16 @@ class ResilienceRuntime {
                 val signalStability = cn0?.let { (it / 50.0).coerceIn(0.0, 1.0) }
                 val dopplerConsistency = if (previous?.pseudorangeRate != null && pseudorangeRate != null)
                     (1.0 - kotlin.math.abs(pseudorangeRate - previous.pseudorangeRate) / 100.0).coerceIn(0.0, 1.0) else null
+                val ageMs = deltaNs?.let { it.coerceAtLeast(0L) / 1_000_000L }
                 val candidate = MeasurementCandidate(
                     id = key,
                     signalStability = signalStability,
                     temporalContinuity = continuity,
+                    freshness = ageMs?.let { (1.0 - it.toDouble() / 5_000.0).coerceIn(0.0, 1.0) },
+                    ageMs = ageMs,
                     dopplerConsistency = dopplerConsistency
                 )
-                val trust = measurementTrustEngine.rank(listOf(candidate))
+                val trust = receptionOptimization.rank(listOf(candidate), nowMonotonicMs = observation.monotonicTimestampNs?.div(1_000_000L))
                 previousMeasurements[key] = PreviousMeasurement(observation.monotonicTimestampNs ?: 0L, pseudorangeRate, adr)
                 lastTrustDecisions = trust
             }
@@ -129,8 +132,7 @@ class ResilienceRuntime {
         )
         val interferenceChanged = interferenceStateChanged
         val meaningfulTrust = lastTrustDecisions.any { it.decision != TrustDecision.KEEP }
-        val meaningfulInterference = observation.type == ObservationType.GNSS_STATUS &&
-            (lastInterferenceAssessment != null && lastInterferenceAssessment?.state != null)
+        val meaningfulInterference = observation.type == ObservationType.GNSS_STATUS && interferenceChanged
         if (transition == null && !meaningfulTrust && !meaningfulInterference) return null
         val update = ResilienceRuntimeUpdate(
             navigationState = stateMachine.state,

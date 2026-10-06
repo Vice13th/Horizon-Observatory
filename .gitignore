@@ -60,6 +60,21 @@ Thumbs.db
 *_agent_*.log
 *.tmp
 *.bak
+/h.xml
+/m.xml
+/more.xml
+/ex.xml
+/ex_current.xml
+/e_current.xml
+/e2.xml
+/e3.xml
+/e4.xml
+/pkg_dump.txt
+/post_export_fix_gate.txt
+/post_migration_export*.zip
+/post_export_fix_installed.apk
+/export1_inspect/
+/export2_inspect/
 
 # Large/generated evidence archives are intentionally ignored; metadata remains trackable.
 /evidence/**/*.zip

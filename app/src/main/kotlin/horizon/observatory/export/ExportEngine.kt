@@ -156,7 +156,10 @@ class ExportEngine(
 
             val exportsBase = context.getExternalFilesDir(null) ?: context.filesDir
             val exportsDir = File(exportsBase, "exports").apply {
-                check(mkdirs()) { "Unable to create exports directory: $this" }
+                if (!exists()) {
+                    check(mkdirs()) { "Unable to create exports directory: $this" }
+                }
+                check(isDirectory) { "Exports path is not a directory: $this" }
             }
             val finalFile = File(exportsDir, "horizon_session_$sessionId.zip")
             val tempZip = File(exportsDir, "$sessionId.zip.tmp")

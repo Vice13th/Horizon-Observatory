@@ -432,16 +432,36 @@ Repository remains private.
 
 ## UNVERIFIED
 
-- Post-Kotlin-migration real GNSS acquisition.
-- Post-Kotlin-migration export run #1.
-- Post-Kotlin-migration export run #2.
-- Post-Kotlin-migration export byte/structure regression.
 - Physical heading-driven skyplot rotation.
 - Satellite panel orientation behavior.
 - Final compact satellite naming UI.
 - OrbitCore scientific reference-vector accuracy.
 - Full SGP4/SDP4 production integration.
 - Final Terra/GNSS integrated behavior.
+
+## VERIFIED — POST-MIGRATION REGRESSION (2026-10-06)
+
+- Real post-Kotlin/Room/KSP GNSS recording completed on target device.
+- Session `fa2c48ec-15e6-40c1-a892-c170bc27cd04` completed with 2,759 persisted observations.
+- GNSS and cellular were AVAILABLE during recording.
+- Export #1 succeeded after the export-directory fix.
+- Export #2 succeeded after the same fix.
+- Both archives passed internal checksum validation.
+- Both archives reported contiguous sequence 1..2759 and clean integrity.
+- Stable exported payload files were byte-identical across the two exports.
+- Built and installed APK SHA-256 matched: `1D0788E88CB59917BD7EA7561229C66707C94DF3C40CA9D40719FEC28D69DA6C`.
+
+## FAILED THEN FIXED — EXPORT DIRECTORY
+
+- First post-migration export attempt failed because `mkdirs()` returned false for an already-existing exports directory.
+- `ExportEngine` was corrected to create the directory only when absent and explicitly verify `isDirectory`.
+- The corrected implementation was rebuilt, installed, and verified by two successful exports.
+
+## OBSERVED DIAGNOSTIC
+
+- The verified session contained 316 source-timestamp regressions.
+- The export integrity gate remained clean because ingestion timestamps were complete and non-decreasing and sequence continuity was preserved.
+- This diagnostic remains evidence, not an inferred defect classification.
 
 ## KNOWN UI BACKLOG
 
@@ -458,7 +478,7 @@ Repository remains private.
 
 ## PHASE A — POST-MIGRATION REGRESSION
 **Priority: P0**  
-**Status: NEXT**
+**Status: VERIFIED — CLOSED 2026-10-06**
 
 ### A1 — Clean device launch
 Acceptance:
@@ -889,9 +909,9 @@ Each dataset requires:
 | G4 Device install | APK install | VERIFIED |
 | G5 Launch | MainActivity / crash check | VERIFIED |
 | G6 Installed APK integrity | SHA match | VERIFIED |
-| G7 Post-migration GNSS | Real observations | UNVERIFIED |
-| G8 Export #1 | Device export | UNVERIFIED |
-| G9 Export #2 | Repeat export | UNVERIFIED |
+| G7 Post-migration GNSS | Real observations | VERIFIED |
+| G8 Export #1 | Device export | VERIFIED |
+| G9 Export #2 | Repeat export | VERIFIED |
 | G10 Orientation | Physical heading behavior | UNVERIFIED |
 | G11 Satellite panel redesign | Evidence-preserving UI | NOT STARTED |
 | G12 OrbitCore scientific vectors | SGP4/SDP4 reference accuracy | UNVERIFIED |
@@ -979,6 +999,24 @@ Build/cache folders are excluded from repository checkpoints unless specifically
 - Mandatory update-and-push protocol established.
 
 ---
+
+# 24.1 CHANGELOG — 2026-10-06 POST-MIGRATION REGRESSION
+
+**STATUS: VERIFIED — PHASE A CLOSED**
+
+- Executed real target-device recording after the Kotlin 2.4 / Room 2.8.5 / KSP migration.
+- Session `fa2c48ec-15e6-40c1-a892-c170bc27cd04` completed with 2,759 observations.
+- Discovered a real export regression: existing exports directory caused `mkdirs()` to return false and abort export.
+- Fixed `ExportEngine` directory creation semantics.
+- Rebuilt successfully; unit/test/bridge gates remained green.
+- Installed APK SHA-256 matched built APK: `1D0788E88CB59917BD7EA7561229C66707C94DF3C40CA9D40719FEC28D69DA6C`.
+- Export #1 succeeded: 542,501 bytes, SHA-256 `5BF287B5C4393A5CADA9846135E8DB4B238D07911774A08B7B9E90FE3BC77DB7`.
+- Export #2 succeeded: 542,500 bytes, SHA-256 `53EB52446004DC7EC82B0B4F4EF769CCB20F332FC71DC5DB6C71B2369DB36214`.
+- Both archives passed independent extraction and internal checksum verification.
+- Both archives contained the same 2,759 observations, sequence 1..2759, 2 system events, 0 errors, and clean integrity.
+- 316 source-timestamp regressions were observed and preserved as diagnostic evidence.
+- Detailed receipt: `docs/receipts/POST_MIGRATION_REGRESSION_2026-10-06.md`.
+- Phase B Satellite Observatory UI is now the next execution target.
 
 # 25. MANDATORY ROADMAP UPDATE PROTOCOL
 
@@ -1075,24 +1113,25 @@ Horizon Observatory reaches Final Checkpoint only when:
 
 # 28. CURRENT NEXT ACTION
 
-**NEXT EXECUTION TARGET: PHASE A — POST-MIGRATION REGRESSION**
+**NEXT EXECUTION TARGET: PHASE B — SATELLITE OBSERVATORY UI**
 
-Order:
+Phase A is closed and verified. The next execution sequence is:
 
-1. clean launch;
-2. start real recording;
-3. verify GNSS acquisition;
-4. collect real observations;
-5. stop;
-6. export #1;
-7. export #2;
-8. pull and validate exports;
-9. compare with historical baseline;
-10. update this roadmap;
-11. commit + push;
-12. only then begin Satellite Observatory UI work.
+1. inspect the current SatellitePanel / CameraObservatory implementation;
+2. trace actual satellite identity data from persisted observations into the UI;
+3. implement compact evidence-derived satellite identifiers inside each panel;
+4. remove redundant labels below panels;
+5. implement orientation-aware panel placement only from a valid runtime orientation source;
+6. preserve explicit UNAVAILABLE behavior when orientation evidence is absent;
+7. verify skyplot/panel rotation direction empirically on device;
+8. run UI/build/unit regression;
+9. install and verify on the target device;
+10. update this roadmap with receipts;
+11. commit code + roadmap;
+12. push and verify origin/main;
+13. then proceed to Phase C scientific SGP4/SDP4 reference-vector validation.
 
-**Do not skip Phase A to make UI progress appear faster.**
+**Scientific identity, satellite names, and orientation must remain evidence-derived. No fabricated labels or measurements.**
 
 ---
 

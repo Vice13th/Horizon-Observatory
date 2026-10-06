@@ -137,3 +137,153 @@ Final report format:
 VERIFIED / MEASURED / UNVERIFIED / BLOCKED / COMMIT
 
 No receipt → no epistemic upgrade.
+
+
+# UI/UX RADICAL REDESIGN OVERRIDE — 2026-10-06
+
+The current Horizon UI is considered substantially underdeveloped relative to the engineering underneath it.
+
+This is NOT a cosmetic polish task. Treat it as a full presentation-layer redesign.
+
+Target:
+MODERN SCIENTIFIC OBSERVATORY / AEROSPACE TELEMETRY INTERFACE
+
+Do NOT turn it into:
+- generic Material dashboard
+- CRUD/card collection
+- crypto dashboard
+- neon cyberpunk
+- fake NASA cosplay
+- videogame HUD
+
+The visual target is precise, quiet, dense, technical and premium.
+
+## Design freedom
+
+You are authorized to:
+- restructure screens
+- redesign navigation
+- replace weak components
+- redesign satellite panels
+- redesign skyplot hierarchy
+- redesign typography
+- redesign information density
+- introduce restrained motion
+- introduce layered data visualization
+- redesign session/history/evidence presentation
+- redesign responsive/mobile layout
+
+Preserve verified behavior and evidence, NOT weak presentation.
+
+## Information hierarchy
+
+The user must immediately understand:
+1. what is being observed now;
+2. which satellites/signals are actually present;
+3. which values are OBSERVED;
+4. which values are DERIVED;
+5. which values are PREDICTED/PROPAGATED;
+6. current session/integrity health;
+7. what is missing, unknown or unavailable.
+
+Visually distinguish:
+OBSERVED / DERIVED / PREDICTED / DEAD-RECKONED / UNKNOWN / UNAVAILABLE.
+
+## Primary observatory screen
+
+Make the live observatory screen the product centerpiece.
+Prioritize:
+- live session state;
+- observation count and elapsed time;
+- fix/PVT state;
+- integrity/freshness;
+- sky/satellite visualization;
+- compact active-satellite intelligence.
+
+The skyplot must feel like a scientific instrument, not a static circle with dots.
+Use depth, layered rings, restrained motion and evidence-backed signal encoding.
+
+## Satellite panels
+
+Replace oversized generic cards with compact instrument readouts.
+Show only evidence-backed values such as:
+CONSTELLATION / SVID / C/N0 / AZ / EL / DOPPLER / AGE / STATE.
+
+Never invent a satellite name or NORAD ID.
+Missing data remains visibly unavailable.
+
+## Navigation
+
+Organize navigation around user tasks rather than implementation modules.
+Preferred conceptual model:
+OBSERVE / SIGNALS / ORBIT / SESSION / EVIDENCE
+
+Adapt to the repository if a stronger evidence-backed structure exists.
+
+## Motion
+
+Use motion to communicate observations, state transitions, tracking, propagation and recovery.
+Avoid decorative particle storms, endless spinning and motion that harms readability.
+Respect prefers-reduced-motion.
+
+## Color semantics
+
+Use restrained semantic encoding:
+- cyan = live/observed
+- amber = warning/degraded
+- violet = derived/model state
+- blue = propagated/orbital context
+- red = fault/critical
+- neutral gray = unknown/unavailable
+
+Do not flood the interface with accent colors.
+
+## Mobile-first
+
+Design for the real target Samsung SM-A075F.
+Validate portrait, supported landscape, small widths, large-text accessibility and long-session use.
+
+## Performance boundary
+
+Visual sophistication must not create duplicate collectors, unbounded polling, full-list recomputation per frame, database work inside composables, runaway recomposition or unbounded allocations.
+Keep live UI projections bounded. Preserve the existing 512-observation live projection boundary unless new evidence proves a safer design.
+
+## Architecture
+
+Preferred:
+RAW EVIDENCE → DOMAIN STATE → DERIVED STATE → BOUNDED UI PROJECTION → VISUALIZATION
+
+Never make composables the source of scientific truth.
+Do not move scientific computation into the UI merely for convenience.
+
+## Execution
+
+INSPECT → REPRODUCE → DESIGN → IMPLEMENT → TEST → BUILD → DEVICE VERIFY → QA → DOCUMENT
+
+Do not make tiny cosmetic patches only to claim progress.
+If the component hierarchy is weak, replace it.
+If the navigation is weak, restructure it.
+If the visual language is weak, redesign it.
+
+## Non-negotiable boundary
+
+The UI redesign MUST NOT:
+- invent measurements;
+- invent satellite identities;
+- invent NORAD mappings;
+- invent orientation;
+- alter raw observations;
+- alter Room persistence semantics;
+- alter Observation Bus semantics;
+- alter OrbitCore/SGP4/SDP4 behavior;
+- silently turn UNKNOWN into KNOWN;
+- silently turn PREDICTED into OBSERVED.
+
+Presentation may be radically redesigned.
+Scientific truth may not.
+
+## Final design test
+
+The redesigned interface should look like a serious scientific observation instrument before a reviewer reads the source code.
+It must also make the boundary between observed, derived and predicted state visually obvious.
+If either condition fails, the redesign is not finished.

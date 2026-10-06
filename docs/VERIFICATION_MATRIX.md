@@ -1,5 +1,16 @@
 # HORIZON — Verification Matrix
 
+> **Canonical reconciliation — 2026-10-06**
+>
+> Remote main was reconciled after discovering historical UI-B1 context that referenced a local workspace (C:\Horizon\horizon_stage2) without a corresponding GitHub receipt. That handoff is historical, not current repository truth.
+>
+> **Current verified foundation:** GNSS acquisition → Observation Bus → Room persistence → readback → export → checksum → semantic normalization is VERIFIED/CLOSED on SM-A075F.  
+> **Current resilience state:** K0–K7 software integration is implemented and explicitly receipted where marked VERIFIED/DEVICE-OBSERVED.  
+> **Current UI lane:** presentation-only; raw evidence, persistence/export semantics, and propagation remain protected.  
+> **Open:** NORAD mapping UNKNOWN, device-specific UTC edge case UNVERIFIED, physical orientation/panel rotation UNVERIFIED/BLOCKED on the target evidence, scientific OrbitCore reference-vector accuracy UNVERIFIED, K8 physical interference/long-run validation PENDING.
+>
+> Rows below are a cumulative evidence history. Older rows may use statuses that were correct at the time they were written; they must not be read as the current project verdict.
+
 | Gate | Status | Evidence |
 |---|---|---|
 | Source checkpoint assembled | VERIFIED | This archive |
@@ -26,7 +37,7 @@
 | Export | VERIFIED | real exported session ZIPs |
 | Export read-back | VERIFIED in prior validated pipeline | existing export/integrity evidence |
 | Antenna model | NOT_IMPLEMENTED | intentionally deferred |
-| GNSS correlation layer | NEXT | not yet implemented |
+| GNSS correlation layer | IMPLEMENTED / DERIVED | Current source contains the GNSS correlation engine; downstream claims remain evidence-bounded |
 | Final release | NOT_CLAIMED | checkpoint only |
 
 | B0 panel recovery firewall | VERIFIED | Real-device active recording capped UI projection at 512; completed session retained 9,522 persisted observations; 11 instrumentation tests passed |

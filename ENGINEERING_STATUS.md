@@ -1,10 +1,55 @@
-# HORIZON — Final Engineering Status
+# HORIZON — CANONICAL CURRENT STATUS / 2026-10-06
 
+> **Canonical remote source:** Vice13th/Horizon-Observatory / main  
+> **Current remote HEAD at reconciliation:** e719d88f6cd7e4dc2c83fa29750009356ce7154e  
+> **Current checkpoint:** HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED
+
+## Current verdict
+
+**GNSS evidence foundation: VERIFIED / CLOSED.**  
+**K0–K7 resilience software integration: VERIFIED / DEVICE-OBSERVED where explicitly receipted.**  
+**Overall project: PARTIAL** because NORAD identity resolution, device-specific UTC edge cases, physical orientation evidence, scientific OrbitCore reference-vector accuracy, and K8 physical/long-run validation remain open.
+
+**Reconciliation rule:** older sections below are historical receipts. They must not override the latest dated receipts or the current verification matrix.
+
+**Historical workspace paths** recorded in older handoffs, including `C:\Horizon\horizon_stage2`, are evidence of a prior local workspace only. Never assume those local changes exist on the current machine or were pushed to main without a Git receipt.
+
+## Latest verified device/runtime evidence
+
+- Target: **Samsung SM-A075F / Android 16 / API 36**
+- Latest runtime session: **10,961 observations / 0 error events**
+- Sequence: **1..10,961 contiguous**
+- Ingestion timestamps: **non-decreasing**
+- Integrity audit: **clean**
+- GNSS evidence observed: raw measurements, navigation messages, ADR, multi-frequency
+- Cellular fresh-update API: supported
+- Antenna information: unsupported on the observed target
+- Carrier phase capability: unverified
+- AGC capability: unverified
+
+Fresh GNSS foundation closure separately verified **3,250 observations** end-to-end through acquisition → Observation Bus → Room → readback → export → checksum → semantic normalization.
+
+## Current UI truth
+
+UI redesign is authorized and remains **presentation-layer only**.
+
+Current source evidence shows the observatory UI has correlated observed azimuth/elevation sky projection, explicit orientation-decision plumbing, compact satellite evidence derived from stored GNSS state, bounded live-recording projection, and Room-backed observation flow.
+
+The historical **UI B1 handoff from C:\Horizon\horizon_stage2 is NOT a GitHub/main receipt**. Its claimed receipt file is not present on main and therefore cannot be used as current repository evidence.
+
+## Open gates
+
+- **NORAD mapping:** UNKNOWN; resolver intentionally remains empty-table.
+- **Device-specific UTC edge case:** UNVERIFIED.
+- **Physical orientation / panel rotation:** UNVERIFIED/BLOCKED on the target evidence currently available.
+- **Scientific OrbitCore reference vectors:** UNVERIFIED.
+- **K8 physical interference / long-run resource validation:** PENDING.
+- **Release readiness:** NOT CLAIMED.
+
+---
 ## STATUS
 
-**PARTIAL — GNSS measurement foundation is device-verified end-to-end; scientific identity/timestamp and K8 hardware gates remain open.**
-
-The repository now contains the intended end-to-end architecture from acquisition through persistence, analysis, export, diagnostics, and Compose Observatory UI. The final status deliberately remains PARTIAL because the available execution environment does not contain Android SDK/ADB and no physical Samsung SM-A075F session was performed here.
+**PARTIAL — see the canonical current-status block above. Historical receipts below remain immutable evidence.**
 
 ## CHANGED
 

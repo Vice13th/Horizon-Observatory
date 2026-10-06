@@ -2,7 +2,7 @@
 
 ## STATUS
 
-**PARTIAL — implementation-complete baseline, physical-device verification pending.**
+**PARTIAL — GNSS measurement foundation is device-verified end-to-end; scientific identity/timestamp and K8 hardware gates remain open.**
 
 The repository now contains the intended end-to-end architecture from acquisition through persistence, analysis, export, diagnostics, and Compose Observatory UI. The final status deliberately remains PARTIAL because the available execution environment does not contain Android SDK/ADB and no physical Samsung SM-A075F session was performed here.
 
@@ -181,3 +181,38 @@ Reference fixtures `SGP4-VER.TLE` and `tcppver.out` are vendored from the public
 **Fresh verification:** primary JVM suite `163` tests, `0` failures, `0` errors, `3` existing reference-vector skips; fresh primary APK SHA-256 `9EB1F04505DEA594C4D1789A0BFD6B8CCA51ACFA953E9D8BDC80C3B2D6E2995A`; `:app:connectedPrimaryDebugAndroidTest` BUILD SUCCESSFUL on `SM-A075F / Android 16`, `14` tests finished, `2` existing migration tests skipped; OrbitCore bridge debug suite `2` tests, `0` failures, `0` errors.
 
 **Scientific boundary:** `SGP4-VER.TLE` and `tcppver.out` are now vendored with verified SHA-256 (`D246D1D9D768ACE445A38A965713FA9BA52D80FD8A41A0502FF83D7ACFFE2881`, `687BF28DBE52DF86E8E60AB5CB4A08D1AA3DBCAF4E63B1F7AB95F044FBE3833B`). The files are provenance fixtures only at this receipt. No SGP4/SDP4 numerical accuracy claim is made until Horizon's dedicated vector runner compares OrbitCore states against the fixture rows.
+
+## 2026-10-06 GNSS MEASUREMENT EVIDENCE CLOSURE
+
+**STATUS: VERIFIED / CLOSED**
+
+Fresh device session on Hive / Samsung SM-A075F / Android 16 / API 36 closed the GNSS evidence chain through Observation Bus, Room persistence, readback, export, checksum, and semantic normalization.
+
+Canonical receipt:
+docs/verification/device-receipts/HORIZON_MEASUREMENT_ROOM_READBACK_8cf1c36f-8387-4bc9-b850-22d2c754d5e9.md
+
+Evidence:
+- Session 8cf1c36f-8387-4bc9-b850-22d2c754d5e9
+- 3,250 observations
+- sequence 1..3250 contiguous
+- ingestion timestamps 3,250/3,250 and non-decreasing
+- 25 bounded raw GNSS rows with constellation/SVID/C/N0/SV time/pseudorange-rate/ADR
+- explicit JSON nulls preserved for carrierPhase and carrierPhaseUncertainty
+- Room readback + ExportEngine + checksum + export readback
+- GNSS_SEMANTIC_NORMALIZATION_V1
+- normalized_payload_keys_bounded=[10]
+- DERIVED classification
+- rawPayloadPreserved=true
+- direct instrumentation: 1 test / 0 failure / 0 error
+- full JVM: 167 tests / 0 failures / 0 errors / 3 pre-existing skips
+- export SHA-256: b5697add8563c8380f85f7bc2bc403a5041a2a9f7d3194cc11883b922174e64e
+
+source_timestamp_regressions=150 is retained as a diagnostic observation, not an ingestion-order failure.
+
+Remaining:
+- NORAD mapping UNKNOWN; resolver is intentionally empty-table and no mapping is guessed.
+- Device-specific UTC edge-case UNVERIFIED.
+- K8 physical interference/long-run validation PENDING.
+- Orientation-dependent UI remains bounded by target-device sensor availability.
+
+Freeze rule: UI work must not alter propagation, OrbitCore, SGP4/SDP4, or raw-evidence semantics without a new evidence-backed checkpoint.

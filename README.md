@@ -1,6 +1,61 @@
-# HORIZON Observatory — Final Engineering Baseline
+# HORIZON Observatory
 
-Horizon is a local-first Android scientific observation platform. The application preserves raw observations and provenance first; derived analysis and UI are downstream.
+> **A satellite-aware Android observatory for observing positioning, orbital context, and the signals around you.**
+
+Horizon is a local-first scientific observation platform built around a simple rule: **capture what the system actually observes, preserve the evidence, and derive from it downstream.**
+
+It combines **GNSS raw measurements, satellite status, navigation messages, cellular observations, sensors, and location/PVT** into a durable observation pipeline—then extends that foundation toward **orbital observation and propagation**, with an explicit OMM → SGP4/SDP4 boundary and OrbitCore-backed computation.
+
+This is not just a location screen.
+
+It is an **observatory stack**: measurement acquisition, satellite-aware context, provenance, persistence, analysis, resilience, and export—kept separate enough that the data remains inspectable from the original observation to the final derived state.
+
+**GNSS · Satellites · Orbital Context · SGP4/SDP4 · Cellular · Sensors · Provenance · Resilient Navigation**
+
+## Satellite & Orbital Observation
+
+Horizon is designed to connect what a device **measures in the sky** with what an orbital model can **predict about objects in orbit**.
+
+The current architecture keeps these domains explicitly separated:
+
+```
+GNSS / Device Measurements
+        |
+        +---- satellite observations
+        +---- signal state / C/N0 / geometry
+        +---- navigation messages
+        +---- PVT / sensor / cellular evidence
+        |
+        v
+  Observation + Evidence Layer
+        |
+        +-----------------------------+
+        |                             |
+        v                             v
+  Positioning / Resilience       Orbital Context
+                                      |
+                                  Catalog / OMM
+                                      |
+                                  SGP4 / SDP4
+                                      |
+                               Orbit state / passes
+```
+
+The orbital path is implemented behind a dedicated propagation contract with an **OrbitCore SGP4/SDP4 backend**, including deep-space handling and provenance-preserving identity fallbacks. Scientific reference-vector accuracy remains an explicit validation gate rather than an implied claim.
+
+## Resilient Positioning
+
+Horizon also treats GNSS loss or degradation as an engineering state—not a reason to silently invent a position.
+
+The resilience pipeline can combine evidence from:
+
+- GNSS measurements and status
+- last trusted PVT
+- inertial/sensor context where available
+- cellular/network evidence
+- validated software-derived state
+
+Observed, predicted, and dead-reckoned states remain distinct, with provenance and uncertainty carried forward instead of hidden behind a single coordinate.
 
 ## Target
 

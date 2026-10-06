@@ -105,3 +105,20 @@ Controlled export/readback closure was completed against the latest completed de
 - Export/readback/count/checksum: VERIFIED for the completed session and exported archive.
 
 Scientific gates remain unchanged: NORAD mapping, UTC edge cases, OrbitCore reference-vector accuracy, physical heading/orientation, and K8 long-duration/interference validation remain open.
+
+
+## Visual Device Evidence Addendum — 2026-10-07
+
+A real physical-device screenshot was captured from the verified Samsung SM-A075F / Android 16 / API 36 while HORIZON Observatory was the resumed foreground activity.
+
+- Capture state: completed OBSERVED SKY session; session control reported COMPLETED / IDLE.
+- UI evidence: OBSERVATION BUS reported OBSERVED 58; OBSERVED SKY reported 58 latest satellites with correlated observed azimuth/elevation.
+- Orientation text in the captured UI explicitly states north-up recorded data and that live orientation was not applied; no physical-heading claim is made.
+- Raw device capture timestamp: 2026-10-07 03:04:29 +0330.
+- Hero image: `docs/assets/horizon-observatory-device-verified.png`.
+- Image dimensions: 720 × 1446 pixels; the crop removes only the Android status/navigation chrome and does not alter application content.
+- Hero image SHA-256: `A6BE2027F07881245F8545A0C9FA067EB832050A2C397B66B435109A4751AFD5`.
+- The screenshot was taken directly from the running application via the authorized physical-device ADB framebuffer capture path; no generated or synthetic UI/data was used.
+- No scientific values, satellite identities, geometry, orientation claims, or telemetry were edited.
+
+This visual evidence is documentation-only and does not close NORAD, UTC, OrbitCore reference-vector, physical orientation, or K8 scientific gates.

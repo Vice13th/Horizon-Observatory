@@ -12,6 +12,16 @@ This is not a location screen.
 
 It is an **observatory stack**: acquisition, provenance, persistence, integrity, analysis, resilience, orbital context, replay, export, and instrument-style visualization—kept separate enough that a reviewer can trace a value back toward its original evidence.
 
+<p align="center">
+  <img src="docs/assets/horizon-observatory-device-verified.png"
+       alt="HORIZON Observatory running on Samsung SM-A075F"
+       width="380">
+</p>
+
+<p align="center">
+  <sub>Physical-device capture — Samsung SM-A075F / Android 16.</sub>
+</p>
+
 **GNSS · Satellites · Orbital Context · SGP4/SDP4 · Cellular · Sensors · Provenance · Resilient Navigation**
 
 

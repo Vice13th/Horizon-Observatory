@@ -55,3 +55,21 @@
 2. Continue GNSS observation-pipeline empirical validation.
 3. Address remaining gates only with fresh evidence: export/readback reconciliation, satellite identity resolution, UTC/timestamp edge cases, and long-run/interference validation.
 4. Keep propagation/scientific foundations frozen unless a new reproducible defect is demonstrated.
+
+## Fresh Device Verification Addendum — 2026-10-07
+
+- Repository: `main` at `3ed4f007e5c21a561d0449e1a55003f93b92396b`, matching `origin/main`.
+- Unit test `:app:testPrimaryDebugUnitTest`: PASS, exit 0.
+- Build `:app:assemblePrimaryDebug`: PASS, exit 0.
+- APK SHA-256: `81CE8B59491525A7EC0DA91BDA3C5C0DBDEDDAAB310EC0FB93E311FE3F474A45`.
+- Device: Samsung SM-A075F / Android 16 / API 36.
+- Fresh recording: IDLE ? RECORDING/ACTIVE ? STOP ? COMPLETED/IDLE.
+- Fresh live UI: 0 latest satellites shortly after start ? 43 latest satellites during the same active session.
+- Completed session: 2341 persisted observations reported by Room runtime diagnostics; completed-state update succeeded.
+- Crash scan: no material application crash signatures observed.
+- Orientation: rotation-vector unavailable; physical heading remains unverified and UI remains truthful north-up.
+- Sequence advancement: UNVERIFIED.
+- Fresh SVID/constellation extraction: UNVERIFIED.
+- Fresh Doppler/pseudorange-rate extraction: UNVERIFIED.
+- Export/readback checksum reconciliation: UNVERIFIED.
+- NORAD, UTC, OrbitCore, physical orientation, and K8 remain open scientific gates.

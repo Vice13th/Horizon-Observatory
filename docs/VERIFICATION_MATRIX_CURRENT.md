@@ -19,12 +19,13 @@
 | Export/readback checksum | VERIFIED | Export SHA-256 7CFEC703... matched independent readback |
 | Published APK asset | VERIFIED | Exact real filename and GitHub asset digest match local APK SHA-256 |
 | Published APK filename | VERIFIED | Horizon-Observatory-v1.0.0-observatory.apk |
-| Public release availability | VERIFIED | GitHub Release v1.0.0-observatory is published |
+| Release availability | VERIFIED | GitHub Release v1.0.0-observatory is published |
 | NORAD identity mapping | UNKNOWN | No authoritative time-valid SVID→NORAD resolver receipt |
 | UTC/device edge cases | UNVERIFIED | Dedicated target-device receipt still required |
 | OrbitCore reference-vector accuracy | UNVERIFIED | Runtime/conformance evidence does not establish scientific numerical accuracy |
 | Physical orientation / heading | UNVERIFIED | Rotation-vector evidence unavailable on target device |
 | K8 long-duration/interference validation | PENDING | Requires bounded long-run physical validation |
+| Physical-device hero screenshot | VERIFIED | Real Samsung SM-A075F framebuffer capture at commit 06ece75a2dae8e88861c3fc32471b091b94c916e; SHA-256 A6BE2027F07881245F8545A0C9FA067EB832050A2C397B66B435109A4751AFD5 |
 | Production/final scientific validation claim | NOT CLAIMED | Release is a device-verified artifact with explicit open scientific gates |
 
 ## Release artifact identity

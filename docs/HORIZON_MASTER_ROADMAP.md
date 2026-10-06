@@ -1,47 +1,23 @@
-# HORIZON OBSERVATORY Ã¢â‚¬â€ MASTER ROADMAP & EXECUTION LEDGER
+# HORIZON OBSERVATORY — MASTER ROADMAP & EXECUTION LEDGER
 
-**Repository:** `Vice13th/Horizon-Observatory`  
-**Branch:** `main`  
-**Repository baseline commit:** `423577893094216aab6e4acc97bd600509ac94c3`  
-**Roadmap update policy:** Every material change is committed and pushed; origin/main is the authoritative remote HEAD receipt.
-**Current project checkpoint:** `HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED`  
-**Working workspace:** `C:\Horizon\horizon_stage2`  
-**Original workspace:** `E:\horizon_stage2`  
-**Operating rule:** Evidence > narrative; Execution > appearance; Verification > confidence.
-
-> This document is the authoritative execution roadmap for the current Horizon Observatory development line. It records completed work, evidence, unresolved state, decisions, and the planned path to Final Checkpoint. Every future material change MUST update this document and push the update to the private GitHub repository.
-
-
-## 2026-10-06 CURRENT STATE / GNSS FOUNDATION CLOSURE
-
-**Current checkpoint:** HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED
-
-**Acquisition → Observation Bus → Room → Readback → Export → Semantic Normalization: VERIFIED / CLOSED**
-
-Fresh device session:
-- SM-A075F / Android 16 / API 36
-- Session 8cf1c36f-8387-4bc9-b850-22d2c754d5e9
-- 3,250 observations
-- sequence 1..3250 contiguous
-- ingestion timestamps 3,250/3,250 and non-decreasing
-- 25 bounded raw GNSS rows with constellation/SVID/C/N0/SV time/pseudorange-rate/ADR
-- explicit JSON null preservation for carrierPhase and carrierPhaseUncertainty
-- Room readback + ExportEngine + checksum/readback verified
-- GNSS_SEMANTIC_NORMALIZATION_V1, 10 bounded normalized keys, DERIVED, rawPayloadPreserved=true
-- direct instrumentation: 1/0/0
-- full JVM: 167 tests / 0 failures / 0 errors / 3 pre-existing skips
-- export SHA-256: b5697add8563c8380f85f7bc2bc403a5041a2a9f7d3194cc11883b922174e64e
-
-**Open / explicit non-claims**
-- NORAD mapping = UNKNOWN; resolver remains empty-table; no SVID→NORAD guessing.
-- Device-specific UTC edge case = UNVERIFIED.
-- source_timestamp_regressions=150 is diagnostic only.
-- K8 physical interference and long-run validation = PENDING.
-
-**Current execution lane:** UI/UX modernization only. B0 panel-recovery firewall is CLOSED and the UI feature freeze is lifted. Scientific propagation, OrbitCore, SGP4/SDP4, raw evidence semantics, and persistence/export contracts remain frozen.
-
-
----
+> **CURRENT REMOTE RECONCILIATION — 2026-10-06**
+>
+> Repository: Vice13th/Horizon-Observatory  
+> Branch: main  
+> Current remote HEAD: e719d88f6cd7e4dc2c83fa29750009356ce7154e  
+> Current checkpoint: HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED
+>
+> **Important:** the previously recorded workspace path C:\Horizon\horizon_stage2 is historical context only. A local handoff from that workspace MUST NOT be treated as a pushed repository change unless a Git commit/receipt proves it.
+>
+> **Current authority order:** current main source → latest dated checkpoint/receipt → verification matrix → current handoff → historical handoffs. Chat history and unreceipted local workspaces are not repository truth.
+>
+> **Current lane:** UI/UX modernization only, presentation-layer and evidence-preserving. Scientific propagation, OrbitCore, SGP4/SDP4, raw-evidence semantics, persistence, and export contracts remain frozen unless a new evidence-backed defect requires reopening them.
+>
+> **Current verified foundation:** GNSS acquisition → Observation Bus → Room → readback → export → checksum/readback → semantic normalization is VERIFIED/CLOSED.
+>
+> **Open gates:** NORAD mapping UNKNOWN; device-specific UTC edge case UNVERIFIED; physical orientation/panel rotation UNVERIFIED/BLOCKED; scientific OrbitCore reference-vector accuracy UNVERIFIED; K8 physical interference/long-run validation PENDING.
+>
+> The older ledger below remains historical evidence and is intentionally retained; dated later receipts supersede earlier statuses.
 
 # 1. GOVERNANCE / EPISTEMIC CONTRACT
 

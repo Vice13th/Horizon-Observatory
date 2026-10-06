@@ -1,1 +1,153 @@
-# POST-MIGRATION REGRESSION RECEIPT â€” 2026-10-06`r`n`r`n**Milestone:** Phase A / Post-Kotlin-2.4 + Room/KSP migration regression`r`n**Device:** Hive / Samsung SM-A075F / R8YY92YWAAF`r`n**Package:** horizon.observatory.debug`r`n**Session:** `fa2c48ec-15e6-40c1-a892-c170bc27cd04``r`n`r`n## Build / install â€” VERIFIED`r`n`r`nGate:`r`n- `:app:compilePrimaryDebugKotlin``r`n- `:app:testPrimaryDebugUnitTest``r`n- `:app:testT1DebugUnitTest``r`n- `:orbitcore-bridge:testDebugUnitTest``r`n- `:app:assemblePrimaryDebug``r`n`r`nResult: EXIT=0, BUILD SUCCESSFUL.`r`n`r`nPrimary APK:`r`n- size: 10,400,849 bytes`r`n- SHA-256: `1D0788E88CB59917BD7EA7561229C66707C94DF3C40CA9D40719FEC28D69DA6C``r`n`r`nInstalled APK:`r`n- size: 10,400,849 bytes`r`n- SHA-256: `1D0788E88CB59917BD7EA7561229C66707C94DF3C40CA9D40719FEC28D69DA6C``r`n- built/installed MATCH=true`r`n`r`n## Real recording â€” VERIFIED`r`n`r`nUI start path was used through the actual application.`r`n`r`nHorizonHealth:`r`n- 12:42:49 â€” 1 observation`r`n- 12:42:54 â€” 218`r`n- 12:42:59 â€” 455`r`n- 12:43:04 â€” 679`r`n- 12:43:09 â€” 932`r`n- 12:43:14 â€” 1238`r`n- 12:43:19 â€” 1503`r`n- 12:43:24 â€” 1797`r`n- 12:43:29 â€” 2076`r`n- 12:43:34 â€” 2373`r`n`r`nFinal:`r`n- 12:43:39 â€” Session COMPLETED`r`n- observations: 2759`r`n- GNSS: AVAILABLE`r`n- cellular: AVAILABLE`r`n- acquisitionRunning: true during recording`r`n`r`n## Export regression failure â€” FAILED, preserved as provenance`r`n`r`nBefore the fix, export failed at 12:44:34:`r`n`r`n`Unable to create exports directory: /storage/emulated/0/Android/data/horizon.observatory.debug/files/exports``r`n`r`nRoot cause: `File.mkdirs()` returns false when the target directory already exists, but the implementation treated that normal state as failure.`r`n`r`n## Export fix â€” VERIFIED`r`n`r`nChanged `ExportEngine.kt` to create the directory only when absent and explicitly verify that the resulting path is a directory:`r`n`r`n```kotlin`r`nval exportsDir = File(exportsBase, "exports").apply {`r`n    if (!exists()) {`r`n        check(mkdirs()) { "Unable to create exports directory: $this" }`r`n    }`r`n    check(isDirectory) { "Exports path is not a directory: $this" }`r`n}`r`n````r`n`r`n## Export #1 after fix â€” VERIFIED`r`n`r`nRuntime:`r`n- 12:47:47 â€” Export SUCCESS`r`n- observations: 2759`r`n`r`nZIP:`r`n- size: 542,501 bytes`r`n- SHA-256: `5BF287B5C4393A5CADA9846135E8DB4B238D07911774A08B7B9E90FE3BC77DB7``r`n- extracted successfully`r`n- internal checksums: TRUE`r`n`r`nIntegrity:`r`n- observationCount=2759`r`n- sequence 1..2759`r`n- sequenceContiguous=true`r`n- ingestionTimestampsNonDecreasing=true`r`n- ingestionTimestampedObservationCount=2759`r`n- sourceTimestampRegressions=316`r`n- isClean=true`r`n- system events=2`r`n- errors=0`r`n- schemaVersion=5`r`n`r`n## Export #2 after fix â€” VERIFIED`r`n`r`nRuntime:`r`n- 12:50:28 â€” Export SUCCESS`r`n- observations: 2759`r`n`r`nZIP:`r`n- size: 542,500 bytes`r`n- SHA-256: `53EB52446004DC7EC82B0B4F4EF769CCB20F332FC71DC5DB6C71B2369DB36214``r`n- device SHA-256 matched pulled ZIP SHA-256`r`n- extracted successfully`r`n- internal checksums: TRUE`r`n`r`nIntegrity:`r`n- observationCount=2759`r`n- sequence 1..2759`r`n- sequenceContiguous=true`r`n- ingestionTimestampsNonDecreasing=true`r`n- ingestionTimestampedObservationCount=2759`r`n- sourceTimestampRegressions=316`r`n- isClean=true`r`n- system events=2`r`n- errors=0`r`n`r`nExport #1/#2 comparison:`r`n- observations identical`r`n- sequence range identical`r`n- system events identical`r`n- errors identical`r`n- integrity state identical`r`n- stable payload files were byte-identical`r`n- `dataset_manifest.json` and `checksums.sha256` differed only because export-time metadata/checksums changed`r`n`r`n## Capability evidence â€” OBSERVED`r`n`r`nSession manifest:`r`n- Android 16 / API 36`r`n- fine/coarse location GRANTED`r`n- READ_PHONE_STATE GRANTED`r`n- notifications GRANTED`r`n- raw GNSS measurements SUPPORTED`r`n- navigation messages SUPPORTED`r`n- accumulated delta range SUPPORTED`r`n- multi-frequency SUPPORTED`r`n- antenna info UNSUPPORTED`r`n- carrier phase UNVERIFIED`r`n- automatic gain control UNVERIFIED`r`n- rotation vector UNAVAILABLE`r`n- gyroscope UNAVAILABLE`r`n- magnetometer UNAVAILABLE`r`n`r`n## Phase A conclusion`r`n`r`n**VERIFIED:** post-migration build, install, real recording, GNSS availability, persistence, session completion, export #1, export #2, archive integrity, internal checksums, sequence continuity, ingress timestamp monotonicity, installed APK integrity.`r`n`r`n**UNVERIFIED:** physical orientation/panel rotation, satellite-panel redesign, scientific OrbitCore reference vectors.`r`n`r`n**OBSERVED diagnostic:** 316 source-timestamp regressions in this session. These do not fail the export integrity gate and remain explicitly documented.`r`n
+﻿# POST-MIGRATION REGRESSION RECEIPT ΓÇö 2026-10-06
+
+**Milestone:** Phase A / Post-Kotlin-2.4 + Room/KSP migration regression
+**Device:** Hive / Samsung SM-A075F / R8YY92YWAAF
+**Package:** horizon.observatory.debug
+**Session:** `fa2c48ec-15e6-40c1-a892-c170bc27cd04`
+
+## Build / install ΓÇö VERIFIED
+
+Gate:
+- `:app:compilePrimaryDebugKotlin`
+- `:app:testPrimaryDebugUnitTest`
+- `:app:testT1DebugUnitTest`
+- `:orbitcore-bridge:testDebugUnitTest`
+- `:app:assemblePrimaryDebug`
+
+Result: EXIT=0, BUILD SUCCESSFUL.
+
+Primary APK:
+- size: 10,400,849 bytes
+- SHA-256: `1D0788E88CB59917BD7EA7561229C66707C94DF3C40CA9D40719FEC28D69DA6C`
+
+Installed APK:
+- size: 10,400,849 bytes
+- SHA-256: `1D0788E88CB59917BD7EA7561229C66707C94DF3C40CA9D40719FEC28D69DA6C`
+- built/installed MATCH=true
+
+## Real recording ΓÇö VERIFIED
+
+UI start path was used through the actual application.
+
+HorizonHealth:
+- 12:42:49 ΓÇö 1 observation
+- 12:42:54 ΓÇö 218
+- 12:42:59 ΓÇö 455
+- 12:43:04 ΓÇö 679
+- 12:43:09 ΓÇö 932
+- 12:43:14 ΓÇö 1238
+- 12:43:19 ΓÇö 1503
+- 12:43:24 ΓÇö 1797
+- 12:43:29 ΓÇö 2076
+- 12:43:34 ΓÇö 2373
+
+Final:
+- 12:43:39 ΓÇö Session COMPLETED
+- observations: 2759
+- GNSS: AVAILABLE
+- cellular: AVAILABLE
+- acquisitionRunning: true during recording
+
+## Export regression failure ΓÇö FAILED, preserved as provenance
+
+Before the fix, export failed at 12:44:34:
+
+`Unable to create exports directory: /storage/emulated/0/Android/data/horizon.observatory.debug/files/exports`
+
+Root cause: `File.mkdirs()` returns false when the target directory already exists, but the implementation treated that normal state as failure.
+
+## Export fix ΓÇö VERIFIED
+
+Changed `ExportEngine.kt` to create the directory only when absent and explicitly verify that the resulting path is a directory:
+
+```kotlin
+val exportsDir = File(exportsBase, "exports").apply {
+    if (!exists()) {
+        check(mkdirs()) { "Unable to create exports directory: $this" }
+    }
+    check(isDirectory) { "Exports path is not a directory: $this" }
+}
+```
+
+## Export #1 after fix ΓÇö VERIFIED
+
+Runtime:
+- 12:47:47 ΓÇö Export SUCCESS
+- observations: 2759
+
+ZIP:
+- size: 542,501 bytes
+- SHA-256: `5BF287B5C4393A5CADA9846135E8DB4B238D07911774A08B7B9E90FE3BC77DB7`
+- extracted successfully
+- internal checksums: TRUE
+
+Integrity:
+- observationCount=2759
+- sequence 1..2759
+- sequenceContiguous=true
+- ingestionTimestampsNonDecreasing=true
+- ingestionTimestampedObservationCount=2759
+- sourceTimestampRegressions=316
+- isClean=true
+- system events=2
+- errors=0
+- schemaVersion=5
+
+## Export #2 after fix ΓÇö VERIFIED
+
+Runtime:
+- 12:50:28 ΓÇö Export SUCCESS
+- observations: 2759
+
+ZIP:
+- size: 542,500 bytes
+- SHA-256: `53EB52446004DC7EC82B0B4F4EF769CCB20F332FC71DC5DB6C71B2369DB36214`
+- device SHA-256 matched pulled ZIP SHA-256
+- extracted successfully
+- internal checksums: TRUE
+
+Integrity:
+- observationCount=2759
+- sequence 1..2759
+- sequenceContiguous=true
+- ingestionTimestampsNonDecreasing=true
+- ingestionTimestampedObservationCount=2759
+- sourceTimestampRegressions=316
+- isClean=true
+- system events=2
+- errors=0
+
+Export #1/#2 comparison:
+- observations identical
+- sequence range identical
+- system events identical
+- errors identical
+- integrity state identical
+- stable payload files were byte-identical
+- `dataset_manifest.json` and `checksums.sha256` differed only because export-time metadata/checksums changed
+
+## Capability evidence ΓÇö OBSERVED
+
+Session manifest:
+- Android 16 / API 36
+- fine/coarse location GRANTED
+- READ_PHONE_STATE GRANTED
+- notifications GRANTED
+- raw GNSS measurements SUPPORTED
+- navigation messages SUPPORTED
+- accumulated delta range SUPPORTED
+- multi-frequency SUPPORTED
+- antenna info UNSUPPORTED
+- carrier phase UNVERIFIED
+- automatic gain control UNVERIFIED
+- rotation vector UNAVAILABLE
+- gyroscope UNAVAILABLE
+- magnetometer UNAVAILABLE
+
+## Phase A conclusion
+
+**VERIFIED:** post-migration build, install, real recording, GNSS availability, persistence, session completion, export #1, export #2, archive integrity, internal checksums, sequence continuity, ingress timestamp monotonicity, installed APK integrity.
+
+**UNVERIFIED:** physical orientation/panel rotation, satellite-panel redesign, scientific OrbitCore reference vectors.
+
+**OBSERVED diagnostic:** 316 source-timestamp regressions in this session. These do not fail the export integrity gate and remain explicitly documented.

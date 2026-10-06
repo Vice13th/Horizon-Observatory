@@ -1,0 +1,191 @@
+--- app/src/main/kotlin/horizon/observatory/export/ExportEngine.kt	2026-09-23 19:38:54.000000000 +0000
++++ PROJECT/app/src/main/kotlin/horizon/observatory/export/ExportEngine.kt	2026-09-23 23:01:55.497756139 +0000
+@@ -6,6 +6,8 @@
+ import android.util.Log
+ import horizon.observatory.domain.model.IntegrityAudit
+ import horizon.observatory.domain.model.RawObservationView
++import horizon.observatory.analysis.gnss.GnssCorrelationEngine
++import horizon.observatory.domain.gnss.GnssDomainSnapshot
+ import horizon.observatory.export.model.DatasetManifest
+ import horizon.observatory.storage.entity.ObservationEntity
+ import horizon.observatory.storage.entity.SessionEntity
+@@ -125,6 +127,19 @@
+             val auditFile = File(tempDir, "integrity_audit.json")
+             auditFile.writeText(audit.toJson().toString(2))
+ 
++            val gnssDomain = GnssCorrelationEngine().buildSnapshot(observations)
++            val gnssDomainFile = File(tempDir, "gnss_domain_snapshot.json")
++            gnssDomainFile.writeText(gnssDomain.toJson().toString(2))
++
++            val satelliteEvidenceCsvFile = File(tempDir, "satellite_evidence.csv")
++            satelliteEvidenceCsvFile.bufferedWriter().use { writer ->
++                writer.appendLine(SATELLITE_CSV_HEADER)
++                gnssDomain.satelliteEvidence.forEach { s -> writer.appendLine(satelliteCsvRow(s)) }
++            }
++
++            val antennaEvidenceFile = File(tempDir, "gnss_antenna_evidence.json")
++            antennaEvidenceFile.writeText(JSONArray().apply { gnssDomain.antennaEvidence.forEach { put(it.toJson()) } }.toString(2))
++
+             val sqliteFile = File(tempDir, "horizon_session.sqlite")
+             writeSessionSqlite(sqliteFile, session, observations, audit)
+ 
+@@ -149,7 +164,7 @@
+ 
+             val archiveFiles = listOf(
+                 manifestFile, jsonFile, csvFile, eventsJsonFile, eventsCsvFile, sessionLogFile,
+-                capabilityFile, permissionsFile, auditFile, sqliteFile
++                capabilityFile, permissionsFile, auditFile, gnssDomainFile, satelliteEvidenceCsvFile, antennaEvidenceFile, sqliteFile
+             )
+             ZipOutputStream(tempZip.outputStream().buffered()).use { zip ->
+                 archiveFiles.forEach { file ->
+@@ -267,6 +282,9 @@
+             var auditJson: String? = null
+             var capabilitiesJson: String? = null
+             var permissionsJson: String? = null
++            var gnssDomainJson: String? = null
++            var satelliteEvidenceCsv: String? = null
++            var antennaEvidenceJson: String? = null
+             ZipInputStream(file.inputStream().buffered()).use { zipInput ->
+                 while (true) {
+                     val entry = zipInput.nextEntry ?: break
+@@ -281,11 +299,14 @@
+                         "integrity_audit.json" -> auditJson = bytes.toString(Charsets.UTF_8)
+                         "capabilities.json" -> capabilitiesJson = bytes.toString(Charsets.UTF_8)
+                         "permissions.json" -> permissionsJson = bytes.toString(Charsets.UTF_8)
++                        "gnss_domain_snapshot.json" -> gnssDomainJson = bytes.toString(Charsets.UTF_8)
++                        "satellite_evidence.csv" -> satelliteEvidenceCsv = bytes.toString(Charsets.UTF_8)
++                        "gnss_antenna_evidence.json" -> antennaEvidenceJson = bytes.toString(Charsets.UTF_8)
+                         "horizon_session.sqlite" -> extracted.writeBytes(bytes)
+                     }
+                 }
+             }
+-            if (listOf(manifestJson, jsonText, csvText, eventsJsonText, eventsCsvText, sessionLogText, auditJson, capabilitiesJson, permissionsJson).any { it == null } || !extracted.exists()) {
++            if (listOf(manifestJson, jsonText, csvText, eventsJsonText, eventsCsvText, sessionLogText, auditJson, capabilitiesJson, permissionsJson, gnssDomainJson, satelliteEvidenceCsv, antennaEvidenceJson).any { it == null } || !extracted.exists()) {
+                 return "Required archive entry missing"
+             }
+             val manifest = JSONObject(manifestJson!!)
+@@ -303,6 +324,10 @@
+             check(sessionLogText!!.isNotBlank()) { "Session log text readback empty" }
+             check(capabilitiesJson!!.isNotBlank()) { "Capability export readback empty" }
+             check(permissionsJson!!.isNotBlank()) { "Permission export readback empty" }
++            val domainJson = JSONObject(gnssDomainJson!!)
++            check(domainJson.has("satelliteEvidence") && domainJson.has("constellationSummaries")) { "GNSS domain snapshot readback invalid" }
++            check(satelliteEvidenceCsv!!.lineSequence().count() >= 1) { "Satellite evidence CSV readback empty" }
++            check(JSONArray(antennaEvidenceJson!!).length() >= 0) { "Antenna evidence JSON unreadable" }
+             return null
+         } catch (e: Exception) {
+             return e.message ?: e.toString()
+@@ -311,6 +336,105 @@
+         }
+     }
+ 
++    private fun GnssDomainSnapshot.toJson(): JSONObject = JSONObject().apply {
++        put("sampleCount", signalStatistics.sampleCount)
++        put("averageCn0DbHz", signalStatistics.averageCn0DbHz ?: JSONObject.NULL)
++        put("minCn0DbHz", signalStatistics.minCn0DbHz ?: JSONObject.NULL)
++        put("maxCn0DbHz", signalStatistics.maxCn0DbHz ?: JSONObject.NULL)
++        put("averageElevationDegrees", signalStatistics.averageElevationDegrees ?: JSONObject.NULL)
++        put("minElevationDegrees", signalStatistics.minElevationDegrees ?: JSONObject.NULL)
++        put("maxElevationDegrees", signalStatistics.maxElevationDegrees ?: JSONObject.NULL)
++        put("averageAgcDb", signalStatistics.averageAgcDb ?: JSONObject.NULL)
++        put("minAgcDb", signalStatistics.minAgcDb ?: JSONObject.NULL)
++        put("maxAgcDb", signalStatistics.maxAgcDb ?: JSONObject.NULL)
++        put("distinctFrequenciesHz", JSONArray().apply { signalStatistics.distinctFrequenciesHz.forEach { put(it) } })
++        put("navigationMessageCount", navigationMessageCount)
++        put("correlatedMeasurementCount", correlatedMeasurementCount)
++        put("statusOnlySatelliteCount", statusOnlySatelliteCount)
++        put("rawOnlySatelliteCount", rawOnlySatelliteCount)
++        put("satelliteEvidence", JSONArray().apply { satelliteEvidence.forEach { put(it.toJson()) } })
++        put("latestSatelliteEvidence", JSONArray().apply { latestSatelliteEvidence.forEach { put(it.toJson()) } })
++        put("historyPoints", JSONArray().apply {
++            historyPoints.forEach { point ->
++                put(JSONObject().apply {
++                    put("sequenceNumber", point.sequenceNumber ?: JSONObject.NULL)
++                    put("constellationType", point.constellationType)
++                    put("svid", point.svid)
++                    put("carrierFrequencyHz", point.carrierFrequencyHz ?: JSONObject.NULL)
++                    put("cn0DbHz", point.cn0DbHz ?: JSONObject.NULL)
++                    put("basebandCn0DbHz", point.basebandCn0DbHz ?: JSONObject.NULL)
++                    put("elevationDegrees", point.elevationDegrees ?: JSONObject.NULL)
++                    put("azimuthDegrees", point.azimuthDegrees ?: JSONObject.NULL)
++                    put("usedInFix", point.usedInFix ?: JSONObject.NULL)
++                    put("agcDb", point.agcDb ?: JSONObject.NULL)
++                    put("navigationMessageCount", point.navigationMessageCount)
++                    put("match", point.match.name)
++                    put("monotonicTimestampNs", point.monotonicTimestampNs ?: JSONObject.NULL)
++                })
++            }
++        })
++        put("constellationSummaries", JSONArray().apply {
++            constellationSummaries.forEach { s ->
++                put(JSONObject().apply {
++                    put("constellationType", s.constellationType)
++                    put("evidenceCount", s.evidenceCount)
++                    put("distinctSatelliteCount", s.distinctSatelliteCount)
++                    put("matchedCount", s.matchedCount)
++                    put("statusOnlyCount", s.statusOnlyCount)
++                    put("rawOnlyCount", s.rawOnlyCount)
++                    put("navigationMessageCount", s.navigationMessageCount)
++                    put("averageCn0DbHz", s.averageCn0DbHz ?: JSONObject.NULL)
++                    put("averageElevationDegrees", s.averageElevationDegrees ?: JSONObject.NULL)
++                    put("averageAgcDb", s.averageAgcDb ?: JSONObject.NULL)
++                })
++            }
++        })
++        put("antennaEvidence", JSONArray().apply { antennaEvidence.forEach { put(it.toJson()) } })
++        put("provenance", "DERIVED_FROM_PERSISTED_GNSS_OBSERVATIONS")
++    }
++
++    private fun horizon.observatory.domain.gnss.SatelliteEvidence.toJson(): JSONObject = JSONObject().apply {
++        put("constellationType", constellationType)
++        put("svid", svid)
++        put("carrierFrequencyHz", carrierFrequencyHz ?: JSONObject.NULL)
++        put("cn0DbHz", cn0DbHz ?: JSONObject.NULL)
++        put("basebandCn0DbHz", basebandCn0DbHz ?: JSONObject.NULL)
++        put("elevationDegrees", elevationDegrees ?: JSONObject.NULL)
++        put("azimuthDegrees", azimuthDegrees ?: JSONObject.NULL)
++        put("usedInFix", usedInFix ?: JSONObject.NULL)
++        put("measurementState", measurementState ?: JSONObject.NULL)
++        put("multipathIndicator", multipathIndicator ?: JSONObject.NULL)
++        put("accumulatedDeltaRangeMeters", accumulatedDeltaRangeMeters ?: JSONObject.NULL)
++        put("accumulatedDeltaRangeState", accumulatedDeltaRangeState ?: JSONObject.NULL)
++        put("automaticGainControlLevelDb", automaticGainControlLevelDb ?: JSONObject.NULL)
++        put("navigationMessageCount", navigationMessageCount)
++        put("navigationAssociation", navigationAssociation.name)
++        put("observationMonotonicTimestampNs", observationMonotonicTimestampNs ?: JSONObject.NULL)
++        put("statusMonotonicTimestampNs", statusMonotonicTimestampNs ?: JSONObject.NULL)
++        put("rawSequenceNumber", rawSequenceNumber ?: JSONObject.NULL)
++        put("statusSequenceNumber", statusSequenceNumber ?: JSONObject.NULL)
++        put("match", match.name)
++        put("provenance", provenance)
++    }
++
++    private fun horizon.observatory.domain.gnss.GnssAntennaEvidence.toJson(): JSONObject = JSONObject().apply {
++        put("carrierFrequencyMHz", carrierFrequencyMHz ?: JSONObject.NULL)
++        put("phaseCenterOffset", phaseCenterOffset ?: JSONObject.NULL)
++        put("phaseCenterVariationCorrections", phaseCenterVariationCorrections ?: JSONObject.NULL)
++        put("signalGainCorrections", signalGainCorrections ?: JSONObject.NULL)
++        put("monotonicTimestampNs", monotonicTimestampNs ?: JSONObject.NULL)
++        put("capabilityState", capabilityState)
++        put("provenance", provenance)
++    }
++
++    private fun satelliteCsvRow(s: horizon.observatory.domain.gnss.SatelliteEvidence): String = listOf(
++        s.constellationType, s.svid, s.carrierFrequencyHz, s.cn0DbHz, s.basebandCn0DbHz,
++        s.elevationDegrees, s.azimuthDegrees, s.usedInFix, s.automaticGainControlLevelDb,
++        s.navigationMessageCount, s.navigationAssociation.name, s.rawSequenceNumber,
++        s.statusSequenceNumber, s.match.name, s.observationMonotonicTimestampNs,
++        s.statusMonotonicTimestampNs
++    ).joinToString(",") { csvEscape(it.toString()) }
++
+     private fun buildSessionLog(
+         session: SessionEntity,
+         observations: List<ObservationEntity>,
+@@ -413,6 +537,7 @@
+         private const val TAG = "HorizonExport"
+         private const val CSV_HEADER =
+             "observationId,sessionId,sequenceNumber,timestampUtcMs,sourceMonotonicTimestampNs,ingestionMonotonicTimestampNs,source,technology,type,provider,timestampDomain,timestampUncertaintyNs,capabilityState,evidenceStatus,provenance"
++        private const val SATELLITE_CSV_HEADER = "constellationType,svid,carrierFrequencyHz,cn0DbHz,basebandCn0DbHz,elevationDegrees,azimuthDegrees,usedInFix,automaticGainControlLevelDb,navigationMessageCount,navigationAssociation,rawSequenceNumber,statusSequenceNumber,match,observationMonotonicTimestampNs,statusMonotonicTimestampNs"
+         private const val EVENT_CSV_HEADER =
+             "observationId,sessionId,sequenceNumber,timestampUtcMs,sourceMonotonicTimestampNs,ingestionMonotonicTimestampNs,type,provider,capabilityState,evidenceStatus,rawPayloadJson"
+     }

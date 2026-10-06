@@ -1,0 +1,30 @@
+HORIZON CHECKPOINT 2026-09-24
+
+ROOT
+- Android/Gradle project source
+- app source + tests
+- Gradle wrapper
+- existing build/SDK/recovery documentation
+
+DOCS
+- PROJECT_CHECKPOINT_2026-09-24.md
+- ARCHITECTURE_STATE.md
+- VERIFICATION_MATRIX.md
+- BUILD_AND_DEVICE_VALIDATION.md
+- EVIDENCE_SUMMARY.md
+- NEXT_PHASE_CORRELATION.md
+- CHANGELOG_CHECKPOINT.md
+- KNOWN_LIMITATIONS.md
+- patches/ previous and Next Phase patch receipts
+
+EVIDENCE
+- session 35f8... ZIP
+- session f860... ZIP
+- session_evidence_summary.json
+
+NOT INCLUDED
+- build/ outputs
+- .gradle caches
+- local.properties
+- IDE state
+- device-local APK unless separately supplied

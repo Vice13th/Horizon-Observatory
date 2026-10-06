@@ -1,0 +1,507 @@
+--- BASELINE/HORIZON_CHECKPOINT_2026-09-24/app/src/main/kotlin/horizon/observatory/domain/gnss/GnssEvidenceModels.kt	1970-01-01 00:00:00.000000000 +0000
++++ CHECKPOINT/app/src/main/kotlin/horizon/observatory/domain/gnss/GnssEvidenceModels.kt	2026-09-23 22:53:40.120887826 +0000
+@@ -0,0 +1,69 @@
++package horizon.observatory.domain.gnss
++
++/**
++ * Stable key for correlating GNSS observations across Android callbacks.
++ * SVID is not globally unique, so constellation is mandatory. Frequency is optional
++ * because some Android status/measurement records do not expose it.
++ */
++data class SatelliteCorrelationKey(
++    val constellationType: Int,
++    val svid: Int,
++    val carrierFrequencyHz: Long? = null
++)
++
++enum class SatelliteEvidenceMatch {
++    STATUS_AND_RAW_MATCH,
++    STATUS_ONLY,
++    RAW_ONLY
++}
++
++enum class NavigationAssociation {
++    ASSOCIATED,
++    AMBIGUOUS,
++    NOT_ASSOCIATED
++}
++
++data class SatelliteEvidence(
++    val key: SatelliteCorrelationKey,
++    val constellationType: Int,
++    val svid: Int,
++    val carrierFrequencyHz: Double?,
++    val cn0DbHz: Double?,
++    val basebandCn0DbHz: Double?,
++    val elevationDegrees: Double?,
++    val azimuthDegrees: Double?,
++    val usedInFix: Boolean?,
++    val measurementState: Int?,
++    val multipathIndicator: Int?,
++    val accumulatedDeltaRangeMeters: Double?,
++    val accumulatedDeltaRangeState: Int?,
++    val automaticGainControlLevelDb: Double?,
++    val navigationMessageCount: Int,
++    val navigationAssociation: NavigationAssociation,
++    val lastNavigationMessageMonotonicTimestampNs: Long?,
++    val observationMonotonicTimestampNs: Long?,
++    val statusMonotonicTimestampNs: Long?,
++    val rawSequenceNumber: Long?,
++    val statusSequenceNumber: Long?,
++    val match: SatelliteEvidenceMatch,
++    val provenance: String = "GNSS_CORRELATION_DERIVED"
++)
++
++data class GnssAntennaEvidence(
++    val carrierFrequencyMHz: Double?,
++    val phaseCenterOffset: String?,
++    val phaseCenterVariationCorrections: String?,
++    val signalGainCorrections: String?,
++    val monotonicTimestampNs: Long?,
++    val capabilityState: String,
++    val provenance: String = "GNSS_ANTENNA_RAW"
++)
++
++data class GnssDomainSnapshot(
++    val satelliteEvidence: List<SatelliteEvidence>,
++    val antennaEvidence: List<GnssAntennaEvidence>,
++    val navigationMessageCount: Int,
++    val matchedSatelliteCount: Int,
++    val statusOnlySatelliteCount: Int,
++    val rawOnlySatelliteCount: Int
++)
+--- BASELINE/HORIZON_CHECKPOINT_2026-09-24/app/src/main/kotlin/horizon/observatory/analysis/gnss/GnssCorrelationEngine.kt	1970-01-01 00:00:00.000000000 +0000
++++ CHECKPOINT/app/src/main/kotlin/horizon/observatory/analysis/gnss/GnssCorrelationEngine.kt	2026-09-23 22:53:57.458714654 +0000
+@@ -0,0 +1,322 @@
++package horizon.observatory.analysis.gnss
++
++import horizon.observatory.domain.gnss.GnssAntennaEvidence
++import horizon.observatory.domain.gnss.GnssDomainSnapshot
++import horizon.observatory.domain.gnss.NavigationAssociation
++import horizon.observatory.domain.gnss.SatelliteCorrelationKey
++import horizon.observatory.domain.gnss.SatelliteEvidence
++import horizon.observatory.domain.gnss.SatelliteEvidenceMatch
++import horizon.observatory.storage.entity.ObservationEntity
++import org.json.JSONObject
++import kotlin.math.abs
++import kotlin.math.round
++
++/**
++ * Correlates independent Android GNSS callback streams into a derived, time-aware satellite
++ * evidence series. Raw observations remain untouched; every SatelliteEvidence item is derived.
++ */
++class GnssCorrelationEngine(
++    private val statusMatchWindowNs: Long = 2_000_000_000L,
++    private val navigationMatchWindowNs: Long = 5_000_000_000L
++) {
++    fun buildSnapshot(observations: List<ObservationEntity>): GnssDomainSnapshot {
++        val statusRows = observations
++            .asSequence()
++            .filter { it.type == "GNSS_STATUS" }
++            .flatMap { parseStatus(it).orEmpty().asSequence() }
++            .toList()
++
++        val rawRows = observations
++            .asSequence()
++            .filter { it.type == "GNSS_RAW_MEASUREMENT" }
++            .mapNotNull(::parseRaw)
++            .toList()
++
++        val navRows = observations
++            .asSequence()
++            .filter { it.type == "GNSS_NAVIGATION_MESSAGE" }
++            .mapNotNull(::parseNav)
++            .toList()
++
++        val antenna = observations
++            .asSequence()
++            .filter { it.type == "GNSS_ANTENNA_INFO" }
++            .map(::parseAntenna)
++            .toList()
++
++        val statusByBaseKey = statusRows.groupBy { BaseKey(it.constellationType, it.svid) }
++        val latestStatusByBaseKey = latestStatus(statusRows)
++        val matchedRawSequences = mutableSetOf<Long>()
++        val evidence = mutableListOf<SatelliteEvidence>()
++
++        rawRows.sortedBy { it.sequenceNumber }.forEach { raw ->
++            val candidate = selectBestStatus(statusByBaseKey[BaseKey(raw.constellationType, raw.svid)].orEmpty(), raw)
++            val nav = associateNavigation(raw, candidate, statusRows, navRows)
++            if (candidate != null) matchedRawSequences += raw.sequenceNumber
++
++            evidence += SatelliteEvidence(
++                key = SatelliteCorrelationKey(raw.constellationType, raw.svid, raw.carrierFrequencyHz?.roundToLongSafe()),
++                constellationType = raw.constellationType,
++                svid = raw.svid,
++                carrierFrequencyHz = raw.carrierFrequencyHz ?: candidate?.carrierFrequencyHz,
++                cn0DbHz = raw.cn0DbHz ?: candidate?.cn0DbHz,
++                basebandCn0DbHz = raw.basebandCn0DbHz ?: candidate?.basebandCn0DbHz,
++                elevationDegrees = candidate?.elevationDegrees,
++                azimuthDegrees = candidate?.azimuthDegrees,
++                usedInFix = candidate?.usedInFix,
++                measurementState = raw.state,
++                multipathIndicator = raw.multipathIndicator,
++                accumulatedDeltaRangeMeters = raw.accumulatedDeltaRangeMeters,
++                accumulatedDeltaRangeState = raw.accumulatedDeltaRangeState,
++                automaticGainControlLevelDb = raw.agcDb,
++                navigationMessageCount = nav.count,
++                navigationAssociation = nav.association,
++                lastNavigationMessageMonotonicTimestampNs = nav.lastMonotonicTimestampNs,
++                observationMonotonicTimestampNs = raw.monotonicTimestampNs,
++                statusMonotonicTimestampNs = candidate?.monotonicTimestampNs,
++                rawSequenceNumber = raw.sequenceNumber,
++                statusSequenceNumber = candidate?.sequenceNumber,
++                match = if (candidate == null) SatelliteEvidenceMatch.RAW_ONLY else SatelliteEvidenceMatch.STATUS_AND_RAW_MATCH
++            )
++        }
++
++        // Preserve a current status view for satellites that have no raw measurement in the same
++        // bounded window. This is still observed status data, not a synthesized measurement.
++        latestStatusByBaseKey.values.forEach { status ->
++            val hasRecentRaw = evidence.any {
++                it.constellationType == status.constellationType &&
++                    it.svid == status.svid &&
++                    status.monotonicTimestampNs != null &&
++                    it.observationMonotonicTimestampNs != null &&
++                    timeDistance(status.monotonicTimestampNs, it.observationMonotonicTimestampNs) <= statusMatchWindowNs
++            }
++            if (!hasRecentRaw) {
++                evidence += SatelliteEvidence(
++                    key = SatelliteCorrelationKey(status.constellationType, status.svid, status.carrierFrequencyHz?.roundToLongSafe()),
++                    constellationType = status.constellationType,
++                    svid = status.svid,
++                    carrierFrequencyHz = status.carrierFrequencyHz,
++                    cn0DbHz = status.cn0DbHz,
++                    basebandCn0DbHz = status.basebandCn0DbHz,
++                    elevationDegrees = status.elevationDegrees,
++                    azimuthDegrees = status.azimuthDegrees,
++                    usedInFix = status.usedInFix,
++                    measurementState = null,
++                    multipathIndicator = null,
++                    accumulatedDeltaRangeMeters = null,
++                    accumulatedDeltaRangeState = null,
++                    automaticGainControlLevelDb = null,
++                    navigationMessageCount = 0,
++                    navigationAssociation = NavigationAssociation.NOT_ASSOCIATED,
++                    lastNavigationMessageMonotonicTimestampNs = null,
++                    observationMonotonicTimestampNs = null,
++                    statusMonotonicTimestampNs = status.monotonicTimestampNs,
++                    rawSequenceNumber = null,
++                    statusSequenceNumber = status.sequenceNumber,
++                    match = SatelliteEvidenceMatch.STATUS_ONLY
++                )
++            }
++        }
++
++        val ordered = evidence.sortedWith(
++            compareBy<SatelliteEvidence>(
++                { it.observationMonotonicTimestampNs ?: Long.MAX_VALUE },
++                { it.constellationType },
++                { it.svid },
++                { it.rawSequenceNumber ?: Long.MAX_VALUE }
++            )
++        )
++
++        return GnssDomainSnapshot(
++            satelliteEvidence = ordered,
++            antennaEvidence = antenna,
++            navigationMessageCount = navRows.size,
++            matchedSatelliteCount = matchedRawSequences.size,
++            statusOnlySatelliteCount = ordered.count { it.match == SatelliteEvidenceMatch.STATUS_ONLY },
++            rawOnlySatelliteCount = ordered.count { it.match == SatelliteEvidenceMatch.RAW_ONLY }
++        )
++    }
++
++    private fun selectBestStatus(rows: List<StatusRecord>, raw: RawRecord): StatusRecord? {
++        if (rows.isEmpty()) return null
++        return rows
++            .filter { status -> timeDistance(status.monotonicTimestampNs, raw.monotonicTimestampNs) <= statusMatchWindowNs }
++            .minWithOrNull(compareBy<StatusRecord>(
++                { frequencyPenalty(it.carrierFrequencyHz, raw.carrierFrequencyHz) },
++                { timeDistance(it.monotonicTimestampNs, raw.monotonicTimestampNs) }
++            ))
++    }
++
++    private fun frequencyPenalty(statusHz: Double?, rawHz: Double?): Int {
++        if (statusHz == null || rawHz == null) return 0
++        return if (abs(statusHz - rawHz) < 1.0) 0 else 1
++    }
++
++    private fun associateNavigation(
++        raw: RawRecord,
++        selectedStatus: StatusRecord?,
++        allStatusRows: List<StatusRecord>,
++        navRows: List<NavRecord>
++    ): NavigationMatch {
++        if (navRows.isEmpty()) return NavigationMatch(0, NavigationAssociation.NOT_ASSOCIATED, null)
++        val referenceTime = raw.monotonicTimestampNs ?: selectedStatus?.monotonicTimestampNs
++            ?: return NavigationMatch(0, NavigationAssociation.NOT_ASSOCIATED, null)
++        val candidates = navRows.filter {
++            it.svid == raw.svid && timeDistance(it.monotonicTimestampNs, referenceTime) <= navigationMatchWindowNs
++        }
++        if (candidates.isEmpty()) return NavigationMatch(0, NavigationAssociation.NOT_ASSOCIATED, null)
++
++        // GnssNavigationMessage does not expose constellation identity in our persisted payload.
++        // Resolve only when the surrounding status evidence gives a single constellation for this SVID.
++        val constellationCandidates = allStatusRows
++            .asSequence()
++            .filter { it.svid == raw.svid && timeDistance(it.monotonicTimestampNs, referenceTime) <= navigationMatchWindowNs }
++            .map { it.constellationType }
++            .distinct()
++            .toList()
++
++        val association = when {
++            selectedStatus == null -> NavigationAssociation.AMBIGUOUS
++            constellationCandidates.size == 1 && constellationCandidates.first() == selectedStatus.constellationType -> NavigationAssociation.ASSOCIATED
++            else -> NavigationAssociation.AMBIGUOUS
++        }
++
++        val unique = candidates.distinctBy { it.sequenceNumber }
++        return NavigationMatch(
++            count = unique.size,
++            association = association,
++            lastMonotonicTimestampNs = unique.maxByOrNull { it.monotonicTimestampNs ?: Long.MIN_VALUE }?.monotonicTimestampNs
++        )
++    }
++
++    private fun latestStatus(rows: List<StatusRecord>): Map<BaseKey, StatusRecord> =
++        rows.sortedBy { it.sequenceNumber }.associateBy { BaseKey(it.constellationType, it.svid) }
++
++    private fun parseStatus(row: ObservationEntity): List<StatusRecord>? {
++        return runCatching {
++            val root = JSONObject(row.rawPayloadJson)
++            val array = root.optJSONArray("satellites") ?: return@runCatching null
++            val result = buildList<StatusRecord> {
++                for (i in 0 until array.length()) {
++                    val item = array.optJSONObject(i) ?: continue
++                    add(
++                        StatusRecord(
++                            sequenceNumber = row.sequenceNumber,
++                            constellationType = item.optInt("constellationType", -1),
++                            svid = item.optInt("svid", -1),
++                            carrierFrequencyHz = item.doubleOrNull("carrierFrequencyHz"),
++                            cn0DbHz = item.doubleOrNull("cn0DbHz"),
++                            basebandCn0DbHz = item.doubleOrNull("basebandCn0DbHz"),
++                            elevationDegrees = item.doubleOrNull("elevationDegrees"),
++                            azimuthDegrees = item.doubleOrNull("azimuthDegrees"),
++                            usedInFix = item.optBoolean("usedInFix", false),
++                            monotonicTimestampNs = row.monotonicTimestampNs
++                        )
++                    )
++                }
++            }
++            result
++        }.getOrNull()
++    }
++
++    private fun parseRaw(row: ObservationEntity): RawRecord? = runCatching {
++        val root = JSONObject(row.rawPayloadJson)
++        RawRecord(
++            sequenceNumber = row.sequenceNumber,
++            constellationType = root.optInt("constellationType", -1),
++            svid = root.optInt("svid", -1),
++            carrierFrequencyHz = root.doubleOrNull("carrierFrequencyHz"),
++            cn0DbHz = root.doubleOrNull("cn0DbHz"),
++            basebandCn0DbHz = root.doubleOrNull("basebandCn0DbHz"),
++            state = root.intOrNull("state"),
++            multipathIndicator = root.intOrNull("multipathIndicator"),
++            accumulatedDeltaRangeMeters = root.doubleOrNull("accumulatedDeltaRangeMeters"),
++            accumulatedDeltaRangeState = root.intOrNull("accumulatedDeltaRangeState"),
++            agcDb = root.doubleOrNull("automaticGainControlLevelDb"),
++            monotonicTimestampNs = row.monotonicTimestampNs
++        )
++    }.getOrNull()
++
++    private fun parseNav(row: ObservationEntity): NavRecord? = runCatching {
++        val root = JSONObject(row.rawPayloadJson)
++        NavRecord(
++            sequenceNumber = row.sequenceNumber,
++            svid = root.optInt("svid", -1),
++            monotonicTimestampNs = row.monotonicTimestampNs
++        )
++    }.getOrNull()
++
++    private fun parseAntenna(row: ObservationEntity): GnssAntennaEvidence = runCatching {
++        val root = JSONObject(row.rawPayloadJson)
++        GnssAntennaEvidence(
++            carrierFrequencyMHz = root.doubleOrNull("carrierFrequencyMHz"),
++            phaseCenterOffset = root.stringOrNull("phaseCenterOffset"),
++            phaseCenterVariationCorrections = root.stringOrNull("phaseCenterVariationCorrections"),
++            signalGainCorrections = root.stringOrNull("signalGainCorrections"),
++            monotonicTimestampNs = row.monotonicTimestampNs,
++            capabilityState = row.capabilityState
++        )
++    }.getOrElse {
++        GnssAntennaEvidence(null, null, null, null, row.monotonicTimestampNs, row.capabilityState)
++    }
++
++    private data class BaseKey(val constellationType: Int, val svid: Int)
++    private data class StatusRecord(
++        val sequenceNumber: Long,
++        val constellationType: Int,
++        val svid: Int,
++        val carrierFrequencyHz: Double?,
++        val cn0DbHz: Double?,
++        val basebandCn0DbHz: Double?,
++        val elevationDegrees: Double?,
++        val azimuthDegrees: Double?,
++        val usedInFix: Boolean,
++        val monotonicTimestampNs: Long?
++    )
++    private data class RawRecord(
++        val sequenceNumber: Long,
++        val constellationType: Int,
++        val svid: Int,
++        val carrierFrequencyHz: Double?,
++        val cn0DbHz: Double?,
++        val basebandCn0DbHz: Double?,
++        val state: Int?,
++        val multipathIndicator: Int?,
++        val accumulatedDeltaRangeMeters: Double?,
++        val accumulatedDeltaRangeState: Int?,
++        val agcDb: Double?,
++        val monotonicTimestampNs: Long?
++    )
++    private data class NavRecord(
++        val sequenceNumber: Long,
++        val svid: Int,
++        val monotonicTimestampNs: Long?
++    )
++    private data class NavigationMatch(
++        val count: Int,
++        val association: NavigationAssociation,
++        val lastMonotonicTimestampNs: Long?
++    )
++
++    private fun JSONObject.doubleOrNull(key: String): Double? = when (val value = opt(key)) {
++        is Number -> value.toDouble()
++        else -> null
++    }
++
++    private fun JSONObject.intOrNull(key: String): Int? = when (val value = opt(key)) {
++        is Number -> value.toInt()
++        else -> null
++    }
++
++    private fun JSONObject.stringOrNull(key: String): String? = when (val value = opt(key)) {
++        is String -> value
++        else -> null
++    }
++
++    private fun Double.roundToLongSafe(): Long = round(this).toLong()
++
++    private fun timeDistance(a: Long?, b: Long?): Long {
++        if (a == null || b == null) return Long.MAX_VALUE
++        return if (a >= b) a - b else b - a
++    }
++}
+--- BASELINE/HORIZON_CHECKPOINT_2026-09-24/app/src/test/kotlin/horizon/observatory/analysis/gnss/GnssCorrelationEngineTest.kt	1970-01-01 00:00:00.000000000 +0000
++++ CHECKPOINT/app/src/test/kotlin/horizon/observatory/analysis/gnss/GnssCorrelationEngineTest.kt	2026-09-23 22:53:29.118964558 +0000
+@@ -0,0 +1,107 @@
++package horizon.observatory.analysis.gnss
++
++import horizon.observatory.storage.entity.ObservationEntity
++import horizon.observatory.domain.gnss.SatelliteEvidenceMatch
++import horizon.observatory.domain.gnss.NavigationAssociation
++import org.junit.Assert.assertEquals
++import org.junit.Assert.assertNotNull
++import org.junit.Assert.assertNull
++import org.junit.Assert.assertTrue
++import org.junit.Test
++
++class GnssCorrelationEngineTest {
++    private fun row(
++        sequence: Long,
++        type: String,
++        monotonicNs: Long,
++        payload: String
++    ) = ObservationEntity(
++        sessionId = "session",
++        sequenceNumber = sequence,
++        timestampUtcMs = sequence * 1000,
++        monotonicTimestampNs = monotonicNs,
++        ingestionMonotonicTimestampNs = monotonicNs,
++        source = "GNSS",
++        technology = "GNSS",
++        type = type,
++        provider = type,
++        rawPayloadJson = payload
++    )
++
++    @Test
++    fun joinsStatusAndRawByConstellationSvidAndTime() {
++        val rows = listOf(
++            row(1, "GNSS_STATUS", 1_000_000_000L, """
++                {"satelliteCount":1,"satellites":[{"constellationType":1,"svid":18,"carrierFrequencyHz":1575420000,"cn0DbHz":18.0,"elevationDegrees":32.0,"azimuthDegrees":121.0,"usedInFix":true}]}
++            """.trimIndent()),
++            row(2, "GNSS_RAW_MEASUREMENT", 1_500_000_000L, """
++                {"constellationType":1,"svid":18,"carrierFrequencyHz":1575420000,"cn0DbHz":22.5,"basebandCn0DbHz":21.0,"state":8,"multipathIndicator":0,"accumulatedDeltaRangeMeters":12.0,"accumulatedDeltaRangeState":2,"automaticGainControlLevelDb":6.0}
++            """.trimIndent())
++        )
++
++        val snapshot = GnssCorrelationEngine().buildSnapshot(rows)
++        assertEquals(1, snapshot.satelliteEvidence.size)
++        val sat = snapshot.satelliteEvidence.single()
++        assertEquals(1, sat.constellationType)
++        assertEquals(18, sat.svid)
++        assertEquals(22.5, sat.cn0DbHz!!, 0.001)
++        assertEquals(2L, sat.rawSequenceNumber)
++        assertEquals(1L, sat.statusSequenceNumber)
++        assertEquals(32.0, sat.elevationDegrees!!, 0.001)
++        assertEquals(121.0, sat.azimuthDegrees!!, 0.001)
++        assertEquals(6.0, sat.automaticGainControlLevelDb!!, 0.001)
++        assertEquals(SatelliteEvidenceMatch.STATUS_AND_RAW_MATCH, sat.match)
++    }
++
++    @Test
++    fun doesNotJoinDifferentConstellationsWithSameSvid() {
++        val rows = listOf(
++            row(1, "GNSS_STATUS", 1_000_000_000L, """
++                {"satelliteCount":2,"satellites":[
++                  {"constellationType":1,"svid":5,"cn0DbHz":25.0,"elevationDegrees":40.0,"azimuthDegrees":10.0},
++                  {"constellationType":3,"svid":5,"cn0DbHz":30.0,"elevationDegrees":20.0,"azimuthDegrees":90.0}
++                ]}
++            """.trimIndent()),
++            row(2, "GNSS_RAW_MEASUREMENT", 1_200_000_000L, "{\"constellationType\":1,\"svid\":5,\"cn0DbHz\":26.0}"),
++            row(3, "GNSS_RAW_MEASUREMENT", 1_300_000_000L, "{\"constellationType\":3,\"svid\":5,\"cn0DbHz\":31.0}")
++        )
++
++        val snapshot = GnssCorrelationEngine().buildSnapshot(rows)
++        assertEquals(2, snapshot.satelliteEvidence.size)
++        assertEquals(setOf(1, 3), snapshot.satelliteEvidence.map { it.constellationType }.toSet())
++        assertEquals(setOf(26.0, 31.0), snapshot.satelliteEvidence.map { it.cn0DbHz }.toSet())
++    }
++
++    @Test
++    fun preservesStatusOnlyAndRawOnlyStates() {
++        val rows = listOf(
++            row(1, "GNSS_STATUS", 1_000_000_000L, """
++                {"satelliteCount":1,"satellites":[{"constellationType":1,"svid":7,"cn0DbHz":19.0,"elevationDegrees":10.0,"azimuthDegrees":200.0}]}
++            """.trimIndent()),
++            row(2, "GNSS_RAW_MEASUREMENT", 10_000_000_000L, "{\"constellationType\":3,\"svid\":29,\"cn0DbHz\":28.0}")
++        )
++
++        val snapshot = GnssCorrelationEngine(statusMatchWindowNs = 500_000_000L).buildSnapshot(rows)
++        assertEquals(2, snapshot.satelliteEvidence.size)
++        assertTrue(snapshot.satelliteEvidence.any { it.match == SatelliteEvidenceMatch.STATUS_ONLY })
++        assertTrue(snapshot.satelliteEvidence.any { it.match == SatelliteEvidenceMatch.RAW_ONLY })
++    }
++
++    @Test
++    fun navigationMessageCountIsAssociatedWithSatellite() {
++        val rows = listOf(
++            row(1, "GNSS_STATUS", 1_000_000_000L, """
++                {"satelliteCount":1,"satellites":[{"constellationType":6,"svid":15,"cn0DbHz":27.0,"elevationDegrees":50.0,"azimuthDegrees":250.0}]}
++            """.trimIndent()),
++            row(2, "GNSS_RAW_MEASUREMENT", 1_100_000_000L, "{\"constellationType\":6,\"svid\":15,\"cn0DbHz\":27.0}"),
++            row(3, "GNSS_NAVIGATION_MESSAGE", 1_200_000_000L, "{\"constellationType\":6,\"svid\":15,\"messageId\":1}"),
++            row(4, "GNSS_NAVIGATION_MESSAGE", 1_300_000_000L, "{\"constellationType\":6,\"svid\":15,\"messageId\":2}")
++        )
++
++        val snapshot = GnssCorrelationEngine().buildSnapshot(rows)
++        val sat = snapshot.satelliteEvidence.single()
++        assertEquals(2, sat.navigationMessageCount)
++        assertEquals(NavigationAssociation.ASSOCIATED, sat.navigationAssociation)
++        assertNotNull(sat.lastNavigationMessageMonotonicTimestampNs)
++    }
++}

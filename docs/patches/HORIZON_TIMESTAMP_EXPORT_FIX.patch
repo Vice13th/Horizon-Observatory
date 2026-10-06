@@ -1,0 +1,1137 @@
+--- a/app/src/main/kotlin/horizon/observatory/acquisition/sensor/SensorObservationSource.kt
++++ b/app/src/main/kotlin/horizon/observatory/acquisition/sensor/SensorObservationSource.kt
+@@ -5,7 +5,7 @@
+ import android.hardware.SensorEvent
+ import android.hardware.SensorEventListener
+ import android.hardware.SensorManager
+-import android.os.SystemClock
++import android.os.Build
+ import horizon.observatory.acquisition.base.ObservationSource
+ import horizon.observatory.domain.model.CapabilityState
+ import horizon.observatory.domain.model.EvidenceStatus
+@@ -37,8 +37,14 @@
+             close()
+             return@callbackFlow
+         }
++        val activityRecognitionGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
++            androidx.core.content.ContextCompat.checkSelfPermission(
++                context,
++                android.Manifest.permission.ACTIVITY_RECOGNITION
++            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+         val sensors = manager.getSensorList(Sensor.TYPE_ALL)
+             .filter { it.type in SUPPORTED_TYPES }
++            .filterNot { it.type in STEP_SENSOR_TYPES && !activityRecognitionGranted }
+         if (sensors.isEmpty()) {
+             close()
+             return@callbackFlow
+@@ -107,6 +113,11 @@
+     }
+ 
+     companion object {
++        private val STEP_SENSOR_TYPES = setOf(
++            Sensor.TYPE_STEP_DETECTOR,
++            Sensor.TYPE_STEP_COUNTER
++        )
++
+         private val SUPPORTED_TYPES = setOf(
+             Sensor.TYPE_ACCELEROMETER,
+             Sensor.TYPE_GYROSCOPE,
+--- a/app/src/main/kotlin/horizon/observatory/acquisition/service/ObservatoryService.kt
++++ b/app/src/main/kotlin/horizon/observatory/acquisition/service/ObservatoryService.kt
+@@ -43,6 +43,8 @@
+ import kotlinx.coroutines.cancelAndJoin
+ import kotlinx.coroutines.launch
+ import kotlinx.coroutines.withTimeoutOrNull
++import kotlinx.coroutines.sync.Mutex
++import kotlinx.coroutines.sync.withLock
+ import org.json.JSONObject
+ 
+ class ObservatoryService : Service() {
+@@ -62,6 +64,8 @@
+     private var sequencer: SessionSequencer? = null
+     private var sourceJobs = mutableListOf<Job>()
+     private var healthJob: Job? = null
++    /** Serializes sequence allocation with the HORIZON ingress timestamp. */
++    private val ingressMutex = Mutex()
+ 
+     override fun onCreate() {
+         super.onCreate()
+@@ -142,9 +146,17 @@
+         try {
+             source.start()
+             source.observationFlow.collect { observation ->
+-                val seq = sequencer?.nextSequenceNumber() ?: return@collect
+-                observationQueue.enqueue(sessionId, observation.copy(sequenceNumber = seq))
+-                observationQueue.drain(sessionId)
++                ingressMutex.withLock {
++                    if (currentSessionId != sessionId) return@withLock
++                    val seq = sequencer?.nextSequenceNumber() ?: return@withLock
++                    val ingressNs = android.os.SystemClock.elapsedRealtimeNanos()
++                    val stamped = observation.copy(
++                        sequenceNumber = seq,
++                        ingestionMonotonicTimestampNs = ingressNs
++                    )
++                    observationQueue.enqueue(sessionId, stamped)
++                    observationQueue.drain(sessionId)
++                }
+             }
+         } catch (ce: CancellationException) {
+             throw ce
+@@ -182,7 +194,16 @@
+             }
+ 
+             val persisted = repository.getObservationsSnapshot(sessionId)
+-            val audit = IntegrityAudit.audit(persisted.map { RawObservationView(it.sequenceNumber, it.monotonicTimestampNs, it.provider) })
++            val audit = IntegrityAudit.audit(
++                persisted.map {
++                    RawObservationView(
++                        sequenceNumber = it.sequenceNumber,
++                        sourceMonotonicTimestampNs = it.monotonicTimestampNs,
++                        ingestionMonotonicTimestampNs = it.ingestionMonotonicTimestampNs,
++                        provider = it.provider
++                    )
++                }
++            )
+             if (!audit.isClean) {
+                 Log.e(SERVICE_TAG, "Integrity gate failed session=$sessionId audit=$audit")
+                 stopForeground(STOP_FOREGROUND_REMOVE)
+@@ -202,51 +223,59 @@
+ 
+ 
+     private suspend fun persistErrorEvent(sessionId: String, sourceName: String, throwable: Throwable) {
+-        val seq = sequencer?.nextSequenceNumber() ?: return
+-        val now = TimestampEngine.now()
+-        observationQueue.enqueue(
+-            sessionId,
+-            RawObservation(
+-                type = ObservationType.ERROR_EVENT,
+-                utcTimestampMs = now.utcTimestampMs,
+-                monotonicTimestampNs = now.elapsedRealtimeNanos,
+-                provider = "HorizonService",
+-                payloadJson = JSONObject()
+-                    .put("source", sourceName)
+-                    .put("errorType", throwable::class.java.name)
+-                    .put("message", throwable.message ?: JSONObject.NULL)
+-                    .toString(),
+-                sequenceNumber = seq,
+-                technology = "SYSTEM",
+-                capabilityState = CapabilityState.UNKNOWN,
+-                evidenceStatus = EvidenceStatus.OBSERVED,
+-                provenance = ObservationProvenance.NORMALIZED,
+-                timestampDomain = TimestampDomain.ANDROID_ELAPSED_REALTIME_NANOS
++        ingressMutex.withLock {
++            val seq = sequencer?.nextSequenceNumber() ?: return@withLock
++            val now = TimestampEngine.now()
++            val monotonicNs = now.elapsedRealtimeNanos
++            observationQueue.enqueue(
++                sessionId,
++                RawObservation(
++                    type = ObservationType.ERROR_EVENT,
++                    utcTimestampMs = now.utcTimestampMs,
++                    monotonicTimestampNs = monotonicNs,
++                    ingestionMonotonicTimestampNs = monotonicNs,
++                    provider = "HorizonService",
++                    payloadJson = JSONObject()
++                        .put("source", sourceName)
++                        .put("errorType", throwable::class.java.name)
++                        .put("message", throwable.message ?: JSONObject.NULL)
++                        .toString(),
++                    sequenceNumber = seq,
++                    technology = "SYSTEM",
++                    capabilityState = CapabilityState.UNKNOWN,
++                    evidenceStatus = EvidenceStatus.OBSERVED,
++                    provenance = ObservationProvenance.NORMALIZED,
++                    timestampDomain = TimestampDomain.ANDROID_ELAPSED_REALTIME_NANOS
++                )
+             )
+-        )
+-        observationQueue.drain(sessionId)
++            observationQueue.drain(sessionId)
++        }
+     }
+ 
+     private suspend fun persistSystemEvent(sessionId: String, event: String, details: JSONObject) {
+-        val seq = sequencer?.nextSequenceNumber() ?: return
+-        val now = TimestampEngine.now()
+-        observationQueue.enqueue(
+-            sessionId,
+-            RawObservation(
+-                type = ObservationType.SYSTEM_EVENT,
+-                utcTimestampMs = now.utcTimestampMs,
+-                monotonicTimestampNs = now.elapsedRealtimeNanos,
+-                provider = "HorizonService",
+-                payloadJson = JSONObject().put("event", event).put("details", details).toString(),
+-                sequenceNumber = seq,
+-                technology = "SYSTEM",
+-                capabilityState = CapabilityState.AVAILABLE_NOW,
+-                evidenceStatus = EvidenceStatus.OBSERVED,
+-                provenance = ObservationProvenance.NORMALIZED,
+-                timestampDomain = TimestampDomain.ANDROID_ELAPSED_REALTIME_NANOS
++        ingressMutex.withLock {
++            val seq = sequencer?.nextSequenceNumber() ?: return@withLock
++            val now = TimestampEngine.now()
++            val monotonicNs = now.elapsedRealtimeNanos
++            observationQueue.enqueue(
++                sessionId,
++                RawObservation(
++                    type = ObservationType.SYSTEM_EVENT,
++                    utcTimestampMs = now.utcTimestampMs,
++                    monotonicTimestampNs = monotonicNs,
++                    ingestionMonotonicTimestampNs = monotonicNs,
++                    provider = "HorizonService",
++                    payloadJson = JSONObject().put("event", event).put("details", details).toString(),
++                    sequenceNumber = seq,
++                    technology = "SYSTEM",
++                    capabilityState = CapabilityState.AVAILABLE_NOW,
++                    evidenceStatus = EvidenceStatus.OBSERVED,
++                    provenance = ObservationProvenance.NORMALIZED,
++                    timestampDomain = TimestampDomain.ANDROID_ELAPSED_REALTIME_NANOS
++                )
+             )
+-        )
+-        observationQueue.drain(sessionId)
++            observationQueue.drain(sessionId)
++        }
+     }
+ 
+     private fun exportLastClosedSession() {
+--- a/app/src/main/kotlin/horizon/observatory/domain/model/IntegrityAudit.kt
++++ b/app/src/main/kotlin/horizon/observatory/domain/model/IntegrityAudit.kt
+@@ -5,10 +5,24 @@
+     val firstSequence: Long?,
+     val lastSequence: Long?,
+     val sequenceContiguous: Boolean,
+-    val monotonicTimestampsNonDecreasing: Boolean,
++    val ingestionTimestampsNonDecreasing: Boolean,
++    val ingestionTimestampedObservationCount: Int,
++    val sourceTimestampRegressions: Int,
++    val sourceTimestampedObservationCount: Int
++) {
++    /** Integrity requires a complete serialized ingress clock plus contiguous sequence order. */
++    val isClean: Boolean =
++        sequenceContiguous &&
++            ingestionTimestampsNonDecreasing &&
++            ingestionTimestampedObservationCount == observationCount
++
++    @Deprecated("Use ingestionTimestampsNonDecreasing; source timestamps may legitimately arrive out of order.")
++    val monotonicTimestampsNonDecreasing: Boolean
++        get() = ingestionTimestampsNonDecreasing
++
++    @Deprecated("Use ingestionTimestampedObservationCount")
+     val timestampedObservationCount: Int
+-) {
+-    val isClean: Boolean = sequenceContiguous && monotonicTimestampsNonDecreasing
++        get() = ingestionTimestampedObservationCount
+ }
+ 
+ object IntegrityAudit {
+@@ -16,29 +30,40 @@
+         val ordered = observations.sortedBy { it.sequenceNumber }
+         val first = ordered.firstOrNull()?.sequenceNumber
+         val last = ordered.lastOrNull()?.sequenceNumber
++
+         var contiguous = true
+         ordered.forEachIndexed { index, row ->
+             val expected = (index + 1).toLong()
+             if (row.sequenceNumber != expected) contiguous = false
+         }
+ 
+-        val timestamped = ordered.mapNotNull { it.monotonicTimestampNs }
+-        val monotonic = ordered.mapNotNull { it.monotonicTimestampNs }
+-            .zipWithNext()
+-            .all { (a, b) -> b >= a }
++        val ingestionTimestamps = ordered.mapNotNull { it.ingestionMonotonicTimestampNs }
++        val ingestionMonotonic = ingestionTimestamps.zipWithNext().all { (a, b) -> b >= a }
++
++        var sourceRegressions = 0
++        var previousSource: Long? = null
++        ordered.forEach { row ->
++            val current = row.sourceMonotonicTimestampNs ?: return@forEach
++            if (previousSource != null && current < previousSource!!) sourceRegressions++
++            previousSource = current
++        }
++
+         return IntegrityAuditResult(
+             observationCount = ordered.size,
+             firstSequence = first,
+             lastSequence = last,
+             sequenceContiguous = contiguous,
+-            monotonicTimestampsNonDecreasing = monotonic,
+-            timestampedObservationCount = timestamped.size
++            ingestionTimestampsNonDecreasing = ingestionMonotonic,
++            ingestionTimestampedObservationCount = ingestionTimestamps.size,
++            sourceTimestampRegressions = sourceRegressions,
++            sourceTimestampedObservationCount = ordered.count { it.sourceMonotonicTimestampNs != null }
+         )
+     }
+ }
+ 
+ data class RawObservationView(
+     val sequenceNumber: Long,
+-    val monotonicTimestampNs: Long?,
++    val sourceMonotonicTimestampNs: Long?,
++    val ingestionMonotonicTimestampNs: Long? = sourceMonotonicTimestampNs,
+     val provider: String = "UNKNOWN"
+ )
+--- a/app/src/main/kotlin/horizon/observatory/domain/model/Models.kt
++++ b/app/src/main/kotlin/horizon/observatory/domain/model/Models.kt
+@@ -83,7 +83,10 @@
+     val utcTimestampMs: Long,
+     val provider: String,
+     val payloadJson: String,
++    /** Source/measurement monotonic timestamp when the platform provides one. */
+     val monotonicTimestampNs: Long? = null,
++    /** Monotonic timestamp assigned by HORIZON at serialized ingress, used for integrity ordering. */
++    val ingestionMonotonicTimestampNs: Long? = null,
+     val sequenceNumber: Long = 0L,
+     val technology: String = "UNKNOWN",
+     val capabilityState: CapabilityState = CapabilityState.UNKNOWN,
+--- a/app/src/main/kotlin/horizon/observatory/export/ExportEngine.kt
++++ b/app/src/main/kotlin/horizon/observatory/export/ExportEngine.kt
+@@ -4,8 +4,11 @@
+ import android.content.Context
+ import android.database.sqlite.SQLiteDatabase
+ import android.util.Log
++import horizon.observatory.domain.model.IntegrityAudit
++import horizon.observatory.domain.model.RawObservationView
+ import horizon.observatory.export.model.DatasetManifest
+ import horizon.observatory.storage.entity.ObservationEntity
++import horizon.observatory.storage.entity.SessionEntity
+ import horizon.observatory.storage.repository.SessionRepository
+ import kotlinx.coroutines.Dispatchers
+ import kotlinx.coroutines.withContext
+@@ -17,23 +20,9 @@
+ import java.util.zip.ZipOutputStream
+ 
+ /**
+- * Phase 6 implementation (roadmap Sections 33-36). Genuinely new code -- the supplied source
+- * had only a design comment. Addresses the explicit requirement that the export process must
+- * really run against real Room data and must not produce fabricated/placeholder output.
+- *
+- * Atomicity (Section 34): build.dataset_manifest.json / observations.json / observations.csv /
+- * horizon_session_<id>.zip are all written to a private temp directory first, verified, then
+- * the finished zip is moved into place with File.renameTo (atomic on the same filesystem/
+- * volume). Nothing named horizon_session_<id>.zip exists at the final path until every prior
+- * step has already succeeded and counts have already been checked.
+- *
+- * Verification (Section 35): Room count, JSON array length, and CSV data-row count must all
+- * agree with each other and with manifest.totalObservations before finalize() is allowed to
+- * run. Any mismatch is a FAILED result, not a partial/successful one.
+- *
+- * UNVERIFIED like the rest of this round: file I/O logic has been reviewed by inspection only,
+- * not run on a device. Needs a real exportSession() call against a session that actually has
+- * GNSS observations in it (Section 23's GNSS test, then this) before it can be called VERIFIED.
++ * Exports the real persisted session without synthesizing observations.
++ * The archive contains measurements, the session event/error log, capability/permission
++ * snapshots, integrity evidence, and a self-verification receipt.
+  */
+ class ExportEngine(
+     private val context: Context,
+@@ -48,24 +37,33 @@
+         val session = repository.getSession(sessionId)
+             ?: return@withContext ExportResult.Failed("lookup", "No session found for id=$sessionId")
+ 
+-        // Section 34: never write directly into what could look like a finished dataset.
+         val tempDir = File(context.cacheDir, "export_tmp_$sessionId").apply {
+             deleteRecursively()
+-            mkdirs()
++            check(mkdirs()) { "Unable to create export temp directory: $this" }
+         }
+ 
+         try {
+             val observations = repository.getObservationsSnapshot(sessionId)
+             val roomCount = repository.countObservations(sessionId)
+-
+-            // Section 35: Room count must already agree with what we just fetched before
+-            // anything is written out -- catches a stale/partial snapshot early.
+             if (observations.size != roomCount) {
+                 return@withContext ExportResult.Failed(
+                     "pre-write verification",
+                     "Snapshot size (${observations.size}) != Room COUNT(*) ($roomCount)"
+                 )
+             }
++
++            val audit = IntegrityAudit.audit(
++                observations.map {
++                    RawObservationView(
++                        sequenceNumber = it.sequenceNumber,
++                        sourceMonotonicTimestampNs = it.monotonicTimestampNs,
++                        ingestionMonotonicTimestampNs = it.ingestionMonotonicTimestampNs,
++                        provider = it.provider
++                    )
++                }
++            )
++            val systemEvents = observations.filter { it.type == "SYSTEM_EVENT" }
++            val errorEvents = observations.filter { it.type == "ERROR_EVENT" }
+ 
+             val manifest = DatasetManifest(
+                 exportTimestampUtcMs = System.currentTimeMillis(),
+@@ -74,12 +72,20 @@
+                 deviceManufacturer = session.deviceManufacturer,
+                 deviceModel = session.deviceModel,
+                 totalObservations = observations.size,
++                totalSystemEvents = systemEvents.size,
++                totalErrorEvents = errorEvents.size,
+                 startTimeUtcMs = session.startTimeMs,
+                 endTimeUtcMs = session.endTimeMs,
+                 capabilityReportJson = session.capabilityReportJson,
+                 permissionStateJson = session.permissionStateJson,
+                 sequenceMin = repository.minSequence(sessionId),
+-                sequenceMax = repository.maxSequence(sessionId)
++                sequenceMax = repository.maxSequence(sessionId),
++                integrityClean = audit.isClean,
++                sequenceContiguous = audit.sequenceContiguous,
++                ingestionTimestampsNonDecreasing = audit.ingestionTimestampsNonDecreasing,
++                ingestionTimestampedObservationCount = audit.ingestionTimestampedObservationCount,
++                sourceTimestampRegressions = audit.sourceTimestampRegressions,
++                sourceTimestampedObservationCount = audit.sourceTimestampedObservationCount
+             )
+ 
+             val manifestFile = File(tempDir, "dataset_manifest.json")
+@@ -91,40 +97,65 @@
+             jsonFile.writeText(jsonArray.toString(2))
+ 
+             val csvFile = File(tempDir, "observations.csv")
+-            csvFile.bufferedWriter().use { w ->
+-                w.appendLine(CSV_HEADER)
+-                observations.forEach { w.appendLine(it.toCsvRow()) }
+-            }
++            csvFile.bufferedWriter().use { writer ->
++                writer.appendLine(CSV_HEADER)
++                observations.forEach { writer.appendLine(it.toCsvRow()) }
++            }
++
++            val eventsJsonFile = File(tempDir, "session_events.json")
++            val eventsJson = JSONArray()
++            (systemEvents + errorEvents).sortedBy { it.sequenceNumber }.forEach { eventsJson.put(it.toJson()) }
++            eventsJsonFile.writeText(eventsJson.toString(2))
++
++            val eventsCsvFile = File(tempDir, "session_events.csv")
++            eventsCsvFile.bufferedWriter().use { writer ->
++                writer.appendLine(EVENT_CSV_HEADER)
++                (systemEvents + errorEvents).sortedBy { it.sequenceNumber }.forEach { writer.appendLine(it.toEventCsvRow()) }
++            }
++
++            val sessionLogFile = File(tempDir, "session_log.txt")
++            sessionLogFile.writeText(buildSessionLog(session, observations, audit))
++
++            val capabilityFile = File(tempDir, "capabilities.json")
++            capabilityFile.writeText(JSONObject(session.capabilityReportJson).toString(2))
++
++            val permissionsFile = File(tempDir, "permissions.json")
++            permissionsFile.writeText(JSONObject(session.permissionStateJson).toString(2))
++
++            val auditFile = File(tempDir, "integrity_audit.json")
++            auditFile.writeText(audit.toJson().toString(2))
+ 
+             val sqliteFile = File(tempDir, "horizon_session.sqlite")
+-            writeSessionSqlite(sqliteFile, session, observations)
+-
+-            // Section 35: Room count == JSON count == CSV row count == SQLite row count == manifest count.
++            writeSessionSqlite(sqliteFile, session, observations, audit)
++
+             val jsonCount = jsonArray.length()
+-            val csvRowCount = csvFile.readLines().size - 1 // minus header
++            val csvRowCount = csvFile.useLines { it.drop(1).count { row -> row.isNotBlank() } }
+             val sqliteCount = verifySqlite(sqliteFile, sessionId)
+-            if (jsonCount != roomCount || csvRowCount != roomCount || sqliteCount != roomCount || manifest.totalObservations != roomCount) {
++            if (jsonCount != roomCount || csvRowCount != roomCount || sqliteCount != roomCount) {
+                 return@withContext ExportResult.Failed(
+                     "post-write verification",
+-                    "Count mismatch: room=$roomCount json=$jsonCount csv=$csvRowCount sqlite=$sqliteCount manifest=${manifest.totalObservations}"
++                    "Count mismatch: room=$roomCount json=$jsonCount csv=$csvRowCount sqlite=$sqliteCount"
+                 )
+             }
+ 
+             val tempZip = File(tempDir.parentFile, "$sessionId.zip.tmp")
+-            ZipOutputStream(tempZip.outputStream()).use { zip ->
+-                listOf(manifestFile, jsonFile, csvFile, sqliteFile).forEach { f ->
+-                    zip.putNextEntry(ZipEntry(f.name))
+-                    f.inputStream().use { it.copyTo(zip) }
++            if (tempZip.exists()) tempZip.delete()
++            val archiveFiles = listOf(
++                manifestFile, jsonFile, csvFile, eventsJsonFile, eventsCsvFile, sessionLogFile,
++                capabilityFile, permissionsFile, auditFile, sqliteFile
++            )
++            ZipOutputStream(tempZip.outputStream().buffered()).use { zip ->
++                archiveFiles.forEach { file ->
++                    zip.putNextEntry(ZipEntry(file.name))
++                    file.inputStream().use { input -> input.copyTo(zip) }
+                     zip.closeEntry()
+                 }
+             }
+ 
+             val exportsBase = context.getExternalFilesDir(null) ?: context.filesDir
+-            val exportsDir = File(exportsBase, "exports").apply { mkdirs() }
++            val exportsDir = File(exportsBase, "exports").apply { check(mkdirs()) { "Unable to create exports directory: $this" } }
+             val finalFile = File(exportsDir, "horizon_session_$sessionId.zip")
+-
+-            // Atomic finalize (Section 34): only now, after every verification above passed,
+-            // does anything appear at the final, user-visible path.
++            if (finalFile.exists()) finalFile.delete()
+             if (!tempZip.renameTo(finalFile)) {
+                 return@withContext ExportResult.Failed("finalize", "renameTo failed for $finalFile")
+             }
+@@ -135,6 +166,7 @@
+                 return@withContext ExportResult.Failed("readback", readback)
+             }
+ 
++            Log.i(TAG, "Export SUCCESS session=$sessionId observations=$roomCount file=$finalFile")
+             ExportResult.Success(finalFile, roomCount)
+         } catch (e: Exception) {
+             Log.e(TAG, "Export failed for session=$sessionId", e)
+@@ -144,36 +176,55 @@
+         }
+     }
+ 
+-
+-    private fun writeSessionSqlite(file: File, session: horizon.observatory.storage.entity.SessionEntity, observations: List<ObservationEntity>) {
++    private fun writeSessionSqlite(
++        file: File,
++        session: SessionEntity,
++        observations: List<ObservationEntity>,
++        audit: horizon.observatory.domain.model.IntegrityAuditResult
++    ) {
+         val db = SQLiteDatabase.openOrCreateDatabase(file, null)
+         try {
+             db.execSQL("PRAGMA foreign_keys=ON")
+-            db.execSQL("CREATE TABLE IF NOT EXISTS sessions (sessionId TEXT PRIMARY KEY, startTimeMs INTEGER NOT NULL, endTimeMs INTEGER, lifecycleState TEXT NOT NULL, deviceManufacturer TEXT NOT NULL, deviceModel TEXT NOT NULL, androidVersion TEXT NOT NULL, sdkVersion INTEGER NOT NULL, applicationVersion TEXT NOT NULL, schemaVersion INTEGER NOT NULL, deviceMetadataJson TEXT NOT NULL, capabilityReportJson TEXT NOT NULL, permissionStateJson TEXT NOT NULL)")
+-            db.execSQL("CREATE TABLE IF NOT EXISTS observations (observationId INTEGER PRIMARY KEY, sessionId TEXT NOT NULL, sequenceNumber INTEGER NOT NULL, timestampUtcMs INTEGER NOT NULL, monotonicTimestampNs INTEGER, timestampDomain TEXT NOT NULL, timestampUncertaintyNs INTEGER, source TEXT NOT NULL, technology TEXT NOT NULL, type TEXT NOT NULL, provider TEXT NOT NULL, rawPayloadJson TEXT NOT NULL, normalizedPayloadJson TEXT NOT NULL, capabilityState TEXT NOT NULL, evidenceStatus TEXT NOT NULL, provenance TEXT NOT NULL, UNIQUE(sessionId, sequenceNumber))")
++            db.execSQL("CREATE TABLE sessions (sessionId TEXT PRIMARY KEY, startTimeMs INTEGER NOT NULL, endTimeMs INTEGER, lifecycleState TEXT NOT NULL, deviceManufacturer TEXT NOT NULL, deviceModel TEXT NOT NULL, androidVersion TEXT NOT NULL, sdkVersion INTEGER NOT NULL, applicationVersion TEXT NOT NULL, schemaVersion INTEGER NOT NULL, deviceMetadataJson TEXT NOT NULL, capabilityReportJson TEXT NOT NULL, permissionStateJson TEXT NOT NULL)")
++            db.execSQL("CREATE TABLE observations (observationId INTEGER PRIMARY KEY, sessionId TEXT NOT NULL, sequenceNumber INTEGER NOT NULL, timestampUtcMs INTEGER NOT NULL, monotonicTimestampNs INTEGER, ingestionMonotonicTimestampNs INTEGER, timestampDomain TEXT NOT NULL, timestampUncertaintyNs INTEGER, source TEXT NOT NULL, technology TEXT NOT NULL, type TEXT NOT NULL, provider TEXT NOT NULL, rawPayloadJson TEXT NOT NULL, normalizedPayloadJson TEXT NOT NULL, capabilityState TEXT NOT NULL, evidenceStatus TEXT NOT NULL, provenance TEXT NOT NULL, UNIQUE(sessionId, sequenceNumber))")
++            db.execSQL("CREATE TABLE integrity_audit (sessionId TEXT PRIMARY KEY, observationCount INTEGER NOT NULL, firstSequence INTEGER, lastSequence INTEGER, sequenceContiguous INTEGER NOT NULL, ingestionTimestampsNonDecreasing INTEGER NOT NULL, ingestionTimestampedObservationCount INTEGER NOT NULL, sourceTimestampRegressions INTEGER NOT NULL, sourceTimestampedObservationCount INTEGER NOT NULL)")
+             db.beginTransaction()
+             try {
+                 val sessionValues = ContentValues().apply {
+-                    put("sessionId", session.sessionId); put("startTimeMs", session.startTimeMs);
++                    put("sessionId", session.sessionId); put("startTimeMs", session.startTimeMs)
+                     session.endTimeMs?.let { put("endTimeMs", it) }
+-                    put("lifecycleState", session.lifecycleState); put("deviceManufacturer", session.deviceManufacturer);
+-                    put("deviceModel", session.deviceModel); put("androidVersion", session.androidVersion);
+-                    put("sdkVersion", session.sdkVersion); put("applicationVersion", session.applicationVersion);
+-                    put("schemaVersion", session.schemaVersion); put("deviceMetadataJson", session.deviceMetadataJson);
++                    put("lifecycleState", session.lifecycleState); put("deviceManufacturer", session.deviceManufacturer)
++                    put("deviceModel", session.deviceModel); put("androidVersion", session.androidVersion)
++                    put("sdkVersion", session.sdkVersion); put("applicationVersion", session.applicationVersion)
++                    put("schemaVersion", session.schemaVersion); put("deviceMetadataJson", session.deviceMetadataJson)
+                     put("capabilityReportJson", session.capabilityReportJson); put("permissionStateJson", session.permissionStateJson)
+                 }
+                 db.insertOrThrow("sessions", null, sessionValues)
++
+                 observations.forEach { row ->
+-                    val v = ContentValues().apply {
+-                        put("observationId", row.observationId); put("sessionId", row.sessionId); put("sequenceNumber", row.sequenceNumber);
+-                        put("timestampUtcMs", row.timestampUtcMs); row.monotonicTimestampNs?.let { put("monotonicTimestampNs", it) };
+-                        put("timestampDomain", row.timestampDomain); row.timestampUncertaintyNs?.let { put("timestampUncertaintyNs", it) };
+-                        put("source", row.source); put("technology", row.technology); put("type", row.type); put("provider", row.provider);
+-                        put("rawPayloadJson", row.rawPayloadJson); put("normalizedPayloadJson", row.normalizedPayloadJson);
++                    val values = ContentValues().apply {
++                        put("observationId", row.observationId); put("sessionId", row.sessionId); put("sequenceNumber", row.sequenceNumber)
++                        put("timestampUtcMs", row.timestampUtcMs); row.monotonicTimestampNs?.let { put("monotonicTimestampNs", it) }
++                        row.ingestionMonotonicTimestampNs?.let { put("ingestionMonotonicTimestampNs", it) }
++                        put("timestampDomain", row.timestampDomain); row.timestampUncertaintyNs?.let { put("timestampUncertaintyNs", it) }
++                        put("source", row.source); put("technology", row.technology); put("type", row.type); put("provider", row.provider)
++                        put("rawPayloadJson", row.rawPayloadJson); put("normalizedPayloadJson", row.normalizedPayloadJson)
+                         put("capabilityState", row.capabilityState); put("evidenceStatus", row.evidenceStatus); put("provenance", row.provenance)
+                     }
+-                    db.insertOrThrow("observations", null, v)
+-                }
++                    db.insertOrThrow("observations", null, values)
++                }
++
++                val auditValues = ContentValues().apply {
++                    put("sessionId", session.sessionId); put("observationCount", audit.observationCount)
++                    audit.firstSequence?.let { put("firstSequence", it) }
++                    audit.lastSequence?.let { put("lastSequence", it) }
++                    put("sequenceContiguous", if (audit.sequenceContiguous) 1 else 0)
++                    put("ingestionTimestampsNonDecreasing", if (audit.ingestionTimestampsNonDecreasing) 1 else 0)
++                    put("ingestionTimestampedObservationCount", audit.ingestionTimestampedObservationCount)
++                    put("sourceTimestampRegressions", audit.sourceTimestampRegressions)
++                    put("sourceTimestampedObservationCount", audit.sourceTimestampedObservationCount)
++                }
++                db.insertOrThrow("integrity_audit", null, auditValues)
+                 db.setTransactionSuccessful()
+             } finally {
+                 db.endTransaction()
+@@ -186,12 +237,12 @@
+     private fun verifySqlite(file: File, sessionId: String): Int {
+         val db = SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY)
+         try {
+-            db.rawQuery("SELECT COUNT(*) FROM sessions WHERE sessionId = ?", arrayOf(sessionId)).use { c ->
+-                check(c.moveToFirst() && c.getInt(0) == 1) { "SQLite session row missing" }
+-            }
+-            db.rawQuery("SELECT COUNT(*) FROM observations WHERE sessionId = ?", arrayOf(sessionId)).use { c ->
+-                check(c.moveToFirst()) { "SQLite observation count query failed" }
+-                return c.getInt(0)
++            db.rawQuery("SELECT COUNT(*) FROM sessions WHERE sessionId = ?", arrayOf(sessionId)).use { cursor ->
++                check(cursor.moveToFirst() && cursor.getInt(0) == 1) { "SQLite session row missing" }
++            }
++            db.rawQuery("SELECT COUNT(*) FROM observations WHERE sessionId = ?", arrayOf(sessionId)).use { cursor ->
++                check(cursor.moveToFirst()) { "SQLite observation count query failed" }
++                return cursor.getInt(0)
+             }
+         } finally {
+             db.close()
+@@ -204,34 +255,81 @@
+             var manifestJson: String? = null
+             var jsonText: String? = null
+             var csvText: String? = null
+-            ZipInputStream(file.inputStream()).use { zis ->
++            var eventsJsonText: String? = null
++            var eventsCsvText: String? = null
++            var sessionLogText: String? = null
++            var auditJson: String? = null
++            var capabilitiesJson: String? = null
++            var permissionsJson: String? = null
++            ZipInputStream(file.inputStream().buffered()).use { zipInput ->
+                 while (true) {
+-                    val entry = zis.nextEntry ?: break
+-                    val bytes = zis.readBytes()
++                    val entry = zipInput.nextEntry ?: break
++                    val bytes = zipInput.readBytes()
+                     when (entry.name) {
+                         "dataset_manifest.json" -> manifestJson = bytes.toString(Charsets.UTF_8)
+                         "observations.json" -> jsonText = bytes.toString(Charsets.UTF_8)
+                         "observations.csv" -> csvText = bytes.toString(Charsets.UTF_8)
++                        "session_events.json" -> eventsJsonText = bytes.toString(Charsets.UTF_8)
++                        "session_events.csv" -> eventsCsvText = bytes.toString(Charsets.UTF_8)
++                        "session_log.txt" -> sessionLogText = bytes.toString(Charsets.UTF_8)
++                        "integrity_audit.json" -> auditJson = bytes.toString(Charsets.UTF_8)
++                        "capabilities.json" -> capabilitiesJson = bytes.toString(Charsets.UTF_8)
++                        "permissions.json" -> permissionsJson = bytes.toString(Charsets.UTF_8)
+                         "horizon_session.sqlite" -> extracted.writeBytes(bytes)
+                     }
+                 }
+             }
+-            if (manifestJson == null || jsonText == null || csvText == null || !extracted.exists()) return "Required archive entry missing"
++            if (listOf(manifestJson, jsonText, csvText, eventsJsonText, eventsCsvText, sessionLogText, auditJson, capabilitiesJson, permissionsJson).any { it == null } || !extracted.exists()) {
++                return "Required archive entry missing"
++            }
+             val manifest = JSONObject(manifestJson!!)
+-            if (manifest.optString("sessionId") != sessionId) return "Manifest sessionId mismatch"
+-            if (manifest.optInt("totalObservations", -1) != expectedCount) return "Manifest count mismatch"
++            check(manifest.optString("sessionId") == sessionId) { "Manifest sessionId mismatch" }
++            check(manifest.optInt("totalObservations", -1) == expectedCount) { "Manifest count mismatch" }
+             val jsonCount = JSONArray(jsonText!!).length()
+             val csvCount = csvText!!.lineSequence().drop(1).count { it.isNotBlank() }
+             val sqliteCount = verifySqlite(extracted, sessionId)
+-            if (jsonCount != expectedCount || csvCount != expectedCount || sqliteCount != expectedCount) {
+-                return "Readback count mismatch: expected=$expectedCount json=$jsonCount csv=$csvCount sqlite=$sqliteCount"
+-            }
++            check(jsonCount == expectedCount && csvCount == expectedCount && sqliteCount == expectedCount) {
++                "Readback count mismatch: expected=$expectedCount json=$jsonCount csv=$csvCount sqlite=$sqliteCount"
++            }
++            check(auditJson!!.isNotBlank()) { "Integrity audit readback empty" }
++            check(eventsJsonText!!.isNotBlank()) { "Session event log JSON readback empty" }
++            check(eventsCsvText!!.isNotBlank()) { "Session event log CSV readback empty" }
++            check(sessionLogText!!.isNotBlank()) { "Session log text readback empty" }
++            check(capabilitiesJson!!.isNotBlank()) { "Capability export readback empty" }
++            check(permissionsJson!!.isNotBlank()) { "Permission export readback empty" }
+             return null
+         } catch (e: Exception) {
+             return e.message ?: e.toString()
+         } finally {
+             extracted.delete()
+         }
++    }
++
++    private fun buildSessionLog(
++        session: SessionEntity,
++        observations: List<ObservationEntity>,
++        audit: horizon.observatory.domain.model.IntegrityAuditResult
++    ): String = buildString {
++        appendLine("HORIZON SESSION LOG")
++        appendLine("sessionId=${session.sessionId}")
++        appendLine("lifecycle=${session.lifecycleState}")
++        appendLine("device=${session.deviceManufacturer} ${session.deviceModel}")
++        appendLine("android=${session.androidVersion} api=${session.sdkVersion}")
++        appendLine("startUtcMs=${session.startTimeMs}")
++        appendLine("endUtcMs=${session.endTimeMs ?: "UNSET"}")
++        appendLine("observationCount=${observations.size}")
++        appendLine("integrityClean=${audit.isClean}")
++        appendLine("sequenceContiguous=${audit.sequenceContiguous}")
++        appendLine("ingestionTimestampsNonDecreasing=${audit.ingestionTimestampsNonDecreasing}")
++        appendLine("ingestionTimestampedObservationCount=${audit.ingestionTimestampedObservationCount}")
++        appendLine("sourceTimestampRegressions=${audit.sourceTimestampRegressions}")
++        appendLine("sourceTimestampedObservationCount=${audit.sourceTimestampedObservationCount}")
++        appendLine()
++        observations.filter { it.type == "SYSTEM_EVENT" || it.type == "ERROR_EVENT" }
++            .sortedBy { it.sequenceNumber }
++            .forEach { row ->
++                appendLine("[seq=${row.sequenceNumber}] [${row.timestampUtcMs}] [${row.type}] [${row.provider}] ${row.rawPayloadJson}")
++            }
+     }
+ 
+     private fun DatasetManifest.toJson(): JSONObject = JSONObject().apply {
+@@ -241,13 +339,33 @@
+         put("deviceManufacturer", deviceManufacturer)
+         put("deviceModel", deviceModel)
+         put("totalObservations", totalObservations)
++        put("totalSystemEvents", totalSystemEvents)
++        put("totalErrorEvents", totalErrorEvents)
+         put("startTimeUtcMs", startTimeUtcMs)
+         put("endTimeUtcMs", endTimeUtcMs ?: JSONObject.NULL)
+         put("capabilityReport", JSONObject(capabilityReportJson))
+         put("permissionState", JSONObject(permissionStateJson))
+         put("sequenceMin", sequenceMin ?: JSONObject.NULL)
+         put("sequenceMax", sequenceMax ?: JSONObject.NULL)
++        put("integrityClean", integrityClean)
++        put("sequenceContiguous", sequenceContiguous)
++        put("ingestionTimestampsNonDecreasing", ingestionTimestampsNonDecreasing)
++        put("ingestionTimestampedObservationCount", ingestionTimestampedObservationCount)
++        put("sourceTimestampRegressions", sourceTimestampRegressions)
++        put("sourceTimestampedObservationCount", sourceTimestampedObservationCount)
+         put("provenanceNote", provenanceNote)
++    }
++
++    private fun horizon.observatory.domain.model.IntegrityAuditResult.toJson(): JSONObject = JSONObject().apply {
++        put("observationCount", observationCount)
++        put("firstSequence", firstSequence ?: JSONObject.NULL)
++        put("lastSequence", lastSequence ?: JSONObject.NULL)
++        put("sequenceContiguous", sequenceContiguous)
++        put("ingestionTimestampsNonDecreasing", ingestionTimestampsNonDecreasing)
++        put("ingestionTimestampedObservationCount", ingestionTimestampedObservationCount)
++        put("sourceTimestampRegressions", sourceTimestampRegressions)
++        put("sourceTimestampedObservationCount", sourceTimestampedObservationCount)
++        put("isClean", isClean)
+     }
+ 
+     private fun ObservationEntity.toJson(): JSONObject = JSONObject().apply {
+@@ -255,7 +373,8 @@
+         put("sessionId", sessionId)
+         put("sequenceNumber", sequenceNumber)
+         put("timestampUtcMs", timestampUtcMs)
+-        put("monotonicTimestampNs", monotonicTimestampNs)
++        put("sourceMonotonicTimestampNs", monotonicTimestampNs ?: JSONObject.NULL)
++        put("ingestionMonotonicTimestampNs", ingestionMonotonicTimestampNs ?: JSONObject.NULL)
+         put("source", source)
+         put("technology", technology)
+         put("type", type)
+@@ -269,13 +388,15 @@
+         put("provenance", provenance)
+     }
+ 
++    private fun ObservationEntity.toEventCsvRow(): String = listOf(
++        observationId, sessionId, sequenceNumber, timestampUtcMs, monotonicTimestampNs, ingestionMonotonicTimestampNs,
++        type, provider, capabilityState, evidenceStatus, rawPayloadJson
++    ).joinToString(",") { csvEscape(it.toString()) }
++
+     private fun ObservationEntity.toCsvRow(): String = listOf(
+-        observationId, sessionId, sequenceNumber, timestampUtcMs, monotonicTimestampNs,
++        observationId, sessionId, sequenceNumber, timestampUtcMs, monotonicTimestampNs, ingestionMonotonicTimestampNs,
+         source, technology, type, provider, timestampDomain, timestampUncertaintyNs, capabilityState, evidenceStatus, provenance
+     ).joinToString(",") { csvEscape(it.toString()) }
+-    // Note: rawPayloadJson/normalizedPayloadJson are deliberately left out of the CSV (a flat
+-    // format) and are only in observations.json -- keeps the CSV columns fixed-width per row
+-    // regardless of payload shape, per Section 33's file-per-purpose split.
+ 
+     private fun csvEscape(value: String): String =
+         if (value.contains(',') || value.contains('"') || value.contains('\n')) {
+@@ -285,6 +406,8 @@
+     companion object {
+         private const val TAG = "HorizonExport"
+         private const val CSV_HEADER =
+-            "observationId,sessionId,sequenceNumber,timestampUtcMs,monotonicTimestampNs,source,technology,type,provider,timestampDomain,timestampUncertaintyNs,capabilityState,evidenceStatus,provenance"
++            "observationId,sessionId,sequenceNumber,timestampUtcMs,sourceMonotonicTimestampNs,ingestionMonotonicTimestampNs,source,technology,type,provider,timestampDomain,timestampUncertaintyNs,capabilityState,evidenceStatus,provenance"
++        private const val EVENT_CSV_HEADER =
++            "observationId,sessionId,sequenceNumber,timestampUtcMs,sourceMonotonicTimestampNs,ingestionMonotonicTimestampNs,type,provider,capabilityState,evidenceStatus,rawPayloadJson"
+     }
+ }
+--- a/app/src/main/kotlin/horizon/observatory/export/model/ExportManifest.kt
++++ b/app/src/main/kotlin/horizon/observatory/export/model/ExportManifest.kt
+@@ -7,11 +7,19 @@
+     val deviceManufacturer: String,
+     val deviceModel: String,
+     val totalObservations: Int,
++    val totalSystemEvents: Int,
++    val totalErrorEvents: Int,
+     val startTimeUtcMs: Long,
+     val endTimeUtcMs: Long?,
+     val capabilityReportJson: String,
+     val permissionStateJson: String,
+     val sequenceMin: Long?,
+     val sequenceMax: Long?,
+-    val provenanceNote: String = "RAW observations are preserved; normalized/derived fields are not substituted for raw evidence."
++    val integrityClean: Boolean,
++    val sequenceContiguous: Boolean,
++    val ingestionTimestampsNonDecreasing: Boolean,
++    val ingestionTimestampedObservationCount: Int,
++    val sourceTimestampRegressions: Int,
++    val sourceTimestampedObservationCount: Int,
++    val provenanceNote: String = "Source measurement time and HORIZON ingestion time are preserved separately. Source timestamps may arrive out of order across asynchronous producers; ingestion order is the integrity clock."
+ )
+--- a/app/src/main/kotlin/horizon/observatory/storage/entity/Entities.kt
++++ b/app/src/main/kotlin/horizon/observatory/storage/entity/Entities.kt
+@@ -20,7 +20,7 @@
+     val androidVersion: String = "UNKNOWN",
+     val sdkVersion: Int = 0,
+     val applicationVersion: String = "UNKNOWN",
+-    val schemaVersion: Int = 4,
++    val schemaVersion: Int = 5,
+     @ColumnInfo(defaultValue = "{}") val deviceMetadataJson: String = "{}",
+     @ColumnInfo(defaultValue = "{}") val capabilityReportJson: String = "{}",
+     @ColumnInfo(defaultValue = "{}") val permissionStateJson: String = "{}"
+@@ -32,6 +32,7 @@
+         Index(value = ["sessionId"]),
+         Index(value = ["timestampUtcMs"]),
+         Index(value = ["monotonicTimestampNs"]),
++        Index(value = ["ingestionMonotonicTimestampNs"]),
+         Index(value = ["type"]),
+         Index(value = ["sessionId", "sequenceNumber"], unique = true)
+     ],
+@@ -49,6 +50,7 @@
+     val sequenceNumber: Long,
+     val timestampUtcMs: Long,
+     val monotonicTimestampNs: Long? = null,
++    val ingestionMonotonicTimestampNs: Long? = null,
+     val timestampDomain: String = "UNKNOWN",
+     val timestampUncertaintyNs: Long? = null,
+     val source: String = "UNKNOWN",
+@@ -79,6 +81,7 @@
+     val sequenceNumber: Long,
+     val timestampUtcMs: Long,
+     val monotonicTimestampNs: Long? = null,
++    val ingestionMonotonicTimestampNs: Long? = null,
+     val timestampDomain: String,
+     val timestampUncertaintyNs: Long? = null,
+     val source: String,
+--- a/app/src/main/kotlin/horizon/observatory/storage/repository/ObservationMapper.kt
++++ b/app/src/main/kotlin/horizon/observatory/storage/repository/ObservationMapper.kt
+@@ -11,6 +11,7 @@
+         sequenceNumber = sequenceNumber,
+         timestampUtcMs = utcTimestampMs,
+         monotonicTimestampNs = monotonicTimestampNs,
++        ingestionMonotonicTimestampNs = ingestionMonotonicTimestampNs,
+         timestampDomain = timestampDomain.name,
+         timestampUncertaintyNs = timestampUncertaintyNs,
+         source = sourceCategoryFor(type),
+@@ -29,6 +30,7 @@
+         sequenceNumber = sequenceNumber,
+         timestampUtcMs = timestampUtcMs,
+         monotonicTimestampNs = monotonicTimestampNs,
++        ingestionMonotonicTimestampNs = ingestionMonotonicTimestampNs,
+         timestampDomain = timestampDomain,
+         timestampUncertaintyNs = timestampUncertaintyNs,
+         source = source,
+@@ -48,6 +50,7 @@
+         sequenceNumber = sequenceNumber,
+         timestampUtcMs = utcTimestampMs,
+         monotonicTimestampNs = monotonicTimestampNs,
++        ingestionMonotonicTimestampNs = ingestionMonotonicTimestampNs,
+         timestampDomain = timestampDomain.name,
+         timestampUncertaintyNs = timestampUncertaintyNs,
+         source = sourceCategoryFor(type),
+--- a/app/src/main/kotlin/horizon/observatory/storage/room/AppDatabase.kt
++++ b/app/src/main/kotlin/horizon/observatory/storage/room/AppDatabase.kt
+@@ -12,7 +12,7 @@
+ 
+ @Database(
+     entities = [SessionEntity::class, ObservationEntity::class, PendingObservationEntity::class],
+-    version = 4,
++    version = 5,
+     exportSchema = true
+ )
+ abstract class AppDatabase : RoomDatabase() {
+@@ -64,6 +64,14 @@
+             }
+         }
+ 
++        val MIGRATION_4_5 = object : Migration(4, 5) {
++            override fun migrate(db: SupportSQLiteDatabase) {
++                db.execSQL("ALTER TABLE observations ADD COLUMN ingestionMonotonicTimestampNs INTEGER")
++                db.execSQL("ALTER TABLE pending_observations ADD COLUMN ingestionMonotonicTimestampNs INTEGER")
++                db.execSQL("CREATE INDEX IF NOT EXISTS index_observations_ingestionMonotonicTimestampNs ON observations(ingestionMonotonicTimestampNs)")
++            }
++        }
++
+         @Volatile private var INSTANCE: AppDatabase? = null
+ 
+         fun getInstance(context: Context): AppDatabase =
+@@ -73,7 +81,7 @@
+                     AppDatabase::class.java,
+                     "horizon_observatory.db"
+                 )
+-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
++                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                     .build()
+                     .also { INSTANCE = it }
+             }
+--- a/app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt
++++ b/app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt
+@@ -61,11 +61,16 @@
+ import horizon.observatory.analysis.SessionAnalysisEngine
+ import horizon.observatory.storage.entity.ObservationEntity
+ import horizon.observatory.storage.entity.SessionEntity
++import horizon.observatory.domain.model.IntegrityAudit
++import horizon.observatory.domain.model.RawObservationView
++import kotlinx.coroutines.Dispatchers
+ import kotlinx.coroutines.delay
+ import kotlinx.coroutines.launch
++import kotlinx.coroutines.withContext
+ import kotlinx.coroutines.flow.collectLatest
+ import kotlinx.coroutines.flow.first
+ import org.json.JSONObject
++import java.io.FileInputStream
+ import java.text.SimpleDateFormat
+ import java.util.Date
+ import java.util.Locale
+@@ -95,6 +100,63 @@
+         }
+         val analysis = remember(observations) { SessionAnalysisEngine().analyze(observations) }
+         val uiScope = androidx.compose.runtime.rememberCoroutineScope()
++        var exportStatus by rememberSaveable { mutableStateOf("No export package generated yet.") }
++        var exportPath by rememberSaveable { mutableStateOf<String?>(null) }
++        var pendingSavePath by rememberSaveable { mutableStateOf<String?>(null) }
++
++        val saveExportLauncher = rememberLauncherForActivityResult(
++            ActivityResultContracts.CreateDocument("application/zip")
++        ) { uri ->
++            val sourcePath = pendingSavePath
++            pendingSavePath = null
++            if (uri == null || sourcePath == null) return@rememberLauncherForActivityResult
++            uiScope.launch(Dispatchers.IO) {
++                runCatching {
++                    val source = java.io.File(sourcePath)
++                    check(source.isFile) { "Export file no longer exists: $sourcePath" }
++                    val output = contentResolver.openOutputStream(uri, "w")
++                        ?: error("Unable to open selected destination")
++                    output.use { out ->
++                        FileInputStream(source).use { input -> input.copyTo(out) }
++                    }
++                }.onSuccess {
++                    withContext(Dispatchers.Main) {
++                        exportStatus = "Export saved to the selected document."
++                        message = "Export saved successfully."
++                    }
++                }.onFailure { error ->
++                    withContext(Dispatchers.Main) {
++                        exportStatus = "Save failed: ${error.message ?: error}"
++                        message = "Export save failed."
++                    }
++                }
++            }
++        }
++
++        val generateExport: () -> Unit = {
++            val id = latest?.sessionId
++            if (id == null) {
++                section = 7
++                exportStatus = "No session is available for export."
++                message = exportStatus
++            } else {
++                section = 7
++                exportStatus = "Generating package for $id …"
++                uiScope.launch {
++                    when (val result = container.exportEngine.exportSession(id)) {
++                        is horizon.observatory.export.ExportEngine.ExportResult.Success -> {
++                            exportPath = result.zipFile.absolutePath
++                            exportStatus = "Package ready: ${result.observationCount} observations."
++                            message = "Export package ready."
++                        }
++                        is horizon.observatory.export.ExportEngine.ExportResult.Failed -> {
++                            exportStatus = "Export failed at ${result.stage}: ${result.reason}"
++                            message = "Export failed; see Export section for details."
++                        }
++                    }
++                }
++            }
++        }
+ 
+         val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+             val location = result[Manifest.permission.ACCESS_FINE_LOCATION] == true || result[Manifest.permission.ACCESS_COARSE_LOCATION] == true || hasLocationPermission()
+@@ -105,7 +167,7 @@
+             topBar = { TopAppBar(title = { Text("HORIZON / OBSERVATORY", fontWeight = FontWeight.SemiBold) }) },
+             bottomBar = {
+                 NavigationBar {
+-                    listOf("Overview", "GNSS", "Cellular", "Sensors", "Timeline", "Session", "Diagnostics").forEachIndexed { index, label ->
++                    listOf("Overview", "GNSS", "Cellular", "Sensors", "Timeline", "Session", "Diagnostics", "Export").forEachIndexed { index, label ->
+                         NavigationBarItem(selected = section == index, onClick = { section = index }, icon = { Text(label.take(1)) }, label = { Text(label) })
+                     }
+                 }
+@@ -127,20 +189,7 @@
+                         startService(Intent(this@MainActivity, ObservatoryService::class.java).setAction(ObservatoryService.ACTION_STOP))
+                         message = "Observation stop requested."
+                     },
+-                    onExport = {
+-                        val id = latest?.sessionId
+-                        if (id == null) {
+-                            message = "No session available for export."
+-                        } else {
+-                            uiScope.launch {
+-                                when (container.exportEngine.exportSession(id)) {
+-                                    is horizon.observatory.export.ExportEngine.ExportResult.Success -> message = "Export complete for session $id."
+-                                    is horizon.observatory.export.ExportEngine.ExportResult.Failed -> message = "Export failed for session $id."
+-                                }
+-                            }
+-                            message = "Export started for latest session."
+-                        }
+-                    }
++                    onExport = generateExport
+                 )
+                 Text(message, Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.labelMedium)
+                 Box(Modifier.fillMaxSize()) {
+@@ -151,7 +200,23 @@
+                         3 -> SensorsScreen(observations, analysis)
+                         4 -> TimelineScreen(observations, analysis)
+                         5 -> SessionScreen(sessions)
+-                        else -> DiagnosticsScreen(latest, container.capabilityScanner.buildReport().json.toString(2), analysis)
++                        6 -> DiagnosticsScreen(latest, container.capabilityScanner.buildReport().json.toString(2), analysis)
++                        else -> ExportScreen(
++                            session = latest,
++                            observations = observations,
++                            exportPath = exportPath,
++                            exportStatus = exportStatus,
++                            onGenerate = generateExport,
++                            onSave = {
++                                val path = exportPath
++                                if (path == null) {
++                                    exportStatus = "Generate an export package first."
++                                } else {
++                                    pendingSavePath = path
++                                    saveExportLauncher.launch(java.io.File(path).name)
++                                }
++                            }
++                        )
+                     }
+                 }
+             }
+@@ -251,7 +316,7 @@
+             Text("Average LTE/NR RSRP: ${a.averageRsrpDbm?.let { "%.2f dBm".format(it) } ?: "UNAVAILABLE"}")
+             Text("Average visible satellites: ${a.averageVisibleSatellites?.let { "%.1f".format(it) } ?: "UNAVAILABLE"}")
+             Text("Sequence gaps: ${a.sequenceGapCount}")
+-            Text("Monotonic timestamp violations: ${a.timestampMonotonicViolations}")
++            Text("Source-time regressions: ${a.timestampMonotonicViolations}")
+         }
+     }
+ }
+@@ -264,7 +329,7 @@
+             Text("Device: ${session?.deviceManufacturer ?: "UNKNOWN"} ${session?.deviceModel ?: "UNKNOWN"}")
+             Text("Android: ${session?.androidVersion ?: "UNKNOWN"} / API ${session?.sdkVersion ?: 0}")
+             Text("Schema: ${session?.schemaVersion ?: 0}")
+-            Text("Raw data is retained; derived values remain separate from source observations.")
++            Text("Source measurement time and HORIZON ingress time are preserved separately; derived values remain separate from raw observations.")
+         }
+     }
+ }
+@@ -393,6 +458,76 @@
+ }
+ 
+ @Composable
++private fun ExportScreen(
++    session: SessionEntity?,
++    observations: List<ObservationEntity>,
++    exportPath: String?,
++    exportStatus: String,
++    onGenerate: () -> Unit,
++    onSave: () -> Unit
++) {
++    val audit = remember(observations) {
++        IntegrityAudit.audit(
++            observations.map { row ->
++                RawObservationView(
++                    sequenceNumber = row.sequenceNumber,
++                    sourceMonotonicTimestampNs = row.monotonicTimestampNs,
++                    ingestionMonotonicTimestampNs = row.ingestionMonotonicTimestampNs,
++                    provider = row.provider
++                )
++            }
++        )
++    }
++    val eventCount = observations.count { it.type == "SYSTEM_EVENT" }
++    val errorCount = observations.count { it.type == "ERROR_EVENT" }
++
++    LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
++        item { MetricCard("Export", if (exportPath != null) "READY" else "NOT GENERATED", exportStatus) }
++        item { MetricCard("Session", session?.sessionId ?: "NONE", session?.lifecycleState ?: "NO SESSION") }
++        item {
++            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
++                    Text("EXPORT INTEGRITY", style = MaterialTheme.typography.titleMedium)
++                    Text("Integrity clean: ${audit.isClean}")
++                    Text("Sequence contiguous: ${audit.sequenceContiguous}")
++                    Text("Ingress timestamp complete: ${audit.ingestionTimestampedObservationCount == audit.observationCount}")
++                    Text("Ingress time monotonic: ${audit.ingestionTimestampsNonDecreasing}")
++                    Text("Source-time regressions: ${audit.sourceTimestampRegressions} (diagnostic, not a failure by itself)")
++                    Text("Observations: ${observations.size}  |  System events: $eventCount  |  Errors: $errorCount")
++                }
++            }
++        }
++        item {
++            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
++                Button(onClick = onGenerate, modifier = Modifier.weight(1f)) { Text("GENERATE PACKAGE") }
++                OutlinedButton(onClick = onSave, enabled = exportPath != null, modifier = Modifier.weight(1f)) { Text("SAVE ZIP") }
++            }
++        }
++        item {
++            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF0D0B10))) {
++                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
++                    Text("PACKAGE CONTENTS", style = MaterialTheme.typography.titleMedium)
++                    Text("dataset_manifest.json")
++                    Text("observations.json")
++                    Text("observations.csv")
++                    Text("horizon_session.sqlite")
++                    Text("session_events.json")
++                    Text("session_events.csv")
++                    Text("session_log.txt")
++                    Text("capabilities.json")
++                    Text("permissions.json")
++                    Text("integrity_audit.json")
++                    Text("The package is assembled from persisted Room data; Android logcat is not silently represented as application data.", style = MaterialTheme.typography.labelSmall)
++                }
++            }
++        }
++        exportPath?.let { path ->
++            item { Text("Local package: $path", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.labelSmall) }
++        }
++    }
++}
++
++@Composable
+ private fun DiagnosticsScreen(session: SessionEntity?, capabilityJson: String, analysis: AnalysisSnapshot) {
+     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+         item { MetricCard("Diagnostics", session?.lifecycleState ?: "NONE", "Sequence gaps ${analysis.sequenceGapCount}; timestamp violations ${analysis.timestampMonotonicViolations}") }
+@@ -411,6 +546,7 @@
+             Text("#${item.sequenceNumber}  ${item.type}", fontWeight = FontWeight.SemiBold)
+             Text("${item.technology} / ${item.provider}", style = MaterialTheme.typography.labelSmall)
+             Text("${item.capabilityState} / ${item.evidenceStatus} / ${item.timestampDomain}", style = MaterialTheme.typography.labelSmall)
++            Text("sourceT=${item.monotonicTimestampNs ?: "UNAVAILABLE"}  ingressT=${item.ingestionMonotonicTimestampNs ?: "UNAVAILABLE"}", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+         }
+     }
+ }
+--- a/app/src/test/kotlin/horizon/observatory/domain/model/IntegrityAuditTest.kt
++++ b/app/src/test/kotlin/horizon/observatory/domain/model/IntegrityAuditTest.kt
+@@ -1,5 +1,6 @@
+ package horizon.observatory.domain.model
+ 
++import org.junit.Assert.assertEquals
+ import org.junit.Assert.assertFalse
+ import org.junit.Assert.assertTrue
+ import org.junit.Test
+@@ -26,12 +27,23 @@
+     }
+ 
+     @Test
+-    fun timestampRegressionFails() {
++    fun sourceTimestampRegressionDoesNotFailIngressIntegrity() {
+         val result = IntegrityAudit.audit(listOf(
+-            RawObservationView(1, 300),
+-            RawObservationView(2, 200)
++            RawObservationView(sequenceNumber = 1, sourceMonotonicTimestampNs = 300, ingestionMonotonicTimestampNs = 100),
++            RawObservationView(sequenceNumber = 2, sourceMonotonicTimestampNs = 200, ingestionMonotonicTimestampNs = 200)
+         ))
+-        assertFalse(result.monotonicTimestampsNonDecreasing)
++        assertTrue(result.ingestionTimestampsNonDecreasing)
++        assertEquals(1, result.sourceTimestampRegressions)
++        assertTrue(result.isClean)
++    }
++
++    @Test
++    fun ingestionTimestampRegressionFailsIntegrity() {
++        val result = IntegrityAudit.audit(listOf(
++            RawObservationView(sequenceNumber = 1, sourceMonotonicTimestampNs = 100, ingestionMonotonicTimestampNs = 300),
++            RawObservationView(sequenceNumber = 2, sourceMonotonicTimestampNs = 200, ingestionMonotonicTimestampNs = 200)
++        ))
++        assertFalse(result.ingestionTimestampsNonDecreasing)
+         assertFalse(result.isClean)
+     }
+ }

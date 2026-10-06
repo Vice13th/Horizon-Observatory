@@ -1,0 +1,61 @@
+--- app/src/main/kotlin/horizon/observatory/analysis/SessionAnalysisEngine.kt	2026-09-23 22:36:21.000000000 +0000
++++ PROJECT/app/src/main/kotlin/horizon/observatory/analysis/SessionAnalysisEngine.kt	2026-09-23 23:01:46.558097441 +0000
+@@ -1,11 +1,15 @@
+ package horizon.observatory.analysis
+ 
++import horizon.observatory.analysis.gnss.GnssCorrelationEngine
++import horizon.observatory.domain.gnss.GnssDomainSnapshot
+ import horizon.observatory.storage.entity.ObservationEntity
+ import org.json.JSONObject
+ import kotlin.math.abs
+ import kotlin.math.sqrt
+ 
+ class SessionAnalysisEngine {
++    private val gnssCorrelationEngine = GnssCorrelationEngine()
++
+     fun analyze(observations: List<ObservationEntity>): AnalysisSnapshot {
+         val gnssRaw = observations.filter { it.type == "GNSS_RAW_MEASUREMENT" }
+         val gnssStatus = observations.filter { it.type == "GNSS_STATUS" }
+@@ -13,6 +17,7 @@
+         val gnssNav = observations.filter { it.type == "GNSS_NAVIGATION_MESSAGE" }
+         val cellular = observations.filter { it.type == "CELLULAR_INFO" }
+         val sensors = observations.filter { it.source == "SENSOR" }
++        val gnssDomain = gnssCorrelationEngine.buildSnapshot(observations)
+ 
+         val cno = gnssRaw.mapNotNull { it.rawPayloadJson.doubleOrNull("cn0DbHz") }
+         val agc = gnssRaw.mapNotNull { it.rawPayloadJson.doubleOrNull("automaticGainControlLevelDb") }
+@@ -82,7 +87,8 @@
+             latestServingTechnology = latestTechnology,
+             latestCellAgeMs = latestAgeMs,
+             freshCellRequestSamples = freshRequestSamples,
+-            cellularCallbackSamples = callbackSamples
++            cellularCallbackSamples = callbackSamples,
++            gnssDomain = gnssDomain
+         )
+     }
+ 
+@@ -193,7 +199,23 @@
+     val latestServingTechnology: String? = null,
+     val latestCellAgeMs: Long? = null,
+     val freshCellRequestSamples: Int = 0,
+-    val cellularCallbackSamples: Int = 0
++    val cellularCallbackSamples: Int = 0,
++    val gnssDomain: GnssDomainSnapshot = GnssDomainSnapshot(
++        signalStatistics = horizon.observatory.domain.gnss.GnssSignalStatistics(
++            sampleCount = 0, averageCn0DbHz = null, minCn0DbHz = null, maxCn0DbHz = null,
++            averageElevationDegrees = null, minElevationDegrees = null, maxElevationDegrees = null,
++            averageAgcDb = null, minAgcDb = null, maxAgcDb = null, distinctFrequenciesHz = emptyList()
++        ),
++        satelliteEvidence = emptyList(),
++        latestSatelliteEvidence = emptyList(),
++        historyPoints = emptyList(),
++        constellationSummaries = emptyList(),
++        antennaEvidence = emptyList(),
++        navigationMessageCount = 0,
++        correlatedMeasurementCount = 0,
++        statusOnlySatelliteCount = 0,
++        rawOnlySatelliteCount = 0
++    )
+ )
+ 
+ data class TimelinePoint(

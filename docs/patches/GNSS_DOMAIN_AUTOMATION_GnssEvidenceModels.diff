@@ -1,0 +1,59 @@
+--- app/src/main/kotlin/horizon/observatory/domain/gnss/GnssEvidenceModels.kt	2026-09-23 22:54:19.000000000 +0000
++++ PROJECT/app/src/main/kotlin/horizon/observatory/domain/gnss/GnssEvidenceModels.kt	2026-09-23 23:01:46.557865722 +0000
+@@ -59,8 +59,56 @@
+     val provenance: String = "GNSS_ANTENNA_RAW"
+ )
+ 
++/** One correlated observation point for GNSS history/plotting. */
++data class SatelliteHistoryPoint(
++    val sequenceNumber: Long?,
++    val constellationType: Int,
++    val svid: Int,
++    val carrierFrequencyHz: Double?,
++    val cn0DbHz: Double?,
++    val basebandCn0DbHz: Double?,
++    val elevationDegrees: Double?,
++    val azimuthDegrees: Double?,
++    val usedInFix: Boolean?,
++    val agcDb: Double?,
++    val navigationMessageCount: Int,
++    val match: SatelliteEvidenceMatch,
++    val monotonicTimestampNs: Long?
++)
++
++data class ConstellationSummary(
++    val constellationType: Int,
++    val evidenceCount: Int,
++    val distinctSatelliteCount: Int,
++    val matchedCount: Int,
++    val statusOnlyCount: Int,
++    val rawOnlyCount: Int,
++    val navigationMessageCount: Int,
++    val averageCn0DbHz: Double?,
++    val averageElevationDegrees: Double?,
++    val averageAgcDb: Double?
++)
++
++data class GnssSignalStatistics(
++    val sampleCount: Int,
++    val averageCn0DbHz: Double?,
++    val minCn0DbHz: Double?,
++    val maxCn0DbHz: Double?,
++    val averageElevationDegrees: Double?,
++    val minElevationDegrees: Double?,
++    val maxElevationDegrees: Double?,
++    val averageAgcDb: Double?,
++    val minAgcDb: Double?,
++    val maxAgcDb: Double?,
++    val distinctFrequenciesHz: List<Double>
++)
++
+ data class GnssDomainSnapshot(
++    val signalStatistics: GnssSignalStatistics,
+     val satelliteEvidence: List<SatelliteEvidence>,
++    val latestSatelliteEvidence: List<SatelliteEvidence>,
++    val historyPoints: List<SatelliteHistoryPoint>,
++    val constellationSummaries: List<ConstellationSummary>,
+     val antennaEvidence: List<GnssAntennaEvidence>,
+     val navigationMessageCount: Int,
+     val correlatedMeasurementCount: Int,

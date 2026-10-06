@@ -1,0 +1,749 @@
+[
+  {
+    "zip": "horizon_session_35f8d344-5d1b-46aa-a695-5112d50eec13.zip",
+    "sha256": "5761a2b3348b0562fc0480a70a449d3b9be11cb46eccd133e8502ebedf0365d1",
+    "dataset_manifest.json": {
+      "exportTimestampUtcMs": 1790202269175,
+      "schemaVersion": 5,
+      "sessionId": "35f8d344-5d1b-46aa-a695-5112d50eec13",
+      "deviceManufacturer": "samsung",
+      "deviceModel": "SM-A075F",
+      "totalObservations": 2395,
+      "totalSystemEvents": 2,
+      "totalErrorEvents": 0,
+      "startTimeUtcMs": 1790202225950,
+      "endTimeUtcMs": 1790202263913,
+      "capabilityReport": {
+        "device": {
+          "manufacturer": "samsung",
+          "model": "SM-A075F",
+          "androidRelease": "16",
+          "api": 36,
+          "fingerprint": "samsung/a07xx/a07:16/BP4A.251205.006/A075FXXS6CZH1_OJM6CZH1:user/release-keys"
+        },
+        "permissions": {
+          "fine_location": "GRANTED",
+          "coarse_location": "GRANTED",
+          "read_phone_state": "GRANTED",
+          "post_notifications": "GRANTED"
+        },
+        "features": {
+          "location": true,
+          "gps": true,
+          "telephony": true,
+          "telephony_radio_access": true
+        },
+        "gnss": {
+          "location_provider": true,
+          "raw_measurements": "SUPPORTED",
+          "navigation_messages": "SUPPORTED",
+          "antenna_info": "UNSUPPORTED",
+          "accumulated_delta_range": "SUPPORTED",
+          "signal_types": [
+            "GnssSignalType[Constellation=1, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+            "GnssSignalType[Constellation=2, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+            "GnssSignalType[Constellation=4, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+            "GnssSignalType[Constellation=3, CarrierFrequencyHz=1.602E9, CodeType=C]",
+            "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN]",
+            "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+            "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN]",
+            "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=X]",
+            "GnssSignalType[Constellation=5, CarrierFrequencyHz=1.561098E9, CodeType=I]"
+          ],
+          "signal_type_count": 9,
+          "carrier_phase": "UNVERIFIED",
+          "automatic_gain_control": "UNVERIFIED",
+          "multi_frequency": "SUPPORTED",
+          "hardware_model": "MTK_MNLD_default,MNL_VER_default",
+          "hardware_year": 2020,
+          "capabilities_string": "[SCHEDULING MSB MSA MEASUREMENTS NAVIGATION_MESSAGES LOW_POWER_MODE SATELLITE_BLOCKLIST SATELLITE_PVT MEASUREMENT_CORRECTIONS MEASUREMENT_CORRECTIONS_FOR_DRIVING ACCUMULATED_DELTA_RANGE LOS_SATS EXCESS_PATH_LENGTH REFLECTING_PLANE signalTypes=[GnssSignalType[Constellation=1, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=2, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=4, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=3, CarrierFrequencyHz=1.602E9, CodeType=C], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=X], GnssSignalType[Constellation=5, CarrierFrequencyHz=1.561098E9, CodeType=I]]]"
+        },
+        "cellular": {
+          "telephony_feature": true,
+          "fine_location_required": true,
+          "phone_state_permission": "GRANTED",
+          "live_cell_info_callback": "REQUIRES_READ_PHONE_STATE_AND_FINE_LOCATION",
+          "status": "SUPPORTED",
+          "fresh_update_api": "SUPPORTED",
+          "fresh_update_rate_limit": "ANDROID_MANAGED"
+        },
+        "sensors": {
+          "accelerometer": [
+            {
+              "name": "mc34x9_acc",
+              "vendor": "mes",
+              "version": 1,
+              "powerMah": 0.001,
+              "resolution": 0.0012,
+              "maxRange": 78.453606,
+              "wakeUp": false,
+              "maxDelayUs": 100000,
+              "minDelayUs": 5000
+            }
+          ],
+          "gyroscope": "UNAVAILABLE",
+          "magnetometer": "UNAVAILABLE",
+          "light": [
+            {
+              "name": "ltr567_als",
+              "vendor": "liteOn",
+              "version": 1,
+              "powerMah": 0.001,
+              "resolution": 1,
+              "maxRange": 65535,
+              "wakeUp": false,
+              "maxDelayUs": 200000,
+              "minDelayUs": 200000
+            }
+          ],
+          "proximity": [
+            {
+              "name": "ltr567_ps",
+              "vendor": "liteOn",
+              "version": 1,
+              "powerMah": 0.001,
+              "resolution": 1,
+              "maxRange": 1,
+              "wakeUp": true,
+              "maxDelayUs": 200000,
+              "minDelayUs": 200000
+            }
+          ],
+          "rotation_vector": "UNAVAILABLE",
+          "gravity": "UNAVAILABLE",
+          "linear_acceleration": "UNAVAILABLE",
+          "pressure": "UNAVAILABLE",
+          "step_detector": [
+            {
+              "name": "step_detect",
+              "vendor": "mtk",
+              "version": 1,
+              "powerMah": 0.001,
+              "resolution": 1,
+              "maxRange": 1,
+              "wakeUp": false,
+              "maxDelayUs": 0,
+              "minDelayUs": 0
+            },
+            {
+              "name": "step_detect_wakeup",
+              "vendor": "mtk",
+              "version": 1,
+              "powerMah": 0.001,
+              "resolution": 1,
+              "maxRange": 1,
+              "wakeUp": true,
+              "maxDelayUs": 0,
+              "minDelayUs": 0
+            }
+          ],
+          "step_counter": [
+            {
+              "name": "step_count",
+              "vendor": "mtk",
+              "version": 1,
+              "powerMah": 0.001,
+              "resolution": 1,
+              "maxRange": 2147483648,
+              "wakeUp": false,
+              "maxDelayUs": 1000000,
+              "minDelayUs": 0
+            }
+          ]
+        },
+        "status": "OBSERVED_AT_SESSION_START"
+      },
+      "permissionState": {
+        "fine_location": "GRANTED",
+        "coarse_location": "GRANTED",
+        "read_phone_state": "GRANTED",
+        "post_notifications": "GRANTED"
+      },
+      "sequenceMin": 1,
+      "sequenceMax": 2395,
+      "integrityClean": true,
+      "sequenceContiguous": true,
+      "ingestionTimestampsNonDecreasing": true,
+      "ingestionTimestampedObservationCount": 2395,
+      "sourceTimestampRegressions": 246,
+      "sourceTimestampedObservationCount": 2395,
+      "provenanceNote": "Source measurement time and HORIZON ingestion time are preserved separately. Source timestamps may arrive out of order across asynchronous producers; ingestion order is the integrity clock."
+    },
+    "integrity_audit.json": {
+      "observationCount": 2395,
+      "firstSequence": 1,
+      "lastSequence": 2395,
+      "sequenceContiguous": true,
+      "ingestionTimestampsNonDecreasing": true,
+      "ingestionTimestampedObservationCount": 2395,
+      "sourceTimestampRegressions": 246,
+      "sourceTimestampedObservationCount": 2395,
+      "isClean": true
+    },
+    "capabilities.json": {
+      "device": {
+        "manufacturer": "samsung",
+        "model": "SM-A075F",
+        "androidRelease": "16",
+        "api": 36,
+        "fingerprint": "samsung/a07xx/a07:16/BP4A.251205.006/A075FXXS6CZH1_OJM6CZH1:user/release-keys"
+      },
+      "permissions": {
+        "fine_location": "GRANTED",
+        "coarse_location": "GRANTED",
+        "read_phone_state": "GRANTED",
+        "post_notifications": "GRANTED"
+      },
+      "features": {
+        "location": true,
+        "gps": true,
+        "telephony": true,
+        "telephony_radio_access": true
+      },
+      "gnss": {
+        "location_provider": true,
+        "raw_measurements": "SUPPORTED",
+        "navigation_messages": "SUPPORTED",
+        "antenna_info": "UNSUPPORTED",
+        "accumulated_delta_range": "SUPPORTED",
+        "signal_types": [
+          "GnssSignalType[Constellation=1, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+          "GnssSignalType[Constellation=2, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+          "GnssSignalType[Constellation=4, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+          "GnssSignalType[Constellation=3, CarrierFrequencyHz=1.602E9, CodeType=C]",
+          "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN]",
+          "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+          "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN]",
+          "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=X]",
+          "GnssSignalType[Constellation=5, CarrierFrequencyHz=1.561098E9, CodeType=I]"
+        ],
+        "signal_type_count": 9,
+        "carrier_phase": "UNVERIFIED",
+        "automatic_gain_control": "UNVERIFIED",
+        "multi_frequency": "SUPPORTED",
+        "hardware_model": "MTK_MNLD_default,MNL_VER_default",
+        "hardware_year": 2020,
+        "capabilities_string": "[SCHEDULING MSB MSA MEASUREMENTS NAVIGATION_MESSAGES LOW_POWER_MODE SATELLITE_BLOCKLIST SATELLITE_PVT MEASUREMENT_CORRECTIONS MEASUREMENT_CORRECTIONS_FOR_DRIVING ACCUMULATED_DELTA_RANGE LOS_SATS EXCESS_PATH_LENGTH REFLECTING_PLANE signalTypes=[GnssSignalType[Constellation=1, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=2, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=4, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=3, CarrierFrequencyHz=1.602E9, CodeType=C], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=X], GnssSignalType[Constellation=5, CarrierFrequencyHz=1.561098E9, CodeType=I]]]"
+      },
+      "cellular": {
+        "telephony_feature": true,
+        "fine_location_required": true,
+        "phone_state_permission": "GRANTED",
+        "live_cell_info_callback": "REQUIRES_READ_PHONE_STATE_AND_FINE_LOCATION",
+        "status": "SUPPORTED",
+        "fresh_update_api": "SUPPORTED",
+        "fresh_update_rate_limit": "ANDROID_MANAGED"
+      },
+      "sensors": {
+        "accelerometer": [
+          {
+            "name": "mc34x9_acc",
+            "vendor": "mes",
+            "version": 1,
+            "powerMah": 0.001,
+            "resolution": 0.0012,
+            "maxRange": 78.453606,
+            "wakeUp": false,
+            "maxDelayUs": 100000,
+            "minDelayUs": 5000
+          }
+        ],
+        "gyroscope": "UNAVAILABLE",
+        "magnetometer": "UNAVAILABLE",
+        "light": [
+          {
+            "name": "ltr567_als",
+            "vendor": "liteOn",
+            "version": 1,
+            "powerMah": 0.001,
+            "resolution": 1,
+            "maxRange": 65535,
+            "wakeUp": false,
+            "maxDelayUs": 200000,
+            "minDelayUs": 200000
+          }
+        ],
+        "proximity": [
+          {
+            "name": "ltr567_ps",
+            "vendor": "liteOn",
+            "version": 1,
+            "powerMah": 0.001,
+            "resolution": 1,
+            "maxRange": 1,
+            "wakeUp": true,
+            "maxDelayUs": 200000,
+            "minDelayUs": 200000
+          }
+        ],
+        "rotation_vector": "UNAVAILABLE",
+        "gravity": "UNAVAILABLE",
+        "linear_acceleration": "UNAVAILABLE",
+        "pressure": "UNAVAILABLE",
+        "step_detector": [
+          {
+            "name": "step_detect",
+            "vendor": "mtk",
+            "version": 1,
+            "powerMah": 0.001,
+            "resolution": 1,
+            "maxRange": 1,
+            "wakeUp": false,
+            "maxDelayUs": 0,
+            "minDelayUs": 0
+          },
+          {
+            "name": "step_detect_wakeup",
+            "vendor": "mtk",
+            "version": 1,
+            "powerMah": 0.001,
+            "resolution": 1,
+            "maxRange": 1,
+            "wakeUp": true,
+            "maxDelayUs": 0,
+            "minDelayUs": 0
+          }
+        ],
+        "step_counter": [
+          {
+            "name": "step_count",
+            "vendor": "mtk",
+            "version": 1,
+            "powerMah": 0.001,
+            "resolution": 1,
+            "maxRange": 2147483648,
+            "wakeUp": false,
+            "maxDelayUs": 1000000,
+            "minDelayUs": 0
+          }
+        ]
+      },
+      "status": "OBSERVED_AT_SESSION_START"
+    },
+    "permissions.json": {
+      "fine_location": "GRANTED",
+      "coarse_location": "GRANTED",
+      "read_phone_state": "GRANTED",
+      "post_notifications": "GRANTED"
+    },
+    "observations_count": 2395,
+    "types": {
+      "SYSTEM_EVENT": 2,
+      "SENSOR_LIGHT": 188,
+      "SENSOR_ACCEL": 1897,
+      "CELLULAR_INFO": 27,
+      "SENSOR_PROXIMITY": 1,
+      "GNSS_STATUS": 38,
+      "GNSS_RAW_MEASUREMENT": 207,
+      "GNSS_NAVIGATION_MESSAGE": 14,
+      "GNSS_FIX": 21
+    },
+    "gnss_nav_count": 14,
+    "cellular_count": 27,
+    "gnss_raw_count": 207,
+    "agc_summary": {
+      "min": 6,
+      "max": 6,
+      "distinct": 1,
+      "count": 207
+    },
+    "cno_summary": {
+      "min": 13.730999946594238,
+      "max": 35,
+      "mean": 20.818830969253025,
+      "count": 207
+    },
+    "satellite_angle_counts": {
+      "elevation": 2057,
+      "azimuth": 2057
+    },
+    "cellular_triggers": {
+      "TELEPHONY_CALLBACK": 9,
+      "REQUEST_CELL_INFO_UPDATE": 18
+    },
+    "cellular_source_age_ms": {
+      "min": 7,
+      "max": 5014,
+      "count": 27
+    },
+    "sequence": {
+      "first": 1,
+      "last": 2395,
+      "count": 2395,
+      "contiguous": true
+    },
+    "ingestion_monotonic_non_decreasing": true,
+    "db_tables": [
+      "android_metadata",
+      "sessions",
+      "observations",
+      "integrity_audit"
+    ],
+    "db_observations_count": 2395
+  },
+  {
+    "zip": "horizon_session_f860845d-79cf-4e7d-b951-c00e0b237fe2%20%282%29.zip",
+    "sha256": "7784a4a725eff2d90c214c83a171b8375d70b1fe3b377aaa0ef9aed422f8aa47",
+    "dataset_manifest.json": {
+      "exportTimestampUtcMs": 1790192866628,
+      "schemaVersion": 5,
+      "sessionId": "f860845d-79cf-4e7d-b951-c00e0b237fe2",
+      "deviceManufacturer": "samsung",
+      "deviceModel": "SM-A075F",
+      "totalObservations": 3523,
+      "totalSystemEvents": 2,
+      "totalErrorEvents": 0,
+      "startTimeUtcMs": 1790192800388,
+      "endTimeUtcMs": 1790192860222,
+      "capabilityReport": {
+        "device": {
+          "manufacturer": "samsung",
+          "model": "SM-A075F",
+          "androidRelease": "16",
+          "api": 36,
+          "fingerprint": "samsung/a07xx/a07:16/BP4A.251205.006/A075FXXS6CZH1_OJM6CZH1:user/release-keys"
+        },
+        "permissions": {
+          "fine_location": "GRANTED",
+          "coarse_location": "GRANTED",
+          "post_notifications": "GRANTED"
+        },
+        "features": {
+          "location": true,
+          "gps": true,
+          "telephony": true,
+          "telephony_radio_access": true
+        },
+        "gnss": {
+          "location_provider": true,
+          "raw_measurements": "SUPPORTED",
+          "navigation_messages": "SUPPORTED",
+          "antenna_info": "UNSUPPORTED",
+          "accumulated_delta_range": "SUPPORTED",
+          "signal_types": [
+            "GnssSignalType[Constellation=1, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+            "GnssSignalType[Constellation=2, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+            "GnssSignalType[Constellation=4, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+            "GnssSignalType[Constellation=3, CarrierFrequencyHz=1.602E9, CodeType=C]",
+            "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN]",
+            "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+            "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN]",
+            "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=X]",
+            "GnssSignalType[Constellation=5, CarrierFrequencyHz=1.561098E9, CodeType=I]"
+          ],
+          "signal_type_count": 9,
+          "carrier_phase": "UNVERIFIED",
+          "automatic_gain_control": "UNVERIFIED",
+          "multi_frequency": "SUPPORTED",
+          "hardware_model": "MTK_MNLD_default,MNL_VER_default",
+          "hardware_year": 2020,
+          "capabilities_string": "[SCHEDULING MSB MSA MEASUREMENTS NAVIGATION_MESSAGES LOW_POWER_MODE SATELLITE_BLOCKLIST SATELLITE_PVT MEASUREMENT_CORRECTIONS MEASUREMENT_CORRECTIONS_FOR_DRIVING ACCUMULATED_DELTA_RANGE LOS_SATS EXCESS_PATH_LENGTH REFLECTING_PLANE signalTypes=[GnssSignalType[Constellation=1, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=2, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=4, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=3, CarrierFrequencyHz=1.602E9, CodeType=C], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=X], GnssSignalType[Constellation=5, CarrierFrequencyHz=1.561098E9, CodeType=I]]]"
+        },
+        "cellular": {
+          "telephony_feature": true,
+          "fine_location_required": true,
+          "phone_state_permission": "NOT_REQUIRED_FOR_CELL_INFO",
+          "status": "SUPPORTED",
+          "fresh_update_api": "SUPPORTED"
+        },
+        "sensors": {
+          "accelerometer": [
+            {
+              "name": "mc34x9_acc",
+              "vendor": "mes",
+              "version": 1,
+              "powerMah": 0.001,
+              "resolution": 0.0012,
+              "maxRange": 78.453606,
+              "wakeUp": false,
+              "maxDelayUs": 100000,
+              "minDelayUs": 5000
+            }
+          ],
+          "gyroscope": "UNAVAILABLE",
+          "magnetometer": "UNAVAILABLE",
+          "light": [
+            {
+              "name": "ltr567_als",
+              "vendor": "liteOn",
+              "version": 1,
+              "powerMah": 0.001,
+              "resolution": 1,
+              "maxRange": 65535,
+              "wakeUp": false,
+              "maxDelayUs": 200000,
+              "minDelayUs": 200000
+            }
+          ],
+          "proximity": [
+            {
+              "name": "ltr567_ps",
+              "vendor": "liteOn",
+              "version": 1,
+              "powerMah": 0.001,
+              "resolution": 1,
+              "maxRange": 1,
+              "wakeUp": true,
+              "maxDelayUs": 200000,
+              "minDelayUs": 200000
+            }
+          ],
+          "rotation_vector": "UNAVAILABLE",
+          "gravity": "UNAVAILABLE",
+          "linear_acceleration": "UNAVAILABLE",
+          "pressure": "UNAVAILABLE",
+          "step_detector": [
+            {
+              "name": "step_detect",
+              "vendor": "mtk",
+              "version": 1,
+              "powerMah": 0.001,
+              "resolution": 1,
+              "maxRange": 1,
+              "wakeUp": false,
+              "maxDelayUs": 0,
+              "minDelayUs": 0
+            },
+            {
+              "name": "step_detect_wakeup",
+              "vendor": "mtk",
+              "version": 1,
+              "powerMah": 0.001,
+              "resolution": 1,
+              "maxRange": 1,
+              "wakeUp": true,
+              "maxDelayUs": 0,
+              "minDelayUs": 0
+            }
+          ],
+          "step_counter": [
+            {
+              "name": "step_count",
+              "vendor": "mtk",
+              "version": 1,
+              "powerMah": 0.001,
+              "resolution": 1,
+              "maxRange": 2147483648,
+              "wakeUp": false,
+              "maxDelayUs": 1000000,
+              "minDelayUs": 0
+            }
+          ]
+        },
+        "status": "OBSERVED_AT_SESSION_START"
+      },
+      "permissionState": {
+        "fine_location": "GRANTED",
+        "coarse_location": "GRANTED",
+        "post_notifications": "GRANTED"
+      },
+      "sequenceMin": 1,
+      "sequenceMax": 3523,
+      "integrityClean": true,
+      "sequenceContiguous": true,
+      "ingestionTimestampsNonDecreasing": true,
+      "ingestionTimestampedObservationCount": 3523,
+      "sourceTimestampRegressions": 174,
+      "sourceTimestampedObservationCount": 3523,
+      "provenanceNote": "Source measurement time and HORIZON ingestion time are preserved separately. Source timestamps may arrive out of order across asynchronous producers; ingestion order is the integrity clock."
+    },
+    "integrity_audit.json": {
+      "observationCount": 3523,
+      "firstSequence": 1,
+      "lastSequence": 3523,
+      "sequenceContiguous": true,
+      "ingestionTimestampsNonDecreasing": true,
+      "ingestionTimestampedObservationCount": 3523,
+      "sourceTimestampRegressions": 174,
+      "sourceTimestampedObservationCount": 3523,
+      "isClean": true
+    },
+    "capabilities.json": {
+      "device": {
+        "manufacturer": "samsung",
+        "model": "SM-A075F",
+        "androidRelease": "16",
+        "api": 36,
+        "fingerprint": "samsung/a07xx/a07:16/BP4A.251205.006/A075FXXS6CZH1_OJM6CZH1:user/release-keys"
+      },
+      "permissions": {
+        "fine_location": "GRANTED",
+        "coarse_location": "GRANTED",
+        "post_notifications": "GRANTED"
+      },
+      "features": {
+        "location": true,
+        "gps": true,
+        "telephony": true,
+        "telephony_radio_access": true
+      },
+      "gnss": {
+        "location_provider": true,
+        "raw_measurements": "SUPPORTED",
+        "navigation_messages": "SUPPORTED",
+        "antenna_info": "UNSUPPORTED",
+        "accumulated_delta_range": "SUPPORTED",
+        "signal_types": [
+          "GnssSignalType[Constellation=1, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+          "GnssSignalType[Constellation=2, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+          "GnssSignalType[Constellation=4, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+          "GnssSignalType[Constellation=3, CarrierFrequencyHz=1.602E9, CodeType=C]",
+          "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN]",
+          "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=C]",
+          "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN]",
+          "GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=X]",
+          "GnssSignalType[Constellation=5, CarrierFrequencyHz=1.561098E9, CodeType=I]"
+        ],
+        "signal_type_count": 9,
+        "carrier_phase": "UNVERIFIED",
+        "automatic_gain_control": "UNVERIFIED",
+        "multi_frequency": "SUPPORTED",
+        "hardware_model": "MTK_MNLD_default,MNL_VER_default",
+        "hardware_year": 2020,
+        "capabilities_string": "[SCHEDULING MSB MSA MEASUREMENTS NAVIGATION_MESSAGES LOW_POWER_MODE SATELLITE_BLOCKLIST SATELLITE_PVT MEASUREMENT_CORRECTIONS MEASUREMENT_CORRECTIONS_FOR_DRIVING ACCUMULATED_DELTA_RANGE LOS_SATS EXCESS_PATH_LENGTH REFLECTING_PLANE signalTypes=[GnssSignalType[Constellation=1, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=2, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=4, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=3, CarrierFrequencyHz=1.602E9, CodeType=C], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=C], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=UNKNOWN], GnssSignalType[Constellation=6, CarrierFrequencyHz=1.57542E9, CodeType=X], GnssSignalType[Constellation=5, CarrierFrequencyHz=1.561098E9, CodeType=I]]]"
+      },
+      "cellular": {
+        "telephony_feature": true,
+        "fine_location_required": true,
+        "phone_state_permission": "NOT_REQUIRED_FOR_CELL_INFO",
+        "status": "SUPPORTED",
+        "fresh_update_api": "SUPPORTED"
+      },
+      "sensors": {
+        "accelerometer": [
+          {
+            "name": "mc34x9_acc",
+            "vendor": "mes",
+            "version": 1,
+            "powerMah": 0.001,
+            "resolution": 0.0012,
+            "maxRange": 78.453606,
+            "wakeUp": false,
+            "maxDelayUs": 100000,
+            "minDelayUs": 5000
+          }
+        ],
+        "gyroscope": "UNAVAILABLE",
+        "magnetometer": "UNAVAILABLE",
+        "light": [
+          {
+            "name": "ltr567_als",
+            "vendor": "liteOn",
+            "version": 1,
+            "powerMah": 0.001,
+            "resolution": 1,
+            "maxRange": 65535,
+            "wakeUp": false,
+            "maxDelayUs": 200000,
+            "minDelayUs": 200000
+          }
+        ],
+        "proximity": [
+          {
+            "name": "ltr567_ps",
+            "vendor": "liteOn",
+            "version": 1,
+            "powerMah": 0.001,
+            "resolution": 1,
+            "maxRange": 1,
+            "wakeUp": true,
+            "maxDelayUs": 200000,
+            "minDelayUs": 200000
+          }
+        ],
+        "rotation_vector": "UNAVAILABLE",
+        "gravity": "UNAVAILABLE",
+        "linear_acceleration": "UNAVAILABLE",
+        "pressure": "UNAVAILABLE",
+        "step_detector": [
+          {
+            "name": "step_detect",
+            "vendor": "mtk",
+            "version": 1,
+            "powerMah": 0.001,
+            "resolution": 1,
+            "maxRange": 1,
+            "wakeUp": false,
+            "maxDelayUs": 0,
+            "minDelayUs": 0
+          },
+          {
+            "name": "step_detect_wakeup",
+            "vendor": "mtk",
+            "version": 1,
+            "powerMah": 0.001,
+            "resolution": 1,
+            "maxRange": 1,
+            "wakeUp": true,
+            "maxDelayUs": 0,
+            "minDelayUs": 0
+          }
+        ],
+        "step_counter": [
+          {
+            "name": "step_count",
+            "vendor": "mtk",
+            "version": 1,
+            "powerMah": 0.001,
+            "resolution": 1,
+            "maxRange": 2147483648,
+            "wakeUp": false,
+            "maxDelayUs": 1000000,
+            "minDelayUs": 0
+          }
+        ]
+      },
+      "status": "OBSERVED_AT_SESSION_START"
+    },
+    "permissions.json": {
+      "fine_location": "GRANTED",
+      "coarse_location": "GRANTED",
+      "post_notifications": "GRANTED"
+    },
+    "observations_count": 3523,
+    "types": {
+      "SYSTEM_EVENT": 2,
+      "SENSOR_LIGHT": 299,
+      "CELLULAR_INFO": 3,
+      "SENSOR_ACCEL": 3028,
+      "SENSOR_PROXIMITY": 1,
+      "GNSS_STATUS": 60,
+      "GNSS_RAW_MEASUREMENT": 129,
+      "GNSS_FIX": 1
+    },
+    "gnss_nav_count": 0,
+    "cellular_count": 3,
+    "gnss_raw_count": 129,
+    "agc_summary": {
+      "min": 6,
+      "max": 6,
+      "distinct": 1,
+      "count": 129
+    },
+    "cno_summary": {
+      "min": 14.399999618530273,
+      "max": 26.600000381469727,
+      "mean": 22.674844963606013,
+      "count": 129
+    },
+    "satellite_angle_counts": {
+      "elevation": 2277,
+      "azimuth": 2277
+    },
+    "cellular_triggers": {},
+    "sequence": {
+      "first": 1,
+      "last": 3523,
+      "count": 3523,
+      "contiguous": true
+    },
+    "ingestion_monotonic_non_decreasing": true,
+    "db_tables": [
+      "android_metadata",
+      "sessions",
+      "observations",
+      "integrity_audit"
+    ],
+    "db_observations_count": 3523
+  }
+]

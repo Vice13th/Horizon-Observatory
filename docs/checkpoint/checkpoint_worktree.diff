@@ -1,0 +1,1550 @@
+diff --git a/app/src/main/kotlin/horizon/observatory/acquisition/cellular/CellInfoSource.kt b/app/src/main/kotlin/horizon/observatory/acquisition/cellular/CellInfoSource.kt
+index e7aa598..893ccbd 100644
+--- a/app/src/main/kotlin/horizon/observatory/acquisition/cellular/CellInfoSource.kt
++++ b/app/src/main/kotlin/horizon/observatory/acquisition/cellular/CellInfoSource.kt
+@@ -26,6 +26,9 @@ import horizon.observatory.domain.model.RawObservation
+ import horizon.observatory.domain.model.SourceStatus
+ import horizon.observatory.domain.model.TimestampDomain
+ import kotlinx.coroutines.channels.awaitClose
++import kotlinx.coroutines.delay
++import kotlinx.coroutines.isActive
++import kotlinx.coroutines.launch
+ import kotlinx.coroutines.flow.Flow
+ import kotlinx.coroutines.flow.callbackFlow
+ import org.json.JSONObject
+@@ -49,24 +52,35 @@ class CellInfoSource(private val context: Context) : ObservationSource {
+         val tm = telephonyManager ?: run { close(); return@callbackFlow }
+         if (status != SourceStatus.AVAILABLE) { close(); return@callbackFlow }
+ 
+-        fun emitAll(items: List<CellInfo>?) {
+-            items.orEmpty().forEach { info -> trySend(info.toRawObservation()) }
++        fun emitAll(items: List<CellInfo>?, trigger: String) {
++            items.orEmpty().forEach { info -> trySend(info.toRawObservation(trigger)) }
+         }
+ 
+         fun requestFreshSnapshot() {
+             if (Build.VERSION.SDK_INT >= 29) {
+                 runCatching {
+                     tm.requestCellInfoUpdate(executor, object : TelephonyManager.CellInfoCallback() {
+-                        override fun onCellInfo(cellInfo: MutableList<CellInfo>) = emitAll(cellInfo)
++                        override fun onCellInfo(cellInfo: MutableList<CellInfo>) = emitAll(cellInfo, "REQUEST_CELL_INFO_UPDATE")
++                        override fun onError(errorCode: Int, detail: Throwable?) {
++                            // The request is rate-limited by Android and can fail transiently.
++                            // Do not terminate the source; the live callback may still deliver data.
++                        }
+                     })
+                 }
+             } else {
+-                runCatching { emitAll(tm.allCellInfo) }
++                runCatching { emitAll(tm.allCellInfo, "CACHED_ALL_CELL_INFO") }
+             }
+         }
+ 
+         requestFreshSnapshot()
+ 
++        val refreshJob = launch {
++            while (isActive) {
++                delay(CELL_INFO_REFRESH_MS)
++                requestFreshSnapshot()
++            }
++        }
++
+         closeFlow = { close() }
+ 
+         val canRegisterLiveCellInfo = ContextCompat.checkSelfPermission(
+@@ -75,24 +89,24 @@ class CellInfoSource(private val context: Context) : ObservationSource {
+ 
+         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && canRegisterLiveCellInfo) {
+             val callback = object : TelephonyCallback(), TelephonyCallback.CellInfoListener {
+-                override fun onCellInfoChanged(cellInfo: MutableList<CellInfo>) = emitAll(cellInfo)
++                override fun onCellInfoChanged(cellInfo: MutableList<CellInfo>) = emitAll(cellInfo, "TELEPHONY_CALLBACK")
+             }
+             runCatching { tm.registerTelephonyCallback(executor, callback) }
+                 .onFailure { close(it) }
+-            awaitClose { runCatching { tm.unregisterTelephonyCallback(callback) }; closeFlow = null }
++            awaitClose { refreshJob.cancel(); runCatching { tm.unregisterTelephonyCallback(callback) }; closeFlow = null }
+         } else if (canRegisterLiveCellInfo) {
+             @Suppress("DEPRECATION")
+             val listener = object : PhoneStateListener() {
+                 @Suppress("DEPRECATION")
+-                override fun onCellInfoChanged(cellInfo: MutableList<CellInfo>?) = emitAll(cellInfo)
++                override fun onCellInfoChanged(cellInfo: MutableList<CellInfo>?) = emitAll(cellInfo, "PHONE_STATE_CALLBACK")
+             }
+             @Suppress("DEPRECATION")
+             runCatching { tm.listen(listener, PhoneStateListener.LISTEN_CELL_INFO) }
+                 .onFailure { close(it) }
+             @Suppress("DEPRECATION")
+-            awaitClose { tm.listen(listener, PhoneStateListener.LISTEN_NONE); closeFlow = null }
++            awaitClose { refreshJob.cancel(); tm.listen(listener, PhoneStateListener.LISTEN_NONE); closeFlow = null }
+         } else {
+-            awaitClose { closeFlow = null }
++            awaitClose { refreshJob.cancel(); closeFlow = null }
+         }
+     }
+ 
+@@ -102,10 +116,14 @@ class CellInfoSource(private val context: Context) : ObservationSource {
+     private fun Int.unavailableToNull(): Any =
+         if (this == CellInfo.UNAVAILABLE || this == Int.MAX_VALUE) JSONObject.NULL else this
+ 
++    companion object {
++        private const val CELL_INFO_REFRESH_MS = 5_000L
++    }
++
+     private fun Long.unavailableToNull(): Any =
+         if (this == CellInfo.UNAVAILABLE_LONG || this == Long.MAX_VALUE) JSONObject.NULL else this
+ 
+-    private fun CellInfo.toRawObservation(): RawObservation {
++    private fun CellInfo.toRawObservation(trigger: String): RawObservation {
+         val sourceTimeNs: Long? = if (Build.VERSION.SDK_INT >= 30) {
+             val millis = timestampMillis
+             if (millis >= 0L) millis * 1_000_000L else null
+@@ -123,7 +141,13 @@ class CellInfoSource(private val context: Context) : ObservationSource {
+         if (Build.VERSION.SDK_INT >= 31) payload.put("connectionStatus", getCellConnectionStatus())
+         payload.put("sourceTimestampMillis", if (Build.VERSION.SDK_INT >= 30) timestampMillis else JSONObject.NULL)
+         payload.put("ingestionElapsedRealtimeNanos", ingestionNs)
+-        payload.put("freshness", if (sourceTimeNs != null) "MODEM_TIMESTAMPED" else "INGESTION_TIMESTAMP_ONLY")
++        payload.put("acquisitionTrigger", trigger)
++        payload.put("freshness", if (sourceTimeNs != null) "TIMESTAMPED_CELL_INFO" else "INGESTION_TIMESTAMP_ONLY")
++        if (sourceTimeNs != null) {
++            payload.put("sourceAgeMs", ((ingestionNs - sourceTimeNs).coerceAtLeast(0L)) / 1_000_000L)
++        } else {
++            payload.put("sourceAgeMs", JSONObject.NULL)
++        }
+ 
+         when (this) {
+             is CellInfoLte -> {
+diff --git a/app/src/main/kotlin/horizon/observatory/acquisition/gnss/GnssObservationSource.kt b/app/src/main/kotlin/horizon/observatory/acquisition/gnss/GnssObservationSource.kt
+index 17e67d2..cbdcf8d 100644
+--- a/app/src/main/kotlin/horizon/observatory/acquisition/gnss/GnssObservationSource.kt
++++ b/app/src/main/kotlin/horizon/observatory/acquisition/gnss/GnssObservationSource.kt
+@@ -73,6 +73,11 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
+                     } else {
+                         row.put("carrierFrequencyHz", JSONObject.NULL)
+                     }
++                    if (Build.VERSION.SDK_INT >= 30 && status.hasBasebandCn0DbHz(i)) {
++                        row.put("basebandCn0DbHz", status.getBasebandCn0DbHz(i).toDouble())
++                    } else {
++                        row.put("basebandCn0DbHz", JSONObject.NULL)
++                    }
+                     satellites.put(row)
+                 }
+                 val payload = JSONObject()
+@@ -129,6 +134,7 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
+                     .put("messageId", event.messageId)
+                     .put("submessageId", event.submessageId)
+                     .put("status", event.status)
++                    .put("dataLength", event.data.size)
+                     .put("dataBase64", Base64.getEncoder().encodeToString(event.data))
+                 trySend(RawObservation(
+                     type = ObservationType.GNSS_NAVIGATION_MESSAGE,
+diff --git a/app/src/main/kotlin/horizon/observatory/acquisition/gnss/LocationFixSource.kt b/app/src/main/kotlin/horizon/observatory/acquisition/gnss/LocationFixSource.kt
+index 090cca7..e6c34b0 100644
+--- a/app/src/main/kotlin/horizon/observatory/acquisition/gnss/LocationFixSource.kt
++++ b/app/src/main/kotlin/horizon/observatory/acquisition/gnss/LocationFixSource.kt
+@@ -6,6 +6,7 @@ import android.location.Location
+ import android.location.LocationListener
+ import android.location.LocationManager
+ import android.os.Bundle
++import android.os.Looper
+ import androidx.core.content.ContextCompat
+ import horizon.observatory.acquisition.base.ObservationSource
+ import horizon.observatory.core.time.TimestampEngine
+@@ -90,11 +91,15 @@ class LocationFixSource(private val context: Context) : ObservationSource {
+         closeFlow = { close() }
+ 
+         try {
++            // Acquisition runs on Dispatchers.IO. The listener-only overload creates its
++            // Handler on the calling thread and therefore fails without a Looper. Bind the
++            // callback explicitly to the main application Looper.
+             locationManager.requestLocationUpdates(
+                 LocationManager.GPS_PROVIDER,
+                 /* minTimeMs = */ 1000L,
+                 /* minDistanceM = */ 0f,
+-                gnssListener
++                gnssListener,
++                Looper.getMainLooper()
+             )
+         } catch (e: SecurityException) {
+             // Permission was revoked between the checkSelfPermission above and this call
+diff --git a/app/src/main/kotlin/horizon/observatory/acquisition/sensor/SensorObservationSource.kt b/app/src/main/kotlin/horizon/observatory/acquisition/sensor/SensorObservationSource.kt
+index 6bc3a3c..b5dfd76 100644
+--- a/app/src/main/kotlin/horizon/observatory/acquisition/sensor/SensorObservationSource.kt
++++ b/app/src/main/kotlin/horizon/observatory/acquisition/sensor/SensorObservationSource.kt
+@@ -43,8 +43,8 @@ class SensorObservationSource(private val context: Context) : ObservationSource
+                 android.Manifest.permission.ACTIVITY_RECOGNITION
+             ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+         val sensors = manager.getSensorList(Sensor.TYPE_ALL)
+-            .filter { it.type in SUPPORTED_TYPES }
+-            .filterNot { it.type in STEP_SENSOR_TYPES && !activityRecognitionGranted }
++            .filter { it.type in SUPPORTED_TYPES || it.isStepSensor() }
++            .filterNot { it.isStepSensor() && !activityRecognitionGranted }
+         if (sensors.isEmpty()) {
+             close()
+             return@callbackFlow
+@@ -112,12 +112,12 @@ class SensorObservationSource(private val context: Context) : ObservationSource
+         )
+     }
+ 
+-    companion object {
+-        private val STEP_SENSOR_TYPES = setOf(
+-            Sensor.TYPE_STEP_DETECTOR,
+-            Sensor.TYPE_STEP_COUNTER
+-        )
++    private fun Sensor.isStepSensor(): Boolean =
++        type == Sensor.TYPE_STEP_DETECTOR ||
++            type == Sensor.TYPE_STEP_COUNTER ||
++            name?.contains("step", ignoreCase = true) == true
+ 
++    companion object {
+         private val SUPPORTED_TYPES = setOf(
+             Sensor.TYPE_ACCELEROMETER,
+             Sensor.TYPE_GYROSCOPE,
+diff --git a/app/src/main/kotlin/horizon/observatory/acquisition/service/ObservatoryService.kt b/app/src/main/kotlin/horizon/observatory/acquisition/service/ObservatoryService.kt
+index 7417104..6b41b2d 100644
+--- a/app/src/main/kotlin/horizon/observatory/acquisition/service/ObservatoryService.kt
++++ b/app/src/main/kotlin/horizon/observatory/acquisition/service/ObservatoryService.kt
+@@ -39,9 +39,11 @@ import kotlinx.coroutines.Dispatchers
+ import kotlinx.coroutines.Job
+ import kotlinx.coroutines.SupervisorJob
+ import kotlinx.coroutines.CancellationException
++import kotlinx.coroutines.NonCancellable
+ import kotlinx.coroutines.cancel
+ import kotlinx.coroutines.cancelAndJoin
+ import kotlinx.coroutines.launch
++import kotlinx.coroutines.withContext
+ import kotlinx.coroutines.withTimeoutOrNull
+ import kotlinx.coroutines.sync.Mutex
+ import kotlinx.coroutines.sync.withLock
+@@ -154,7 +156,13 @@ class ObservatoryService : Service() {
+                         sequenceNumber = seq,
+                         ingestionMonotonicTimestampNs = ingressNs
+                     )
+-                    observationQueue.enqueue(sessionId, stamped)
++                    // A sequence number is not reusable. Once allocated, the observation must
++                    // survive collector cancellation long enough to reach the durable queue.
++                    // Otherwise a normal stop can create an artificial gap such as 1..2281
++                    // with only 2280 persisted rows.
++                    withContext(NonCancellable) {
++                        observationQueue.enqueue(sessionId, stamped)
++                    }
+                     observationQueue.drain(sessionId)
+                 }
+             }
+@@ -279,8 +287,13 @@ class ObservatoryService : Service() {
+     }
+ 
+     private fun exportLastClosedSession() {
+-        val sessionId = lastClosedSessionId ?: return
+         serviceScope.launch {
++            val sessionId = lastClosedSessionId
++                ?: repository.getLatestCompletedSession()?.sessionId
++            if (sessionId == null) {
++                Log.w(EXPORT_TAG, "ACTION_EXPORT requested but no completed session is available")
++                return@launch
++            }
+             when (val result = (application as HorizonApplication).container.exportEngine.exportSession(sessionId)) {
+                 is horizon.observatory.export.ExportEngine.ExportResult.Success -> Log.i(EXPORT_TAG, "Export SUCCESS session=$sessionId file=${result.zipFile}")
+                 is horizon.observatory.export.ExportEngine.ExportResult.Failed -> Log.e(EXPORT_TAG, "Export FAILED session=$sessionId stage=${result.stage} reason=${result.reason}")
+diff --git a/app/src/main/kotlin/horizon/observatory/analysis/SessionAnalysisEngine.kt b/app/src/main/kotlin/horizon/observatory/analysis/SessionAnalysisEngine.kt
+index 37863c8..ad74c55 100644
+--- a/app/src/main/kotlin/horizon/observatory/analysis/SessionAnalysisEngine.kt
++++ b/app/src/main/kotlin/horizon/observatory/analysis/SessionAnalysisEngine.kt
+@@ -2,6 +2,7 @@ package horizon.observatory.analysis
+ 
+ import horizon.observatory.storage.entity.ObservationEntity
+ import org.json.JSONObject
++import kotlin.math.abs
+ import kotlin.math.sqrt
+ 
+ class SessionAnalysisEngine {
+@@ -9,15 +10,50 @@ class SessionAnalysisEngine {
+         val gnssRaw = observations.filter { it.type == "GNSS_RAW_MEASUREMENT" }
+         val gnssStatus = observations.filter { it.type == "GNSS_STATUS" }
+         val gnssFix = observations.filter { it.type == "GNSS_FIX" }
++        val gnssNav = observations.filter { it.type == "GNSS_NAVIGATION_MESSAGE" }
+         val cellular = observations.filter { it.type == "CELLULAR_INFO" }
+         val sensors = observations.filter { it.source == "SENSOR" }
++
+         val cno = gnssRaw.mapNotNull { it.rawPayloadJson.doubleOrNull("cn0DbHz") }
+-        val rsrp = cellular.mapNotNull {
++        val agc = gnssRaw.mapNotNull { it.rawPayloadJson.doubleOrNull("automaticGainControlLevelDb") }
++        val rsrpAll = cellular.mapNotNull {
++            it.rawPayloadJson.doubleOrNull("rsrp") ?: it.rawPayloadJson.doubleOrNull("ssRsrp")
++        }
++        val servingCellular = cellular.filter { it.isServingCell() }
++        val rsrpServing = servingCellular.mapNotNull {
+             it.rawPayloadJson.doubleOrNull("rsrp") ?: it.rawPayloadJson.doubleOrNull("ssRsrp")
+         }
++        val rsrp = if (rsrpServing.isNotEmpty()) rsrpServing else rsrpAll
++
+         val satelliteCounts = gnssStatus.mapNotNull { it.rawPayloadJson.doubleOrNull("satelliteCount") }
++        val latestStatus = gnssStatus.maxByOrNull { it.sequenceNumber }
++        val latestSatelliteCount = latestStatus?.rawPayloadJson?.doubleOrNull("satelliteCount")?.toInt()
++        val distinctSatelliteKeys: Set<String> = latestStatus?.rawPayloadJson?.satelliteKeys() ?: emptySet()
++        val multiSatelliteEpochs = gnssStatus.count { (it.rawPayloadJson.doubleOrNull("satelliteCount") ?: 0.0) > 1.0 }
++
++        val latestServing = servingCellular.maxByOrNull { it.sequenceNumber }
++            ?: cellular.maxByOrNull { it.sequenceNumber }
++        val latestRsrp = latestServing?.rawPayloadJson?.doubleOrNull("rsrp")
++            ?: latestServing?.rawPayloadJson?.doubleOrNull("ssRsrp")
++        val latestTechnology = latestServing?.technology
++        val latestAgeMs = latestServing?.rawPayloadJson?.longOrNull("sourceAgeMs")
++        val freshRequestSamples = cellular.count { it.rawPayloadJson.stringOrNull("acquisitionTrigger") == "REQUEST_CELL_INFO_UPDATE" }
++        val callbackSamples = cellular.count {
++            it.rawPayloadJson.stringOrNull("acquisitionTrigger") == "TELEPHONY_CALLBACK" ||
++                it.rawPayloadJson.stringOrNull("acquisitionTrigger") == "PHONE_STATE_CALLBACK"
++        }
++
+         val gaps = sequenceGaps(observations)
+         val monotonicViolations = monotonicViolations(observations)
++        val agcMin = agc.minOrNull()
++        val agcMax = agc.maxOrNull()
++        val agcSpread = if (agcMin != null && agcMax != null) agcMax - agcMin else null
++        val agcDistinct = agc.map { String.format("%.3f", it) }.distinct().size
++        val agcState = when {
++            agc.isEmpty() -> "UNAVAILABLE"
++            agc.all { abs(it - agc.first()) < 1e-9 } -> "EXACTLY_CONSTANT"
++            else -> "VARYING"
++        }
+ 
+         return AnalysisSnapshot(
+             observationCount = observations.size,
+@@ -31,7 +67,22 @@ class SessionAnalysisEngine {
+             averageVisibleSatellites = satelliteCounts.averageOrNull(),
+             sequenceGapCount = gaps,
+             timestampMonotonicViolations = monotonicViolations,
+-            estimatedSensorMagnitude = sensorMagnitude(observations)
++            estimatedSensorMagnitude = sensorMagnitude(observations),
++            navigationMessageCount = gnssNav.size,
++            agcSampleCount = agc.size,
++            agcMinDb = agcMin,
++            agcMaxDb = agcMax,
++            agcSpreadDb = agcSpread,
++            agcDistinctLevels = agcDistinct,
++            agcState = agcState,
++            latestSatelliteCount = latestSatelliteCount,
++            distinctSatelliteCount = distinctSatelliteKeys.size,
++            multiSatelliteEpochs = multiSatelliteEpochs,
++            latestServingRsrpDbm = latestRsrp,
++            latestServingTechnology = latestTechnology,
++            latestCellAgeMs = latestAgeMs,
++            freshCellRequestSamples = freshRequestSamples,
++            cellularCallbackSamples = callbackSamples
+         )
+     }
+ 
+@@ -75,6 +126,13 @@ class SessionAnalysisEngine {
+         return rows.averageOrNull()
+     }
+ 
++    private fun ObservationEntity.isServingCell(): Boolean = runCatching {
++        val json = JSONObject(rawPayloadJson)
++        val registered = json.optBoolean("registered", false)
++        val connectionStatus = json.optInt("connectionStatus", 0)
++        registered || connectionStatus == 1 || connectionStatus == 2
++    }.getOrDefault(false)
++
+     private fun String.doubleOrNull(key: String): Double? = runCatching {
+         val v = JSONObject(this).opt(key)
+         when (v) {
+@@ -83,6 +141,28 @@ class SessionAnalysisEngine {
+         }
+     }.getOrNull()
+ 
++    private fun String.longOrNull(key: String): Long? = runCatching {
++        val v = JSONObject(this).opt(key)
++        when (v) {
++            is Number -> v.toLong()
++            else -> null
++        }
++    }.getOrNull()
++
++    private fun String.stringOrNull(key: String): String? = runCatching {
++        JSONObject(this).optString(key, null)
++    }.getOrNull()
++
++    private fun String.satelliteKeys(): Set<String> = runCatching {
++        val array = JSONObject(this).optJSONArray("satellites") ?: return emptySet()
++        buildSet {
++            for (i in 0 until array.length()) {
++                val item = array.optJSONObject(i) ?: continue
++                add("${item.optInt("constellationType", -1)}:${item.optInt("svid", -1)}")
++            }
++        }
++    }.getOrDefault(emptySet())
++
+     private fun List<Double>.averageOrNull(): Double? = if (isEmpty()) null else average()
+ }
+ 
+@@ -98,7 +178,22 @@ data class AnalysisSnapshot(
+     val averageVisibleSatellites: Double?,
+     val sequenceGapCount: Int,
+     val timestampMonotonicViolations: Int,
+-    val estimatedSensorMagnitude: Double?
++    val estimatedSensorMagnitude: Double?,
++    val navigationMessageCount: Int = 0,
++    val agcSampleCount: Int = 0,
++    val agcMinDb: Double? = null,
++    val agcMaxDb: Double? = null,
++    val agcSpreadDb: Double? = null,
++    val agcDistinctLevels: Int = 0,
++    val agcState: String = "UNAVAILABLE",
++    val latestSatelliteCount: Int? = null,
++    val distinctSatelliteCount: Int = 0,
++    val multiSatelliteEpochs: Int = 0,
++    val latestServingRsrpDbm: Double? = null,
++    val latestServingTechnology: String? = null,
++    val latestCellAgeMs: Long? = null,
++    val freshCellRequestSamples: Int = 0,
++    val cellularCallbackSamples: Int = 0
+ )
+ 
+ data class TimelinePoint(
+diff --git a/app/src/main/kotlin/horizon/observatory/core/capability/CapabilityScanner.kt b/app/src/main/kotlin/horizon/observatory/core/capability/CapabilityScanner.kt
+index 1856076..dcef7b6 100644
+--- a/app/src/main/kotlin/horizon/observatory/core/capability/CapabilityScanner.kt
++++ b/app/src/main/kotlin/horizon/observatory/core/capability/CapabilityScanner.kt
+@@ -37,6 +37,7 @@ class CapabilityScanner(private val context: Context) {
+     private fun permissionState() = JSONObject().apply {
+         put("fine_location", permissionState(Manifest.permission.ACCESS_FINE_LOCATION))
+         put("coarse_location", permissionState(Manifest.permission.ACCESS_COARSE_LOCATION))
++        put("read_phone_state", permissionState(Manifest.permission.READ_PHONE_STATE))
+         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+             put("post_notifications", permissionState(Manifest.permission.POST_NOTIFICATIONS))
+         } else {
+@@ -84,9 +85,11 @@ class CapabilityScanner(private val context: Context) {
+     private fun cellularState() = JSONObject().apply {
+         put("telephony_feature", packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY))
+         put("fine_location_required", granted(Manifest.permission.ACCESS_FINE_LOCATION))
+-        put("phone_state_permission", "NOT_REQUIRED_FOR_CELL_INFO")
++        put("phone_state_permission", permissionState(Manifest.permission.READ_PHONE_STATE))
++        put("live_cell_info_callback", if (Build.VERSION.SDK_INT >= 31) "REQUIRES_READ_PHONE_STATE_AND_FINE_LOCATION" else "DEPRECATED_PHONE_STATE_LISTENER")
+         put("status", if (packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) "SUPPORTED" else "UNAVAILABLE")
+         put("fresh_update_api", if (Build.VERSION.SDK_INT >= 29) "SUPPORTED" else "UNAVAILABLE")
++        put("fresh_update_rate_limit", "ANDROID_MANAGED")
+     }
+ 
+     private fun sensorState() = JSONObject().apply {
+diff --git a/app/src/main/kotlin/horizon/observatory/export/ExportEngine.kt b/app/src/main/kotlin/horizon/observatory/export/ExportEngine.kt
+index d8e9df3..cbd279c 100644
+--- a/app/src/main/kotlin/horizon/observatory/export/ExportEngine.kt
++++ b/app/src/main/kotlin/horizon/observatory/export/ExportEngine.kt
+@@ -138,8 +138,15 @@ class ExportEngine(
+                 )
+             }
+ 
+-            val tempZip = File(tempDir.parentFile, "$sessionId.zip.tmp")
++            val exportsBase = context.getExternalFilesDir(null) ?: context.filesDir
++            val exportsDir = File(exportsBase, "exports").apply {
++                check(mkdirs()) { "Unable to create exports directory: $this" }
++            }
++            val finalFile = File(exportsDir, "horizon_session_$sessionId.zip")
++            val tempZip = File(exportsDir, "$sessionId.zip.tmp")
+             if (tempZip.exists()) tempZip.delete()
++            if (finalFile.exists()) finalFile.delete()
++
+             val archiveFiles = listOf(
+                 manifestFile, jsonFile, csvFile, eventsJsonFile, eventsCsvFile, sessionLogFile,
+                 capabilityFile, permissionsFile, auditFile, sqliteFile
+@@ -152,12 +159,11 @@ class ExportEngine(
+                 }
+             }
+ 
+-            val exportsBase = context.getExternalFilesDir(null) ?: context.filesDir
+-            val exportsDir = File(exportsBase, "exports").apply { check(mkdirs()) { "Unable to create exports directory: $this" } }
+-            val finalFile = File(exportsDir, "horizon_session_$sessionId.zip")
+-            if (finalFile.exists()) finalFile.delete()
+             if (!tempZip.renameTo(finalFile)) {
+-                return@withContext ExportResult.Failed("finalize", "renameTo failed for $finalFile")
++                return@withContext ExportResult.Failed(
++                    "finalize",
++                    "renameTo failed for $finalFile; temporary ZIP was created at $tempZip"
++                )
+             }
+ 
+             val readback = verifyFinalArchive(finalFile, sessionId, roomCount)
+diff --git a/app/src/main/kotlin/horizon/observatory/storage/repository/SessionRepository.kt b/app/src/main/kotlin/horizon/observatory/storage/repository/SessionRepository.kt
+index 62337b2..7e23afb 100644
+--- a/app/src/main/kotlin/horizon/observatory/storage/repository/SessionRepository.kt
++++ b/app/src/main/kotlin/horizon/observatory/storage/repository/SessionRepository.kt
+@@ -20,6 +20,7 @@ interface SessionRepository {
+     )
+     suspend fun getSession(sessionId: String): SessionEntity?
+     suspend fun getLatestSession(): SessionEntity?
++    suspend fun getLatestCompletedSession(): SessionEntity?
+     fun observeAllSessions(): Flow<List<SessionEntity>>
+     fun observeSession(sessionId: String): Flow<SessionEntity?>
+     fun getObservations(sessionId: String): Flow<List<ObservationEntity>>
+diff --git a/app/src/main/kotlin/horizon/observatory/storage/repository/SessionRepositoryImpl.kt b/app/src/main/kotlin/horizon/observatory/storage/repository/SessionRepositoryImpl.kt
+index 9e2f97d..8a62c27 100644
+--- a/app/src/main/kotlin/horizon/observatory/storage/repository/SessionRepositoryImpl.kt
++++ b/app/src/main/kotlin/horizon/observatory/storage/repository/SessionRepositoryImpl.kt
+@@ -80,6 +80,7 @@ class SessionRepositoryImpl(
+ 
+     override suspend fun getSession(sessionId: String): SessionEntity? = sessionDao.getSession(sessionId)
+     override suspend fun getLatestSession(): SessionEntity? = sessionDao.latestSession()
++    override suspend fun getLatestCompletedSession(): SessionEntity? = sessionDao.latestCompletedSession()
+     override fun observeAllSessions(): Flow<List<SessionEntity>> = sessionDao.observeAllSessions()
+     override fun observeSession(sessionId: String): Flow<SessionEntity?> = sessionDao.observeSession(sessionId)
+     override fun getObservations(sessionId: String): Flow<List<ObservationEntity>> = observationDao.getObservationsOrderedForSession(sessionId)
+diff --git a/app/src/main/kotlin/horizon/observatory/storage/room/SessionDao.kt b/app/src/main/kotlin/horizon/observatory/storage/room/SessionDao.kt
+index 987f0f5..a90bd4f 100644
+--- a/app/src/main/kotlin/horizon/observatory/storage/room/SessionDao.kt
++++ b/app/src/main/kotlin/horizon/observatory/storage/room/SessionDao.kt
+@@ -30,6 +30,9 @@ interface SessionDao {
+     @Query("SELECT * FROM sessions ORDER BY startTimeMs DESC LIMIT 1")
+     suspend fun latestSession(): SessionEntity?
+ 
++    @Query("SELECT * FROM sessions WHERE lifecycleState = 'COMPLETED' ORDER BY endTimeMs DESC LIMIT 1")
++    suspend fun latestCompletedSession(): SessionEntity?
++
+     @Query("SELECT * FROM sessions WHERE lifecycleState IN ('READY', 'RECORDING', 'STOPPING') ORDER BY startTimeMs ASC")
+     suspend fun getUnclosedSessions(): List<SessionEntity>
+ 
+diff --git a/app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt b/app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt
+index 4f8f78e..b46c407 100644
+--- a/app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt
++++ b/app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt
+@@ -3,6 +3,7 @@ package horizon.observatory.ui
+ import android.Manifest
+ import android.content.Intent
+ import android.content.pm.PackageManager
++import android.provider.DocumentsContract
+ import android.location.LocationManager
+ import android.os.Build
+ import android.os.Bundle
+@@ -23,6 +24,8 @@ import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.layout.width
++import androidx.compose.foundation.rememberScrollState
++import androidx.compose.foundation.verticalScroll
+ import androidx.compose.foundation.lazy.LazyColumn
+ import androidx.compose.foundation.lazy.items
+ import androidx.compose.material3.Button
+@@ -33,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.NavigationBar
+ import androidx.compose.material3.NavigationBarItem
+ import androidx.compose.material3.OutlinedButton
++import androidx.compose.material3.ExperimentalMaterial3Api
+ import androidx.compose.material3.Scaffold
+ import androidx.compose.material3.Surface
+ import androidx.compose.material3.Text
+@@ -85,6 +89,7 @@ class MainActivity : ComponentActivity() {
+         setContent { HorizonTheme { ObservatoryApp() } }
+     }
+ 
++    @OptIn(ExperimentalMaterial3Api::class)
+     @Composable
+     private fun ObservatoryApp() {
+         val container = (application as HorizonApplication).container
+@@ -104,56 +109,96 @@ class MainActivity : ComponentActivity() {
+         var exportStatus by rememberSaveable { mutableStateOf("No export package generated yet.") }
+         var exportPath by rememberSaveable { mutableStateOf<String?>(null) }
+         var pendingSavePath by rememberSaveable { mutableStateOf<String?>(null) }
++        var exportSessionId by rememberSaveable { mutableStateOf<String?>(null) }
+ 
+         val saveExportLauncher = rememberLauncherForActivityResult(
+-            ActivityResultContracts.CreateDocument("application/zip")
+-        ) { uri ->
++            ActivityResultContracts.OpenDocumentTree()
++        ) { treeUri ->
+             val sourcePath = pendingSavePath
+             pendingSavePath = null
+-            if (uri == null || sourcePath == null) return@rememberLauncherForActivityResult
++            if (treeUri == null || sourcePath == null) return@rememberLauncherForActivityResult
+             uiScope.launch(Dispatchers.IO) {
++                runCatching {
++                    contentResolver.takePersistableUriPermission(
++                        treeUri,
++                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
++                    )
++                }
+                 runCatching {
+                     val source = java.io.File(sourcePath)
+-                    check(source.isFile) { "Export file no longer exists: $sourcePath" }
+-                    val output = contentResolver.openOutputStream(uri, "w")
+-                        ?: error("Unable to open selected destination")
++                    check(source.isFile) { "Export ZIP no longer exists: $sourcePath" }
++                    val targetName = source.name
++                    check(DocumentsContract.isTreeUri(treeUri)) { "Selected URI is not a directory tree" }
++                    val parentDocumentUri = DocumentsContract.buildDocumentUriUsingTree(
++                        treeUri,
++                        DocumentsContract.getTreeDocumentId(treeUri)
++                    )
++                    val targetUri = DocumentsContract.createDocument(
++                        contentResolver,
++                        parentDocumentUri,
++                        "application/zip",
++                        targetName
++                    ) ?: error("Unable to create ZIP in the selected folder")
++                    val output = contentResolver.openOutputStream(targetUri, "w")
++                        ?: error("Unable to open ZIP output in the selected folder")
+                     output.use { out ->
+                         FileInputStream(source).use { input -> input.copyTo(out) }
+                     }
+-                }.onSuccess {
++                    val copiedBytes = contentResolver.openInputStream(targetUri)?.use { input ->
++                        val buffer = ByteArray(DEFAULT_COPY_BUFFER)
++                        var total = 0L
++                        while (true) {
++                            val read = input.read(buffer)
++                            if (read < 0) break
++                            total += read
++                        }
++                        total
++                    } ?: 0L
++                    check(copiedBytes == source.length() && copiedBytes > 0L) {
++                        "ZIP read-back size mismatch: source=${source.length()} destination=$copiedBytes"
++                    }
++                    targetUri
++                }.onSuccess { targetUri ->
+                     withContext(Dispatchers.Main) {
+-                        exportStatus = "Export saved to the selected document."
+-                        message = "Export saved successfully."
++                        exportStatus = "ZIP saved to selected folder: $targetUri"
++                        message = "ZIP export completed."
+                     }
+                 }.onFailure { error ->
+                     withContext(Dispatchers.Main) {
+-                        exportStatus = "Save failed: ${error.message ?: error}"
+-                        message = "Export save failed."
++                        exportStatus = "Folder export failed: ${error.message ?: error}"
++                        message = "ZIP export failed."
+                     }
+                 }
+             }
+         }
+ 
+         val generateExport: () -> Unit = {
+-            val id = latest?.sessionId
+-            if (id == null) {
+-                section = 7
+-                exportStatus = "No session is available for export."
+-                message = exportStatus
+-            } else {
+-                section = 7
++            section = 9
++            exportStatus = "Looking for the latest completed session …"
++            uiScope.launch {
++                val completed = container.sessionRepository.getLatestCompletedSession()
++                val id = completed?.sessionId
++                if (id == null) {
++                    exportStatus = if (latest == null) {
++                        "No session is available for export."
++                    } else {
++                        "Export requires a completed session; current state is ${latest.lifecycleState}."
++                    }
++                    message = exportStatus
++                    return@launch
++                }
++
++                exportSessionId = id
+                 exportStatus = "Generating package for $id …"
+-                uiScope.launch {
+-                    when (val result = container.exportEngine.exportSession(id)) {
+-                        is horizon.observatory.export.ExportEngine.ExportResult.Success -> {
+-                            exportPath = result.zipFile.absolutePath
+-                            exportStatus = "Package ready: ${result.observationCount} observations."
+-                            message = "Export package ready."
+-                        }
+-                        is horizon.observatory.export.ExportEngine.ExportResult.Failed -> {
+-                            exportStatus = "Export failed at ${result.stage}: ${result.reason}"
+-                            message = "Export failed; see Export section for details."
+-                        }
++                when (val result = container.exportEngine.exportSession(id)) {
++                    is horizon.observatory.export.ExportEngine.ExportResult.Success -> {
++                        exportPath = result.zipFile.absolutePath
++                        exportStatus = "Package ready: ${result.observationCount} observations."
++                        message = "Export package ready."
++                    }
++                    is horizon.observatory.export.ExportEngine.ExportResult.Failed -> {
++                        exportStatus = "Export failed at ${result.stage}: ${result.reason}"
++                        message = "Export failed; see Export section for details."
+                     }
+                 }
+             }
+@@ -164,66 +209,133 @@ class MainActivity : ComponentActivity() {
+             message = if (location) "Location capability granted; optional capabilities may remain unavailable." else "Location permission is required for acquisition."
+         }
+ 
++        val exportSession = sessions.firstOrNull { it.sessionId == exportSessionId }
++        val currentSectionTitle = sectionTitle(section)
++        val selectedNav = when (section) {
++            0 -> 0
++            1 -> 1
++            2 -> 2
++            3 -> 3
++            else -> 4
++        }
++
+         Scaffold(
+-            topBar = { TopAppBar(title = { Text("HORIZON / OBSERVATORY", fontWeight = FontWeight.SemiBold) }) },
++            topBar = { TopAppBar(title = { Text(currentSectionTitle, fontWeight = FontWeight.SemiBold) }) },
+             bottomBar = {
+                 NavigationBar {
+-                    listOf("Overview", "GNSS", "Cellular", "Sensors", "Timeline", "Session", "Diagnostics", "Export").forEachIndexed { index, label ->
+-                        NavigationBarItem(selected = section == index, onClick = { section = index }, icon = { Text(label.take(1)) }, label = { Text(label) })
++                    listOf("Overview", "GNSS", "Sessions", "System", "More").forEachIndexed { index, label ->
++                        NavigationBarItem(
++                            selected = selectedNav == index,
++                            onClick = { section = index },
++                            icon = { Text(label.take(1)) },
++                            label = { Text(label) }
++                        )
+                     }
+                 }
+             }
+         ) { padding ->
+-            Column(Modifier.fillMaxSize().padding(padding)) {
+-                ActionBar(
+-                    onPermissions = { permissionLauncher.launch(requestablePermissions()) },
+-                    onStart = {
+-                        if (!hasFineLocationPermission()) {
+-                            message = "Grant precise (fine) location permission to start GNSS/cellular observation."
+-                        } else {
+-                            val intent = Intent(this@MainActivity, ObservatoryService::class.java).setAction(ObservatoryService.ACTION_START)
+-                            ContextCompat.startForegroundService(this@MainActivity, intent)
+-                            message = "Observation start requested."
+-                        }
+-                    },
+-                    onStop = {
+-                        startService(Intent(this@MainActivity, ObservatoryService::class.java).setAction(ObservatoryService.ACTION_STOP))
+-                        message = "Observation stop requested."
+-                    },
+-                    onExport = generateExport
+-                )
+-                Text(message, Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.labelMedium)
+-                Box(Modifier.fillMaxSize()) {
+-                    when (section) {
+-                        0 -> OverviewScreen(latest, analysis)
+-                        1 -> GnssScreen(observations, analysis)
+-                        2 -> CellularScreen(observations, analysis)
+-                        3 -> SensorsScreen(observations, analysis)
+-                        4 -> TimelineScreen(observations, analysis)
+-                        5 -> SessionScreen(sessions)
+-                        6 -> DiagnosticsScreen(latest, container.capabilityScanner.buildReport().json.toString(2), analysis)
+-                        else -> ExportScreen(
++            Box(Modifier.fillMaxSize().padding(padding)) {
++                when (section) {
++                    0 -> Column(Modifier.fillMaxSize()) {
++                        SessionControls(
+                             session = latest,
+-                            observations = observations,
+-                            exportPath = exportPath,
+-                            exportStatus = exportStatus,
+-                            onGenerate = generateExport,
+-                            onSave = {
+-                                val path = exportPath
+-                                if (path == null) {
+-                                    exportStatus = "Generate an export package first."
++                            onPermissions = { permissionLauncher.launch(requestablePermissions()) },
++                            onStart = {
++                                if (latest?.lifecycleState == "RECORDING" || latest?.lifecycleState == "STOPPING") {
++                                    message = "A session is already active."
++                                } else if (!hasFineLocationPermission()) {
++                                    message = "Grant precise (fine) location permission to start GNSS/cellular observation."
+                                 } else {
+-                                    pendingSavePath = path
+-                                    saveExportLauncher.launch(java.io.File(path).name)
++                                    val intent = Intent(this@MainActivity, ObservatoryService::class.java).setAction(ObservatoryService.ACTION_START)
++                                    ContextCompat.startForegroundService(this@MainActivity, intent)
++                                    message = "Observation start requested."
++                                }
++                            },
++                            onStop = {
++                                if (latest?.lifecycleState == "RECORDING" || latest?.lifecycleState == "STOPPING") {
++                                    startService(Intent(this@MainActivity, ObservatoryService::class.java).setAction(ObservatoryService.ACTION_STOP))
++                                    message = "Observation stop requested."
++                                } else {
++                                    message = "No active observation session."
+                                 }
+                             }
+                         )
++                        if (message != "Ready") {
++                            Text(message, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium)
++                        }
++                        OverviewScreen(latest, analysis, gnssCn0Samples(observations))
+                     }
++                    1 -> GnssScreen(observations, analysis)
++                    2 -> SessionScreen(sessions)
++                    3 -> SystemScreen(
++                        session = latest,
++                        capabilityJson = container.capabilityScanner.buildReport().json.toString(2)
++                    )
++                    4 -> MoreScreen(
++                        onNavigate = { section = it },
++                        hasCompletedSession = exportSession != null || sessions.any { it.lifecycleState == "COMPLETED" }
++                    )
++                    5 -> CellularScreen(observations, analysis)
++                    6 -> SensorsScreen(observations, analysis)
++                    7 -> TimelineScreen(observations, analysis)
++                    8 -> DiagnosticsScreen(latest, container.capabilityScanner.buildReport().json.toString(2), analysis)
++                    9 -> ExportScreen(
++                        session = exportSession ?: sessions.firstOrNull { it.lifecycleState == "COMPLETED" },
++                        observations = observations,
++                        exportPath = exportPath,
++                        exportStatus = exportStatus,
++                        onGenerate = generateExport,
++                        onSave = {
++                            val path = exportPath
++                            if (path == null) {
++                                exportStatus = "Generate an export package first."
++                            } else {
++                                pendingSavePath = path
++                                saveExportLauncher.launch(null)
++                            }
++                        }
++                    )
++                    10 -> LogsScreen(observations)
+                 }
+             }
+         }
+     }
+ 
++    private fun gnssCn0Samples(observations: List<ObservationEntity>): List<Double> =
++        observations.asSequence()
++            .filter { it.type == "GNSS_RAW_MEASUREMENT" }
++            .mapNotNull { row -> numericField(row, "cn0DbHz") }
++            .filter { it.isFinite() }
++            .toList()
++            .takeLast(120)
++
++    private fun cellularRsrpSamples(observations: List<ObservationEntity>): List<Double> =
++        observations.asSequence()
++            .filter { it.type == "CELLULAR_INFO" }
++            .mapNotNull { row ->
++                numericField(row, "rsrp", "ssRsrp")
++            }
++            .filter { it.isFinite() }
++            .toList()
++            .takeLast(120)
++
++    private fun numericField(row: ObservationEntity, vararg keys: String): Double? {
++        fun read(jsonText: String): Double? = runCatching {
++            val json = JSONObject(jsonText)
++            keys.firstNotNullOfOrNull { key ->
++                when (val value = json.opt(key)) {
++                    is Number -> value.toDouble()
++                    else -> null
++                }
++            }
++        }.getOrNull()
++        return read(row.rawPayloadJson) ?: read(row.normalizedPayloadJson)
++    }
++
++    companion object {
++        private const val DEFAULT_COPY_BUFFER = 64 * 1024
++    }
++
+     private fun hasLocationPermission() =
+         ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+@@ -238,22 +350,118 @@ class MainActivity : ComponentActivity() {
+     }
+ }
+ 
++private fun sectionTitle(section: Int): String = when (section) {
++    0 -> "HORIZON / OBSERVATORY"
++    1 -> "GNSS OBSERVATORY"
++    2 -> "SESSION HISTORY"
++    3 -> "SYSTEM & CAPABILITIES"
++    4 -> "MORE"
++    5 -> "CELLULAR OBSERVATORY"
++    6 -> "SENSOR OBSERVATORY"
++    7 -> "EVIDENCE TIMELINE"
++    8 -> "DIAGNOSTICS"
++    9 -> "EXPORT CENTER"
++    10 -> "INTERNAL LOG"
++    else -> "HORIZON / OBSERVATORY"
++}
++
+ @Composable
+-private fun ActionBar(onPermissions: () -> Unit, onStart: () -> Unit, onStop: () -> Unit, onExport: () -> Unit) {
+-    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+-        Button(onClick = onStart) { Text("START") }
+-        OutlinedButton(onClick = onStop) { Text("STOP") }
+-        OutlinedButton(onClick = onPermissions) { Text("PERMISSIONS") }
+-        OutlinedButton(onClick = onExport) { Text("EXPORT") }
++private fun SessionControls(
++    session: SessionEntity?,
++    onPermissions: () -> Unit,
++    onStart: () -> Unit,
++    onStop: () -> Unit
++) {
++    val active = session?.lifecycleState == "RECORDING" || session?.lifecycleState == "STOPPING"
++    Card(
++        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
++        colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))
++    ) {
++        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
++            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
++                Column(Modifier.weight(1f)) {
++                    Text("SESSION CONTROL", style = MaterialTheme.typography.labelSmall)
++                    Text(session?.lifecycleState ?: "NO SESSION", fontWeight = FontWeight.Bold)
++                }
++                Text(
++                    if (active) "ACTIVE" else "IDLE",
++                    color = if (active) Color(0xFFE1A4FF) else Color(0xFFB8AEBE),
++                    fontWeight = FontWeight.Bold
++                )
++            }
++            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
++                Button(onClick = onStart, enabled = !active, modifier = Modifier.weight(1f)) { Text("START") }
++                OutlinedButton(onClick = onStop, enabled = active, modifier = Modifier.weight(1f)) { Text("STOP") }
++                OutlinedButton(onClick = onPermissions, modifier = Modifier.weight(1.3f)) { Text("PERMISSIONS") }
++            }
++        }
+     }
+ }
+ 
+ @Composable
+-private fun OverviewScreen(session: SessionEntity?, analysis: AnalysisSnapshot) {
++private fun MoreScreen(onNavigate: (Int) -> Unit, hasCompletedSession: Boolean) {
++    val destinations = listOf(
++        5 to ("Cellular" to "Serving and neighboring cell observations"),
++        6 to ("Sensors" to "Runtime-discovered sensor observations"),
++        7 to ("Timeline" to "Chronological evidence stream"),
++        8 to ("Diagnostics" to "Capabilities, integrity and runtime diagnostics"),
++        9 to ("Export" to if (hasCompletedSession) "Verified session package and save" else "Export requires a completed session"),
++        10 to ("Internal Log" to "Persisted system and error events for the current session")
++    )
++    LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
++        item {
++            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
++                    Text("OBSERVATORY MODULES", style = MaterialTheme.typography.titleMedium)
++                    Text("Secondary views are kept out of the primary navigation so the mobile layout remains readable.", style = MaterialTheme.typography.bodySmall)
++                }
++            }
++        }
++        items(destinations) { (target, content) ->
++            OutlinedButton(onClick = { onNavigate(target) }, modifier = Modifier.fillMaxWidth()) {
++                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
++                    Text(content.first, fontWeight = FontWeight.SemiBold)
++                    Text(content.second, style = MaterialTheme.typography.labelSmall)
++                }
++            }
++        }
++    }
++}
++
++@Composable
++private fun SystemScreen(session: SessionEntity?, capabilityJson: String) {
+     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
++        item { MetricCard("Device", "${session?.deviceManufacturer ?: "UNKNOWN"} ${session?.deviceModel ?: "UNKNOWN"}", "Android ${session?.androidVersion ?: "UNKNOWN"} / API ${session?.sdkVersion ?: 0}") }
++        item { MetricCard("Session", session?.sessionId ?: "NONE", session?.lifecycleState ?: "NO SESSION") }
++        item {
++            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
++                    Text("CAPABILITY REPORT", style = MaterialTheme.typography.titleMedium)
++                    Text(capabilityJson, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
++                }
++            }
++        }
++        item {
++            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
++                    Text("PERMISSION STATE", style = MaterialTheme.typography.titleMedium)
++                    Text(session?.permissionStateJson ?: "{}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
++                }
++            }
++        }
++    }
++}
++
++@Composable
++private fun OverviewScreen(session: SessionEntity?, analysis: AnalysisSnapshot, cnoSamples: List<Double>) {
++    LazyColumn(
++        Modifier.fillMaxSize().padding(horizontal = 12.dp),
++        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp),
++        verticalArrangement = Arrangement.spacedBy(10.dp)
++    ) {
+         item { MetricCard("Session", session?.sessionId ?: "NONE", session?.lifecycleState ?: "NO SESSION") }
+         item { MetricGrid(analysis) }
+-        item { SignalCard("GNSS C/N0 history", "dB-Hz", analysis.averageCn0DbHz) }
++        item { SignalCard("GNSS C/N0 history", "dB-Hz", analysis.averageCn0DbHz, cnoSamples) }
+         item { SignalSummary(analysis) }
+         item { EvidenceCard(session) }
+     }
+@@ -265,22 +473,25 @@ private fun MetricGrid(a: AnalysisSnapshot) {
+         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+             Text("OBSERVATION MATRIX", style = MaterialTheme.typography.titleMedium)
+             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+-                Metric("RAW GNSS", a.gnssRawCount.toString())
+-                Metric("GNSS STATUS", a.gnssStatusCount.toString())
+-                Metric("FIX", a.gnssFixCount.toString())
++                Metric("RAW GNSS", a.gnssRawCount.toString(), Modifier.weight(1f))
++                Metric("GNSS STATUS", a.gnssStatusCount.toString(), Modifier.weight(1f))
++                Metric("FIX", a.gnssFixCount.toString(), Modifier.weight(1f))
+             }
+             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+-                Metric("CELLULAR", a.cellularCount.toString())
+-                Metric("SENSORS", a.sensorCount.toString())
+-                Metric("TOTAL", a.observationCount.toString())
++                Metric("CELLULAR", a.cellularCount.toString(), Modifier.weight(1f))
++                Metric("SENSORS", a.sensorCount.toString(), Modifier.weight(1f))
++                Metric("TOTAL", a.observationCount.toString(), Modifier.weight(1f))
+             }
+         }
+     }
+ }
+ 
+ @Composable
+-private fun Metric(label: String, value: String) {
+-    Column { Text(label, style = MaterialTheme.typography.labelSmall); Text(value, fontWeight = FontWeight.Bold) }
++private fun Metric(label: String, value: String, modifier: Modifier = Modifier) {
++    Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
++        Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
++        Text(value, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
++    }
+ }
+ 
+ @Composable
+@@ -288,7 +499,7 @@ private fun MetricCard(title: String, value: String, state: String) {
+     Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF211526))) {
+         Column(Modifier.padding(16.dp)) {
+             Text(title, style = MaterialTheme.typography.labelSmall)
+-            Text(value, style = MaterialTheme.typography.titleMedium, fontFamily = FontFamily.Monospace)
++            Text(value, style = MaterialTheme.typography.bodyLarge, fontFamily = FontFamily.Monospace, maxLines = 2)
+             Text(state, style = MaterialTheme.typography.labelMedium)
+         }
+     }
+@@ -298,9 +509,18 @@ private fun MetricCard(title: String, value: String, state: String) {
+ private fun SignalCard(title: String, unit: String, value: Double?, samples: List<Double> = emptyList()) {
+     Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+         Column(Modifier.padding(14.dp)) {
+-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+-                Text(title, style = MaterialTheme.typography.titleMedium)
+-                Text(value?.let { "%.1f $unit".format(it) } ?: "UNAVAILABLE", fontWeight = FontWeight.Bold)
++            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
++                Column(Modifier.weight(1f)) {
++                    Text(title, style = MaterialTheme.typography.titleMedium)
++                    Text(
++                        "HISTORY SAMPLES: ${samples.size}",
++                        style = MaterialTheme.typography.labelSmall
++                    )
++                }
++                Text(
++                    value?.let { "%.1f $unit".format(it) } ?: "UNAVAILABLE",
++                    fontWeight = FontWeight.Bold
++                )
+             }
+             Spacer(Modifier.height(8.dp))
+             MiniLineChart(samples)
+@@ -316,6 +536,8 @@ private fun SignalSummary(a: AnalysisSnapshot) {
+             Text("Average C/N0: ${a.averageCn0DbHz?.let { "%.2f dB-Hz".format(it) } ?: "UNAVAILABLE"}")
+             Text("Average LTE/NR RSRP: ${a.averageRsrpDbm?.let { "%.2f dBm".format(it) } ?: "UNAVAILABLE"}")
+             Text("Average visible satellites: ${a.averageVisibleSatellites?.let { "%.1f".format(it) } ?: "UNAVAILABLE"}")
++            Text("Navigation messages: ${a.navigationMessageCount}")
++            Text("AGC: ${a.agcState} · samples=${a.agcSampleCount} · spread=${a.agcSpreadDb?.let { "%.4f dB".format(it) } ?: "UNAVAILABLE"}")
+             Text("Sequence gaps: ${a.sequenceGapCount}")
+             Text("Source-time regressions: ${a.timestampMonotonicViolations}")
+         }
+@@ -337,48 +559,162 @@ private fun EvidenceCard(session: SessionEntity?) {
+ 
+ @Composable
+ private fun GnssScreen(obs: List<ObservationEntity>, analysis: AnalysisSnapshot) {
+-    val rows = obs.filter { it.type.startsWith("GNSS") }.takeLast(80)
+-    val sky = obs.asSequence()
+-        .filter { it.type == "GNSS_STATUS" }
+-        .flatMap { runCatching { JSONObject(it.rawPayloadJson).optJSONArray("satellites") }.getOrNull()?.let { arr ->
+-            (0 until arr.length()).asSequence().mapNotNull { index ->
++    val rawRows = obs.filter { it.type == "GNSS_RAW_MEASUREMENT" }.takeLast(160)
++    val latestStatus = obs.asSequence().filter { it.type == "GNSS_STATUS" }.lastOrNull()
++    val sky = latestStatus?.let { row ->
++        runCatching { JSONObject(row.rawPayloadJson).optJSONArray("satellites") }.getOrNull()?.let { arr ->
++            (0 until arr.length()).mapNotNull { index ->
+                 arr.optJSONObject(index)?.let { item ->
+                     SatellitePoint(
+                         svid = item.optInt("svid", -1),
++                        constellationType = item.optInt("constellationType", 0),
+                         azimuthDeg = item.optDouble("azimuthDegrees", Double.NaN),
+                         elevationDeg = item.optDouble("elevationDegrees", Double.NaN),
+                         cn0 = item.optDouble("cn0DbHz", Double.NaN),
++                        basebandCn0 = item.optDouble("basebandCn0DbHz", Double.NaN),
++                        carrierFrequencyHz = item.optDouble("carrierFrequencyHz", Double.NaN),
+                         usedInFix = item.optBoolean("usedInFix", false)
+                     )
+                 }
+             }
+-        } ?: emptySequence() }
+-        .filter { it.svid >= 0 && !it.azimuthDeg.isNaN() && !it.elevationDeg.isNaN() }
+-        .toList()
+-        .takeLast(120)
++        } ?: emptyList()
++    } ?: emptyList()
++    val cnoHistory = rawRows.mapNotNull { numericFieldLocal(it, "cn0DbHz") }.filter { it.isFinite() }
++    val agcHistory = rawRows.mapNotNull { numericFieldLocal(it, "automaticGainControlLevelDb") }.filter { it.isFinite() }
++    val navigationMessages = obs.filter { it.type == "GNSS_NAVIGATION_MESSAGE" }.takeLast(40)
++    val matrix = sky.filter { it.svid >= 0 && it.azimuthDeg.isFinite() && it.elevationDeg.isFinite() }
++        .sortedByDescending { it.cn0 }
++        .take(14)
+ 
+-    LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+-        item { SignalCard("GNSS signal history", "dB-Hz", analysis.averageCn0DbHz, rows.mapNotNull { runCatching { JSONObject(it.rawPayloadJson).optDouble("cn0DbHz", Double.NaN) }.getOrNull() }.filter { !it.isNaN() }) }
++    LazyColumn(
++        Modifier.fillMaxSize().padding(horizontal = 12.dp),
++        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp),
++        verticalArrangement = Arrangement.spacedBy(8.dp)
++    ) {
++        item { SignalCard("GNSS signal history", "dB-Hz", analysis.averageCn0DbHz, cnoHistory) }
++        item { SignalCard("GNSS AGC history", "dB", null, agcHistory) }
++        item {
++            MetricCard(
++                "AGC DIAGNOSTIC",
++                analysis.agcState,
++                if (analysis.agcSampleCount == 0) "NO AGC MEASUREMENTS OBSERVED"
++                else "samples=${analysis.agcSampleCount} distinct=${analysis.agcDistinctLevels} spread=${analysis.agcSpreadDb?.let { "%.4f dB".format(it) } ?: "UNAVAILABLE"}"
++            )
++        }
+         item { SkyPlot(sky) }
+-        item { MetricCard("Raw measurements", analysis.gnssRawCount.toString(), "MEASURED") }
+-        items(rows.takeLast(40)) { item -> ObservationRow(item) }
++        item {
++            MetricCard(
++                "MULTI-SATELLITE OBSERVATION",
++                analysis.distinctSatelliteCount.toString(),
++                "latest status=${analysis.latestSatelliteCount ?: "UNAVAILABLE"} · multi-satellite epochs=${analysis.multiSatelliteEpochs}"
++            )
++        }
++        item { SatelliteMatrix(matrix) }
++        item {
++            NavigationMessagePanel(
++                count = analysis.navigationMessageCount,
++                latest = navigationMessages.lastOrNull()
++            )
++        }
++        item { MetricCard("Raw measurements", analysis.gnssRawCount.toString(), if (rawRows.isEmpty()) "NOT OBSERVED IN THIS SESSION" else "MEASURED") }
++        if (rawRows.isEmpty()) {
++            item {
++                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
++                        Text("GNSS RAW MEASUREMENTS", style = MaterialTheme.typography.titleMedium)
++                        Text("No persisted GNSS_RAW_MEASUREMENT records are available for this session.", style = MaterialTheme.typography.bodySmall)
++                    }
++                }
++            }
++        }
++        items(rawRows.takeLast(40)) { item -> ObservationRow(item) }
+     }
+ }
+ 
+ data class SatellitePoint(
+     val svid: Int,
++    val constellationType: Int,
+     val azimuthDeg: Double,
+     val elevationDeg: Double,
+     val cn0: Double,
++    val basebandCn0: Double,
++    val carrierFrequencyHz: Double,
+     val usedInFix: Boolean
+ )
+ 
++@Composable
++private fun SatelliteMatrix(points: List<SatellitePoint>) {
++    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
++            Text("LIVE SATELLITE MATRIX", style = MaterialTheme.typography.titleMedium)
++            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
++                Text("SAT", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(56.dp))
++                Text("CN0", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(58.dp))
++                Text("EL", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(48.dp))
++                Text("AZ", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(52.dp))
++                Text("FREQ", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(78.dp))
++            }
++            points.forEach { point ->
++                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
++                    Text(
++                        "${constellationLabel(point.constellationType)} ${point.svid}",
++                        modifier = Modifier.width(56.dp),
++                        style = MaterialTheme.typography.labelSmall,
++                        fontWeight = FontWeight.SemiBold
++                    )
++                    Text("${"%.1f".format(point.cn0)}", modifier = Modifier.width(58.dp), style = MaterialTheme.typography.labelSmall)
++                    Text("${"%.0f°".format(point.elevationDeg)}", modifier = Modifier.width(48.dp), style = MaterialTheme.typography.labelSmall)
++                    Text("${"%.0f°".format(point.azimuthDeg)}", modifier = Modifier.width(52.dp), style = MaterialTheme.typography.labelSmall)
++                    Text(
++                        if (point.carrierFrequencyHz.isFinite()) "${"%.0f".format(point.carrierFrequencyHz / 1_000_000.0)}M" else "—",
++                        modifier = Modifier.width(78.dp),
++                        style = MaterialTheme.typography.labelSmall
++                    )
++                    Text(if (point.usedInFix) "FIX" else "TRACK", style = MaterialTheme.typography.labelSmall)
++                }
++            }
++            if (points.isEmpty()) {
++                Text("NO SATELLITE MATRIX DATA", style = MaterialTheme.typography.bodySmall)
++            }
++        }
++    }
++}
++
++@Composable
++private fun NavigationMessagePanel(count: Int, latest: ObservationEntity?) {
++    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
++            Text("NAVIGATION MESSAGE STREAM", style = MaterialTheme.typography.titleMedium)
++            Text("Observed messages: $count", style = MaterialTheme.typography.labelMedium)
++            if (latest == null) {
++                Text("NOT OBSERVED IN THIS SESSION", style = MaterialTheme.typography.bodySmall)
++            } else {
++                val json = runCatching { JSONObject(latest.rawPayloadJson) }.getOrNull()
++                Text("SVID ${json?.optInt("svid", -1)} · type ${json?.optInt("type", -1)} · status ${json?.optInt("status", -1)}", style = MaterialTheme.typography.bodySmall)
++                Text("messageId=${json?.optInt("messageId", -1)} submessageId=${json?.optInt("submessageId", -1)} length=${json?.optInt("dataLength", -1)} bytes", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
++                Text("Raw navigation payload is preserved in the observation record.", style = MaterialTheme.typography.labelSmall)
++            }
++        }
++    }
++}
++
++private fun constellationLabel(type: Int): String = when (type) {
++    1 -> "GPS"
++    2 -> "SBAS"
++    3 -> "GLO"
++    4 -> "QZSS"
++    5 -> "BDS"
++    6 -> "GAL"
++    7 -> "IRNSS"
++    else -> "UNK"
++}
++
+ @Composable
+ private fun SkyPlot(points: List<SatellitePoint>) {
+     Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+             Text("SATELLITE SKY PLOT", style = MaterialTheme.typography.titleMedium)
+-            Text("Based only on observed azimuth/elevation from GnssStatus • ${points.size} plotted satellites", style = MaterialTheme.typography.labelSmall)
++            Text("Observed azimuth/elevation from GnssStatus • ${points.size} plotted satellites", style = MaterialTheme.typography.labelSmall)
+             Box(Modifier.fillMaxWidth().height(250.dp).background(Color(0xFF0D0B10))) {
+                 Canvas(Modifier.fillMaxSize().padding(12.dp)) {
+                     val diameter = min(size.width, size.height) * 0.82f
+@@ -386,11 +722,10 @@ private fun SkyPlot(points: List<SatellitePoint>) {
+                     val center = Offset(size.width / 2f, size.height / 2f)
+                     val ringFractions = floatArrayOf(1f, 2f / 3f, 1f / 3f)
+                     ringFractions.forEach { fraction ->
+-                        drawCircle(Color(0xFF3A3042), radius * fraction, center, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f))
++                        drawCircle(Color(0xFF3A3042), radius * fraction, center, style = Stroke(width = 1.5f))
+                     }
+                     drawLine(Color(0xFF3A3042), Offset(center.x - radius, center.y), Offset(center.x + radius, center.y), 1.2f)
+                     drawLine(Color(0xFF3A3042), Offset(center.x, center.y - radius), Offset(center.x, center.y + radius), 1.2f)
+-
+                     points.forEach { sat ->
+                         val radial = radius * ((90.0 - sat.elevationDeg.coerceIn(0.0, 90.0)) / 90.0).toFloat()
+                         val az = Math.toRadians(sat.azimuthDeg)
+@@ -408,15 +743,79 @@ private fun SkyPlot(points: List<SatellitePoint>) {
+     }
+ }
+ 
++private fun cellularRsrpSamples(observations: List<ObservationEntity>): List<Double> {
++    val serving = observations.filter { it.type == "CELLULAR_INFO" && isServingCellRow(it) }
++    val source = if (serving.isNotEmpty()) serving else observations.filter { it.type == "CELLULAR_INFO" }
++    return source.asSequence()
++        .mapNotNull { numericFieldLocal(it, "rsrp", "ssRsrp") }
++        .filter { it.isFinite() }
++        .toList()
++        .takeLast(120)
++}
++
++private fun isServingCellRow(row: ObservationEntity): Boolean = runCatching {
++    val json = JSONObject(row.rawPayloadJson)
++    json.optBoolean("registered", false) || json.optInt("connectionStatus", 0) == 1 || json.optInt("connectionStatus", 0) == 2
++}.getOrDefault(false)
++
++private fun latestServingCellRow(observations: List<ObservationEntity>): ObservationEntity? =
++    observations.filter { it.type == "CELLULAR_INFO" && isServingCellRow(it) }
++        .maxByOrNull { it.timestampUtcMs }
++        ?: observations.filter { it.type == "CELLULAR_INFO" }.maxByOrNull { it.timestampUtcMs }
++
+ @Composable
+ private fun CellularScreen(obs: List<ObservationEntity>, analysis: AnalysisSnapshot) {
+-    val rows = obs.filter { it.type == "CELLULAR_INFO" }.takeLast(60)
++    val rows = obs.filter { it.type == "CELLULAR_INFO" }.takeLast(100)
++    val samples = cellularRsrpSamples(obs)
++    val latest = latestServingCellRow(obs)
++    val latestJson = latest?.let { runCatching { JSONObject(it.rawPayloadJson) }.getOrNull() }
+     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+-        item { SignalCard("Cellular signal", "dBm", analysis.averageRsrpDbm, rows.mapNotNull { runCatching { val o=JSONObject(it.rawPayloadJson); (o.opt("rsrp") as? Number)?.toDouble() ?: (o.opt("ssRsrp") as? Number)?.toDouble() }.getOrNull() }) }
++        item {
++            MetricCard(
++                "LIVE SERVING CELL",
++                analysis.latestServingTechnology ?: latest?.technology ?: "UNAVAILABLE",
++                "RSRP=${analysis.latestServingRsrpDbm?.let { "%.1f dBm".format(it) } ?: "UNAVAILABLE"} · age=${analysis.latestCellAgeMs?.let { "${it} ms" } ?: "UNAVAILABLE"}"
++            )
++        }
++        item { SignalCard("Cellular RSRP history", "dBm", analysis.latestServingRsrpDbm ?: analysis.averageRsrpDbm, samples) }
++        item {
++            MetricCard(
++                "LIVE CELLULAR FEED",
++                samples.size.toString(),
++                "explicit refresh=${analysis.freshCellRequestSamples} · callbacks=${analysis.cellularCallbackSamples} · total observations=${analysis.cellularCount}"
++            )
++        }
++        if (latestJson != null) {
++            item {
++                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
++                        Text("SERVING CELL", style = MaterialTheme.typography.titleMedium)
++                        Text("${latest?.technology ?: "UNKNOWN"}  MCC ${latestJson.optString("mcc", "—")}  MNC ${latestJson.optString("mnc", "—")}")
++                        Text("PCI ${latestJson.opt("pci")}  TAC ${latestJson.opt("tac")}  EARFCN ${latestJson.opt("earfcn")}", style = MaterialTheme.typography.labelMedium)
++                        Text("RSRP ${latestJson.opt("rsrp")} · RSRQ ${latestJson.opt("rsrq")} · RSSNR ${latestJson.opt("rssnr")}", style = MaterialTheme.typography.labelMedium)
++                        Text("Trigger ${latestJson.optString("acquisitionTrigger", "UNKNOWN")} · freshness ${latestJson.optString("freshness", "UNKNOWN")}", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
++                    }
++                }
++            }
++        }
+         items(rows.takeLast(40)) { ObservationRow(it) }
+     }
+ }
+ 
++private fun numericFieldLocal(row: ObservationEntity, vararg keys: String): Double? {
++    fun read(jsonText: String): Double? = runCatching {
++        val json = JSONObject(jsonText)
++        keys.firstNotNullOfOrNull { key ->
++            when (val value = json.opt(key)) {
++                is Number -> value.toDouble()
++                else -> null
++            }
++        }
++    }.getOrNull()
++    return read(row.rawPayloadJson) ?: read(row.normalizedPayloadJson)
++}
++
++
+ @Composable
+ private fun SensorsScreen(obs: List<ObservationEntity>, analysis: AnalysisSnapshot) {
+     val rows = obs.filter { it.source == "SENSOR" }.takeLast(60)
+@@ -458,6 +857,87 @@ private fun SessionScreen(sessions: List<SessionEntity>) {
+     }
+ }
+ 
++@Composable
++private fun LogsScreen(obs: List<ObservationEntity>) {
++    val entries = obs
++        .filter { it.type == "SYSTEM_EVENT" || it.type == "ERROR_EVENT" }
++        .takeLast(200)
++
++    LazyColumn(
++        Modifier.fillMaxSize().padding(12.dp),
++        verticalArrangement = Arrangement.spacedBy(8.dp)
++    ) {
++        item {
++            MetricCard(
++                "Internal Log",
++                entries.size.toString(),
++                if (entries.isEmpty()) {
++                    "NO PERSISTED SYSTEM/ERROR EVENTS FOR THIS SESSION"
++                } else {
++                    "Persisted HORIZON application events"
++                }
++            )
++        }
++
++        if (entries.isEmpty()) {
++            item {
++                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++                    Column(
++                        Modifier.padding(14.dp),
++                        verticalArrangement = Arrangement.spacedBy(5.dp)
++                    ) {
++                        Text("LOG STREAM EMPTY", style = MaterialTheme.typography.titleMedium)
++                        Text(
++                            "Start a session to create SESSION_STARTED and lifecycle events. " +
++                                "Source failures are recorded as ERROR_EVENT records.",
++                            style = MaterialTheme.typography.bodySmall
++                        )
++                    }
++                }
++            }
++        } else {
++            items(entries) { entry ->
++                val payload = runCatching { JSONObject(entry.rawPayloadJson) }.getOrNull()
++                val isError = entry.type == "ERROR_EVENT"
++                val title = if (isError) {
++                    "ERROR · ${payload?.optString("source", entry.provider) ?: entry.provider}"
++                } else {
++                    payload?.optString("event", "SYSTEM_EVENT") ?: "SYSTEM_EVENT"
++                }
++                val details = if (isError) {
++                    payload?.optString("message", "")?.takeIf { it.isNotBlank() } ?: "No error message recorded"
++                } else {
++                    payload?.optJSONObject("details")?.toString() ?: payload?.optString("details", "") ?: ""
++                }
++
++                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++                    Column(
++                        Modifier.padding(12.dp),
++                        verticalArrangement = Arrangement.spacedBy(4.dp)
++                    ) {
++                        Text(
++                            "#${entry.sequenceNumber}  $title",
++                            fontWeight = FontWeight.SemiBold
++                        )
++                        Text(
++                            formatUtc(entry.timestampUtcMs),
++                            style = MaterialTheme.typography.labelSmall,
++                            fontFamily = FontFamily.Monospace
++                        )
++                        if (details.isNotBlank()) {
++                            Text(
++                                details,
++                                style = MaterialTheme.typography.bodySmall,
++                                fontFamily = if (isError) FontFamily.Monospace else FontFamily.Default
++                            )
++                        }
++                    }
++                }
++            }
++        }
++    }
++}
++
+ @Composable
+ private fun ExportScreen(
+     session: SessionEntity?,
+@@ -481,50 +961,52 @@ private fun ExportScreen(
+     }
+     val eventCount = observations.count { it.type == "SYSTEM_EVENT" }
+     val errorCount = observations.count { it.type == "ERROR_EVENT" }
++    val scrollState = rememberScrollState()
+ 
+-    LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+-        item { MetricCard("Export", if (exportPath != null) "READY" else "NOT GENERATED", exportStatus) }
+-        item { MetricCard("Session", session?.sessionId ?: "NONE", session?.lifecycleState ?: "NO SESSION") }
+-        item {
+-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+-                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+-                    Text("EXPORT INTEGRITY", style = MaterialTheme.typography.titleMedium)
+-                    Text("Integrity clean: ${audit.isClean}")
+-                    Text("Sequence contiguous: ${audit.sequenceContiguous}")
+-                    Text("Ingress timestamp complete: ${audit.ingestionTimestampedObservationCount == audit.observationCount}")
+-                    Text("Ingress time monotonic: ${audit.ingestionTimestampsNonDecreasing}")
+-                    Text("Source-time regressions: ${audit.sourceTimestampRegressions} (diagnostic, not a failure by itself)")
+-                    Text("Observations: ${observations.size}  |  System events: $eventCount  |  Errors: $errorCount")
+-                }
++    Column(
++        Modifier
++            .fillMaxSize()
++            .verticalScroll(scrollState)
++            .padding(12.dp),
++        verticalArrangement = Arrangement.spacedBy(10.dp)
++    ) {
++        MetricCard("Export", if (exportPath != null) "READY" else "NOT GENERATED", exportStatus)
++        MetricCard("Session", session?.sessionId ?: "NONE", session?.lifecycleState ?: "NO SESSION")
++        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
++                Text("EXPORT INTEGRITY", style = MaterialTheme.typography.titleMedium)
++                Text("Integrity clean: ${audit.isClean}")
++                Text("Sequence contiguous: ${audit.sequenceContiguous}")
++                Text("Ingress timestamp complete: ${audit.ingestionTimestampedObservationCount == audit.observationCount}")
++                Text("Ingress time monotonic: ${audit.ingestionTimestampsNonDecreasing}")
++                Text("Source-time regressions: ${audit.sourceTimestampRegressions} (diagnostic, not a failure by itself)")
++                Text("Observations: ${observations.size}  |  System events: $eventCount  |  Errors: $errorCount")
+             }
+         }
+-        item {
+-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+-                Button(onClick = onGenerate, modifier = Modifier.weight(1f)) { Text("GENERATE PACKAGE") }
+-                OutlinedButton(onClick = onSave, enabled = exportPath != null, modifier = Modifier.weight(1f)) { Text("SAVE ZIP") }
+-            }
++        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
++            Button(onClick = onGenerate, modifier = Modifier.weight(1f)) { Text("GENERATE PACKAGE") }
++            OutlinedButton(onClick = onSave, enabled = exportPath != null, modifier = Modifier.weight(1f)) { Text("CHOOSE FOLDER & SAVE ZIP") }
+         }
+-        item {
+-            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF0D0B10))) {
+-                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+-                    Text("PACKAGE CONTENTS", style = MaterialTheme.typography.titleMedium)
+-                    Text("dataset_manifest.json")
+-                    Text("observations.json")
+-                    Text("observations.csv")
+-                    Text("horizon_session.sqlite")
+-                    Text("session_events.json")
+-                    Text("session_events.csv")
+-                    Text("session_log.txt")
+-                    Text("capabilities.json")
+-                    Text("permissions.json")
+-                    Text("integrity_audit.json")
+-                    Text("The package is assembled from persisted Room data; Android logcat is not silently represented as application data.", style = MaterialTheme.typography.labelSmall)
+-                }
++        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF0D0B10))) {
++            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
++                Text("PACKAGE CONTENTS", style = MaterialTheme.typography.titleMedium)
++                Text("dataset_manifest.json")
++                Text("observations.json")
++                Text("observations.csv")
++                Text("horizon_session.sqlite")
++                Text("session_events.json")
++                Text("session_events.csv")
++                Text("session_log.txt")
++                Text("capabilities.json")
++                Text("permissions.json")
++                Text("integrity_audit.json")
++                Text("Choose a folder, then HORIZON writes the verified ZIP there. Package data comes from persisted Room data and HORIZON session logs; Android logcat is not silently represented as application data.", style = MaterialTheme.typography.labelSmall)
+             }
+         }
+         exportPath?.let { path ->
+-            item { Text("Local package: $path", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.labelSmall) }
++            Text("Local package: $path", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.labelSmall)
+         }
++        Spacer(Modifier.height(24.dp))
+     }
+ }
+ 
+@@ -554,19 +1036,41 @@ private fun ObservationRow(item: ObservationEntity) {
+ 
+ @Composable
+ private fun MiniLineChart(samples: List<Double>) {
+-    Box(Modifier.fillMaxWidth().height(90.dp).background(Color(0xFF0D0B10))) {
+-        Canvas(Modifier.fillMaxSize().padding(8.dp)) {
+-            if (samples.size < 2) return@Canvas
+-            val min = samples.minOrNull() ?: return@Canvas
+-            val max = samples.maxOrNull() ?: return@Canvas
+-            val range = (max - min).takeIf { it > 0.0001 } ?: 1.0
+-            val path = Path()
+-            samples.forEachIndexed { index, v ->
+-                val x = size.width * index / (samples.lastIndex.toFloat())
+-                val y = size.height * (1f - ((v - min) / range).toFloat())
+-                if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+-            }
+-            drawPath(path, color = Color(0xFFE1A4FF), style = Stroke(width = 3f))
++    Box(
++        Modifier.fillMaxWidth().height(104.dp).background(Color(0xFF0D0B10)),
++        contentAlignment = Alignment.Center
++    ) {
++        when {
++            samples.isEmpty() -> {
++                Text("NO HISTORY DATA", style = MaterialTheme.typography.labelSmall)
++            }
++            else -> {
++                Canvas(Modifier.fillMaxSize().padding(8.dp)) {
++                    val min = samples.minOrNull() ?: return@Canvas
++                    val max = samples.maxOrNull() ?: return@Canvas
++                    val range = (max - min).takeIf { it > 0.0001 } ?: 1.0
++                    val lastIndex = maxOf(1, samples.lastIndex)
++                    val path = Path()
++
++                    samples.forEachIndexed { index, v ->
++                        val x = size.width * index / lastIndex.toFloat()
++                        val y = size.height * (1f - ((v - min) / range).toFloat())
++                        if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
++                    }
++
++                    // A single measured sample is still rendered as evidence.
++                    if (samples.size == 1) {
++                        val y = size.height * 0.5f
++                        drawCircle(
++                            color = Color(0xFFE1A4FF),
++                            radius = 5.5f,
++                            center = Offset(size.width * 0.5f, y)
++                        )
++                    } else {
++                        drawPath(path, color = Color(0xFFE1A4FF), style = Stroke(width = 3f))
++                    }
++                }
++            }
+         }
+     }
+ }
+diff --git a/gradlew b/gradlew
+old mode 100644
+new mode 100755

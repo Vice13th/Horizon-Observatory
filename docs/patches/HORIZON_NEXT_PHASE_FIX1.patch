@@ -1,0 +1,14 @@
+*** Begin Patch
+*** Update File: app/src/main/kotlin/horizon/observatory/analysis/SessionAnalysisEngine.kt
+@@
+-        val lastStatus = gnssStatus.lastOrNull()
+-        val latestSatelliteCount = lastStatus?.rawPayloadJson?.doubleOrNull("satelliteCount")?.toInt()
+-        val distinctSatelliteKeys = latestStatus?.rawPayloadJson?.satelliteKeys() ?: emptySet()
++        val latestStatus = gnssStatus.maxByOrNull { it.sequenceNumber }
++        val latestSatelliteCount = latestStatus?.rawPayloadJson?.doubleOrNull("satelliteCount")?.toInt()
++        val distinctSatelliteKeys: Set<String> = latestStatus?.rawPayloadJson?.satelliteKeys() ?: emptySet()
+@@
+-        val latestServing = servingCellular.maxByOrNull { it.timestampUtcMs } ?: cellular.maxByOrNull { it.timestampUtcMs }
++        val latestServing = servingCellular.maxByOrNull { it.sequenceNumber }
++            ?: cellular.maxByOrNull { it.sequenceNumber }
+*** End Patch

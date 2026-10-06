@@ -1,0 +1,416 @@
+--- app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt	2026-09-23 22:36:21.000000000 +0000
++++ PROJECT/app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt	2026-09-23 23:02:27.984047276 +0000
+@@ -64,6 +64,9 @@
+ import horizon.observatory.acquisition.service.ObservatoryService
+ import horizon.observatory.analysis.AnalysisSnapshot
+ import horizon.observatory.analysis.SessionAnalysisEngine
++import horizon.observatory.domain.gnss.GnssDomainSnapshot
++import horizon.observatory.domain.gnss.SatelliteEvidence
++import horizon.observatory.domain.gnss.SatelliteEvidenceMatch
+ import horizon.observatory.storage.entity.ObservationEntity
+ import horizon.observatory.storage.entity.SessionEntity
+ import horizon.observatory.domain.model.IntegrityAudit
+@@ -296,6 +299,7 @@
+                         }
+                     )
+                     10 -> LogsScreen(observations)
++                    11 -> AntennaScreen(analysis.gnssDomain)
+                 }
+             }
+         }
+@@ -362,6 +366,7 @@
+     8 -> "DIAGNOSTICS"
+     9 -> "EXPORT CENTER"
+     10 -> "INTERNAL LOG"
++    11 -> "ANTENNA OBSERVATORY"
+     else -> "HORIZON / OBSERVATORY"
+ }
+ 
+@@ -406,7 +411,8 @@
+         7 to ("Timeline" to "Chronological evidence stream"),
+         8 to ("Diagnostics" to "Capabilities, integrity and runtime diagnostics"),
+         9 to ("Export" to if (hasCompletedSession) "Verified session package and save" else "Export requires a completed session"),
+-        10 to ("Internal Log" to "Persisted system and error events for the current session")
++        10 to ("Internal Log" to "Persisted system and error events for the current session"),
++        11 to ("Antenna" to "GNSS antenna evidence and observed receiver context")
+     )
+     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+         item {
+@@ -559,32 +565,15 @@
+ 
+ @Composable
+ private fun GnssScreen(obs: List<ObservationEntity>, analysis: AnalysisSnapshot) {
++    val domain = analysis.gnssDomain
+     val rawRows = obs.filter { it.type == "GNSS_RAW_MEASUREMENT" }.takeLast(160)
+-    val latestStatus = obs.asSequence().filter { it.type == "GNSS_STATUS" }.lastOrNull()
+-    val sky = latestStatus?.let { row ->
+-        runCatching { JSONObject(row.rawPayloadJson).optJSONArray("satellites") }.getOrNull()?.let { arr ->
+-            (0 until arr.length()).mapNotNull { index ->
+-                arr.optJSONObject(index)?.let { item ->
+-                    SatellitePoint(
+-                        svid = item.optInt("svid", -1),
+-                        constellationType = item.optInt("constellationType", 0),
+-                        azimuthDeg = item.optDouble("azimuthDegrees", Double.NaN),
+-                        elevationDeg = item.optDouble("elevationDegrees", Double.NaN),
+-                        cn0 = item.optDouble("cn0DbHz", Double.NaN),
+-                        basebandCn0 = item.optDouble("basebandCn0DbHz", Double.NaN),
+-                        carrierFrequencyHz = item.optDouble("carrierFrequencyHz", Double.NaN),
+-                        usedInFix = item.optBoolean("usedInFix", false)
+-                    )
+-                }
+-            }
+-        } ?: emptyList()
+-    } ?: emptyList()
+     val cnoHistory = rawRows.mapNotNull { numericFieldLocal(it, "cn0DbHz") }.filter { it.isFinite() }
+     val agcHistory = rawRows.mapNotNull { numericFieldLocal(it, "automaticGainControlLevelDb") }.filter { it.isFinite() }
+     val navigationMessages = obs.filter { it.type == "GNSS_NAVIGATION_MESSAGE" }.takeLast(40)
+-    val matrix = sky.filter { it.svid >= 0 && it.azimuthDeg.isFinite() && it.elevationDeg.isFinite() }
+-        .sortedByDescending { it.cn0 }
+-        .take(14)
++    val matrix = domain.latestSatelliteEvidence
++        .filter { it.svid >= 0 && (it.elevationDegrees?.isFinite() != false) && (it.azimuthDegrees?.isFinite() != false) }
++        .sortedWith(compareByDescending<SatelliteEvidence> { it.cn0DbHz ?: Double.NEGATIVE_INFINITY }.thenBy { it.constellationType }.thenBy { it.svid })
++        .take(18)
+ 
+     LazyColumn(
+         Modifier.fillMaxSize().padding(horizontal = 12.dp),
+@@ -595,28 +584,26 @@
+         item { SignalCard("GNSS AGC history", "dB", null, agcHistory) }
+         item {
+             MetricCard(
+-                "AGC DIAGNOSTIC",
+-                analysis.agcState,
+-                if (analysis.agcSampleCount == 0) "NO AGC MEASUREMENTS OBSERVED"
+-                else "samples=${analysis.agcSampleCount} distinct=${analysis.agcDistinctLevels} spread=${analysis.agcSpreadDb?.let { "%.4f dB".format(it) } ?: "UNAVAILABLE"}"
++                "GNSS DOMAIN",
++                domain.latestSatelliteEvidence.size.toString(),
++                "latest satellite evidence · correlated=${domain.correlatedMeasurementCount} · nav=${domain.navigationMessageCount}"
+             )
+         }
+-        item { SkyPlot(sky) }
+         item {
+             MetricCard(
+-                "MULTI-SATELLITE OBSERVATION",
+-                analysis.distinctSatelliteCount.toString(),
+-                "latest status=${analysis.latestSatelliteCount ?: "UNAVAILABLE"} · multi-satellite epochs=${analysis.multiSatelliteEpochs}"
+-            )
+-        }
+-        item { SatelliteMatrix(matrix) }
+-        item {
+-            NavigationMessagePanel(
+-                count = analysis.navigationMessageCount,
+-                latest = navigationMessages.lastOrNull()
++                "AGC DIAGNOSTIC",
++                analysis.agcState,
++                if (analysis.agcSampleCount == 0) "NO AGC MEASUREMENTS OBSERVED"
++                else "samples=${analysis.agcSampleCount} distinct=${analysis.agcDistinctLevels} spread=${analysis.agcSpreadDb?.let { "%.4f dB".format(it) } ?: "UNAVAILABLE"}"
+             )
+         }
+-        item { MetricCard("Raw measurements", analysis.gnssRawCount.toString(), if (rawRows.isEmpty()) "NOT OBSERVED IN THIS SESSION" else "MEASURED") }
++        item { CorrelatedSkyPlot(matrix) }
++        item { CnoElevationPlot(domain) }
++        item { ConstellationSummaryPanel(domain) }
++        item { SatelliteEvidenceMatrix(matrix) }
++        item { AntennaEvidencePanel(domain) }
++        item { NavigationMessagePanel(count = analysis.navigationMessageCount, latest = navigationMessages.lastOrNull()) }
++        item { MetricCard("Raw measurements", analysis.gnssRawCount.toString(), if (rawRows.isEmpty()) "NOT OBSERVED IN THIS SESSION" else "MEASURED — RAW EVIDENCE PRESERVED") }
+         if (rawRows.isEmpty()) {
+             item {
+                 Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+@@ -631,55 +618,163 @@
+     }
+ }
+ 
+-data class SatellitePoint(
+-    val svid: Int,
+-    val constellationType: Int,
+-    val azimuthDeg: Double,
+-    val elevationDeg: Double,
+-    val cn0: Double,
+-    val basebandCn0: Double,
+-    val carrierFrequencyHz: Double,
+-    val usedInFix: Boolean
+-)
++@Composable
++private fun CorrelatedSkyPlot(points: List<SatelliteEvidence>) {
++    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
++            Text("SATELLITE SKY PLOT", style = MaterialTheme.typography.titleMedium)
++            Text("Correlated observed azimuth/elevation · ${points.size} latest satellites", style = MaterialTheme.typography.labelSmall)
++            Box(Modifier.fillMaxWidth().height(250.dp).background(Color(0xFF0D0B10))) {
++                Canvas(Modifier.fillMaxSize().padding(12.dp)) {
++                    val diameter = min(size.width, size.height) * 0.82f
++                    val radius = diameter / 2f
++                    val center = Offset(size.width / 2f, size.height / 2f)
++                    val ringFractions = floatArrayOf(1f, 2f / 3f, 1f / 3f)
++                    ringFractions.forEach { fraction ->
++                        drawCircle(Color(0xFF3A3440), radius * fraction, center, style = Stroke(width = 1f))
++                    }
++                    points.forEach { point ->
++                        val az = Math.toRadians(point.azimuthDegrees ?: return@forEach)
++                        val el = (point.elevationDegrees ?: return@forEach).coerceIn(-90.0, 90.0)
++                        val radial = (90.0 - el) / 90.0 * radius
++                        val x = center.x + (sin(az) * radial).toFloat()
++                        val y = center.y - (cos(az) * radial).toFloat()
++                        val r = if (point.usedInFix == true) 6f else 4f
++                        drawCircle(Color(0xFFC875FF), r, Offset(x, y))
++                    }
++                }
++                Text("N", Modifier.align(Alignment.TopCenter).padding(top = 4.dp), style = MaterialTheme.typography.labelSmall)
++                Text("S", Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp), style = MaterialTheme.typography.labelSmall)
++                Text("W", Modifier.align(Alignment.CenterStart).padding(start = 5.dp), style = MaterialTheme.typography.labelSmall)
++                Text("E", Modifier.align(Alignment.CenterEnd).padding(end = 5.dp), style = MaterialTheme.typography.labelSmall)
++            }
++        }
++    }
++}
+ 
+ @Composable
+-private fun SatelliteMatrix(points: List<SatellitePoint>) {
++private fun CnoElevationPlot(domain: GnssDomainSnapshot) {
++    val points = domain.historyPoints.filter {
++        it.cn0DbHz?.isFinite() == true && it.elevationDegrees?.isFinite() == true
++    }.takeLast(220)
+     Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+-            Text("LIVE SATELLITE MATRIX", style = MaterialTheme.typography.titleMedium)
++            Text("C/N0 VS ELEVATION", style = MaterialTheme.typography.titleMedium)
++            Text("Observed correlated points · n=${points.size}", style = MaterialTheme.typography.labelSmall)
++            Box(Modifier.fillMaxWidth().height(210.dp).background(Color(0xFF0D0B10))) {
++                Canvas(Modifier.fillMaxSize().padding(18.dp)) {
++                    if (points.isNotEmpty()) {
++                        val minCno = points.mapNotNull { it.cn0DbHz }.minOrNull() ?: 0.0
++                        val maxCno = points.mapNotNull { it.cn0DbHz }.maxOrNull() ?: 1.0
++                        val cnoRange = (maxCno - minCno).takeIf { it > 0.0 } ?: 1.0
++                        points.forEach { point ->
++                            val e = (point.elevationDegrees ?: return@forEach).coerceIn(0.0, 90.0)
++                            val c = point.cn0DbHz ?: return@forEach
++                            val x = (e / 90.0 * size.width).toFloat()
++                            val y = (1.0 - ((c - minCno) / cnoRange)).toFloat() * size.height
++                            drawCircle(Color(0xFFE1A4FF), 3.5f, Offset(x, y))
++                        }
++                    }
++                }
++            }
++            Text("X: elevation (0°→90°) · Y: observed C/N0", style = MaterialTheme.typography.labelSmall)
++        }
++    }
++}
++
++@Composable
++private fun ConstellationSummaryPanel(domain: GnssDomainSnapshot) {
++    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
++            Text("CONSTELLATION SUMMARY", style = MaterialTheme.typography.titleMedium)
++            if (domain.constellationSummaries.isEmpty()) {
++                Text("NO CORRELATED CONSTELLATION DATA", style = MaterialTheme.typography.bodySmall)
++            } else {
++                domain.constellationSummaries.forEach { s ->
++                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
++                        Text(constellationLabel(s.constellationType), fontWeight = FontWeight.SemiBold)
++                        Text("sat=${s.distinctSatelliteCount} match=${s.matchedCount} raw=${s.rawOnlyCount} status=${s.statusOnlyCount}", style = MaterialTheme.typography.labelSmall)
++                    }
++                    Text(
++                        "C/N0=${s.averageCn0DbHz?.let { "%.1f dB-Hz".format(it) } ?: "UNAVAILABLE"} · " +
++                            "elev=${s.averageElevationDegrees?.let { "%.1f°".format(it) } ?: "UNAVAILABLE"} · " +
++                            "nav=${s.navigationMessageCount}",
++                        style = MaterialTheme.typography.labelSmall
++                    )
++                }
++            }
++        }
++    }
++}
++
++@Composable
++private fun SatelliteEvidenceMatrix(points: List<SatelliteEvidence>) {
++    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
++            Text("CORRELATED SATELLITE EVIDENCE", style = MaterialTheme.typography.titleMedium)
+             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+-                Text("SAT", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(56.dp))
+-                Text("CN0", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(58.dp))
+-                Text("EL", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(48.dp))
+-                Text("AZ", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(52.dp))
+-                Text("FREQ", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(78.dp))
++                Text("SAT", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(64.dp))
++                Text("CN0", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(52.dp))
++                Text("EL", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(44.dp))
++                Text("AZ", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(48.dp))
++                Text("MATCH", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(76.dp))
+             }
+             points.forEach { point ->
+                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
++                    Text("${constellationLabel(point.constellationType)} ${point.svid}", modifier = Modifier.width(64.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
++                    Text(point.cn0DbHz?.let { "%.1f".format(it) } ?: "—", modifier = Modifier.width(52.dp), style = MaterialTheme.typography.labelSmall)
++                    Text(point.elevationDegrees?.let { "%.0f°".format(it) } ?: "—", modifier = Modifier.width(44.dp), style = MaterialTheme.typography.labelSmall)
++                    Text(point.azimuthDegrees?.let { "%.0f°".format(it) } ?: "—", modifier = Modifier.width(48.dp), style = MaterialTheme.typography.labelSmall)
+                     Text(
+-                        "${constellationLabel(point.constellationType)} ${point.svid}",
+-                        modifier = Modifier.width(56.dp),
+-                        style = MaterialTheme.typography.labelSmall,
+-                        fontWeight = FontWeight.SemiBold
++                        when (point.match) {
++                            SatelliteEvidenceMatch.STATUS_AND_RAW_MATCH -> "STATUS+RAW"
++                            SatelliteEvidenceMatch.STATUS_ONLY -> "STATUS"
++                            SatelliteEvidenceMatch.RAW_ONLY -> "RAW"
++                        },
++                        modifier = Modifier.width(76.dp),
++                        style = MaterialTheme.typography.labelSmall
+                     )
+-                    Text("${"%.1f".format(point.cn0)}", modifier = Modifier.width(58.dp), style = MaterialTheme.typography.labelSmall)
+-                    Text("${"%.0f°".format(point.elevationDeg)}", modifier = Modifier.width(48.dp), style = MaterialTheme.typography.labelSmall)
+-                    Text("${"%.0f°".format(point.azimuthDeg)}", modifier = Modifier.width(52.dp), style = MaterialTheme.typography.labelSmall)
++                    Text(if (point.usedInFix == true) "FIX" else "TRACK", style = MaterialTheme.typography.labelSmall)
++                }
++            }
++            if (points.isEmpty()) Text("NO CORRELATED SATELLITE DATA", style = MaterialTheme.typography.bodySmall)
++        }
++    }
++}
++
++@Composable
++private fun AntennaEvidencePanel(domain: GnssDomainSnapshot) {
++    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
++            Text("GNSS ANTENNA EVIDENCE", style = MaterialTheme.typography.titleMedium)
++            if (domain.antennaEvidence.isEmpty()) {
++                Text("NO GNSS_ANTENNA_INFO OBSERVATIONS", style = MaterialTheme.typography.bodySmall)
++                Text("Antenna hardware properties remain unobserved; no gain or radiation model is inferred.", style = MaterialTheme.typography.labelSmall)
++            } else {
++                Text("Observed antenna records: ${domain.antennaEvidence.size}", style = MaterialTheme.typography.labelMedium)
++                domain.antennaEvidence.takeLast(8).forEach { a ->
+                     Text(
+-                        if (point.carrierFrequencyHz.isFinite()) "${"%.0f".format(point.carrierFrequencyHz / 1_000_000.0)}M" else "—",
+-                        modifier = Modifier.width(78.dp),
++                        "freq=${a.carrierFrequencyMHz?.let { "%.3f MHz".format(it) } ?: "UNAVAILABLE"} · capability=${a.capabilityState}",
+                         style = MaterialTheme.typography.labelSmall
+                     )
+-                    Text(if (point.usedInFix) "FIX" else "TRACK", style = MaterialTheme.typography.labelSmall)
++                    Text("PCO=${a.phaseCenterOffset ?: "UNAVAILABLE"}", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+                 }
+             }
+-            if (points.isEmpty()) {
+-                Text("NO SATELLITE MATRIX DATA", style = MaterialTheme.typography.bodySmall)
+-            }
+         }
+     }
+ }
+ 
++private fun constellationLabel(type: Int): String = when (type) {
++    1 -> "GPS"
++    2 -> "SBAS"
++    3 -> "GLO"
++    4 -> "QZSS"
++    5 -> "BDS"
++    6 -> "GAL"
++    7 -> "IRNSS"
++    else -> "UNK"
++}
++
+ @Composable
+ private fun NavigationMessagePanel(count: Int, latest: ObservationEntity?) {
+     Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+@@ -709,40 +804,6 @@
+     else -> "UNK"
+ }
+ 
+-@Composable
+-private fun SkyPlot(points: List<SatellitePoint>) {
+-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+-            Text("SATELLITE SKY PLOT", style = MaterialTheme.typography.titleMedium)
+-            Text("Observed azimuth/elevation from GnssStatus • ${points.size} plotted satellites", style = MaterialTheme.typography.labelSmall)
+-            Box(Modifier.fillMaxWidth().height(250.dp).background(Color(0xFF0D0B10))) {
+-                Canvas(Modifier.fillMaxSize().padding(12.dp)) {
+-                    val diameter = min(size.width, size.height) * 0.82f
+-                    val radius = diameter / 2f
+-                    val center = Offset(size.width / 2f, size.height / 2f)
+-                    val ringFractions = floatArrayOf(1f, 2f / 3f, 1f / 3f)
+-                    ringFractions.forEach { fraction ->
+-                        drawCircle(Color(0xFF3A3042), radius * fraction, center, style = Stroke(width = 1.5f))
+-                    }
+-                    drawLine(Color(0xFF3A3042), Offset(center.x - radius, center.y), Offset(center.x + radius, center.y), 1.2f)
+-                    drawLine(Color(0xFF3A3042), Offset(center.x, center.y - radius), Offset(center.x, center.y + radius), 1.2f)
+-                    points.forEach { sat ->
+-                        val radial = radius * ((90.0 - sat.elevationDeg.coerceIn(0.0, 90.0)) / 90.0).toFloat()
+-                        val az = Math.toRadians(sat.azimuthDeg)
+-                        val x = center.x + radial * sin(az).toFloat()
+-                        val y = center.y - radial * cos(az).toFloat()
+-                        drawCircle(
+-                            color = if (sat.usedInFix) Color(0xFFE1A4FF) else Color(0xFF8A7A92),
+-                            radius = 5.5f,
+-                            center = Offset(x, y)
+-                        )
+-                    }
+-                }
+-            }
+-        }
+-    }
+-}
+-
+ private fun cellularRsrpSamples(observations: List<ObservationEntity>): List<Double> {
+     val serving = observations.filter { it.type == "CELLULAR_INFO" && isServingCellRow(it) }
+     val source = if (serving.isNotEmpty()) serving else observations.filter { it.type == "CELLULAR_INFO" }
+@@ -854,6 +915,61 @@
+                 }
+             }
+         }
++    }
++}
++
++@Composable
++private fun AntennaScreen(domain: GnssDomainSnapshot) {
++    val stats = domain.signalStatistics
++    LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
++        item {
++            MetricCard(
++                "GNSS ANTENNA CAPABILITY",
++                if (domain.antennaEvidence.isEmpty()) "UNAVAILABLE / NOT OBSERVED" else "OBSERVED",
++                if (domain.antennaEvidence.isEmpty()) "No GnssAntennaInfo observation was persisted in this session."
++                else "${domain.antennaEvidence.size} raw antenna-info observations preserved."
++            )
++        }
++        item {
++            MetricCard(
++                "OBSERVED RECEIVER CONTEXT",
++                stats.sampleCount.toString(),
++                "C/N0 samples · avg=${stats.averageCn0DbHz?.let { "%.2f dB-Hz".format(it) } ?: "UNAVAILABLE"} · " +
++                    "elevation avg=${stats.averageElevationDegrees?.let { "%.1f°".format(it) } ?: "UNAVAILABLE"}"
++            )
++        }
++        item {
++            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
++                    Text("OBSERVED FREQUENCIES", style = MaterialTheme.typography.titleMedium)
++                    Text(
++                        if (stats.distinctFrequenciesHz.isEmpty()) "UNAVAILABLE"
++                        else stats.distinctFrequenciesHz.joinToString(" · ") { "%.0f MHz".format(it / 1_000_000.0) },
++                        style = MaterialTheme.typography.bodySmall,
++                        fontFamily = FontFamily.Monospace
++                    )
++                    Text("These are receiver-observed GNSS frequencies, not antenna gain measurements.", style = MaterialTheme.typography.labelSmall)
++                }
++            }
++        }
++        item {
++            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
++                    Text("ANTENNA HARDWARE EVIDENCE", style = MaterialTheme.typography.titleMedium)
++                    if (domain.antennaEvidence.isEmpty()) {
++                        Text("Phase center / gain-correction hardware metadata is not observed in this session.", style = MaterialTheme.typography.bodySmall)
++                        Text("No radiation pattern, gain, efficiency or phase-center calibration is inferred.", style = MaterialTheme.typography.labelSmall)
++                    } else {
++                        domain.antennaEvidence.takeLast(12).forEachIndexed { index, a ->
++                            Text("#${index + 1} freq=${a.carrierFrequencyMHz?.let { "%.3f MHz".format(it) } ?: "UNAVAILABLE"}", fontWeight = FontWeight.SemiBold)
++                            Text("PCO: ${a.phaseCenterOffset ?: "UNAVAILABLE"}", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
++                            Text("PCV: ${a.phaseCenterVariationCorrections ?: "UNAVAILABLE"}", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
++                            Text("Gain corrections: ${a.signalGainCorrections ?: "UNAVAILABLE"}", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
++                        }
++                    }
++                }
++            }
++        }
+     }
+ }
+ 

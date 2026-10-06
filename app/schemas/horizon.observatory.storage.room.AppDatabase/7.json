@@ -1,0 +1,584 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 7,
+    "identityHash": "9bc42ef76f169b56d202c5d36b9c949c",
+    "entities": [
+      {
+        "tableName": "sessions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`sessionId` TEXT NOT NULL, `startTimeMs` INTEGER NOT NULL, `endTimeMs` INTEGER, `lifecycleState` TEXT NOT NULL, `deviceManufacturer` TEXT NOT NULL, `deviceModel` TEXT NOT NULL, `androidVersion` TEXT NOT NULL, `sdkVersion` INTEGER NOT NULL, `applicationVersion` TEXT NOT NULL, `schemaVersion` INTEGER NOT NULL, `deviceMetadataJson` TEXT NOT NULL DEFAULT '{}', `capabilityReportJson` TEXT NOT NULL DEFAULT '{}', `permissionStateJson` TEXT NOT NULL DEFAULT '{}', PRIMARY KEY(`sessionId`))",
+        "fields": [
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startTimeMs",
+            "columnName": "startTimeMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endTimeMs",
+            "columnName": "endTimeMs",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lifecycleState",
+            "columnName": "lifecycleState",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviceManufacturer",
+            "columnName": "deviceManufacturer",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviceModel",
+            "columnName": "deviceModel",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "androidVersion",
+            "columnName": "androidVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sdkVersion",
+            "columnName": "sdkVersion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "applicationVersion",
+            "columnName": "applicationVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "schemaVersion",
+            "columnName": "schemaVersion",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviceMetadataJson",
+            "columnName": "deviceMetadataJson",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'{}'"
+          },
+          {
+            "fieldPath": "capabilityReportJson",
+            "columnName": "capabilityReportJson",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'{}'"
+          },
+          {
+            "fieldPath": "permissionStateJson",
+            "columnName": "permissionStateJson",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'{}'"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "sessionId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_sessions_sessionId",
+            "unique": true,
+            "columnNames": [
+              "sessionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_sessions_sessionId` ON `${TABLE_NAME}` (`sessionId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "observations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`observationId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` TEXT NOT NULL, `sequenceNumber` INTEGER NOT NULL, `timestampUtcMs` INTEGER NOT NULL, `monotonicTimestampNs` INTEGER, `ingestionMonotonicTimestampNs` INTEGER, `timestampDomain` TEXT NOT NULL, `timestampUncertaintyNs` INTEGER, `source` TEXT NOT NULL, `technology` TEXT NOT NULL, `type` TEXT NOT NULL, `provider` TEXT NOT NULL, `rawPayloadJson` TEXT NOT NULL, `normalizedPayloadJson` TEXT NOT NULL, `capabilityState` TEXT NOT NULL, `evidenceStatus` TEXT NOT NULL DEFAULT 'OBSERVED', `provenance` TEXT NOT NULL, FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`sessionId`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "observationId",
+            "columnName": "observationId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sequenceNumber",
+            "columnName": "sequenceNumber",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestampUtcMs",
+            "columnName": "timestampUtcMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "monotonicTimestampNs",
+            "columnName": "monotonicTimestampNs",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ingestionMonotonicTimestampNs",
+            "columnName": "ingestionMonotonicTimestampNs",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "timestampDomain",
+            "columnName": "timestampDomain",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestampUncertaintyNs",
+            "columnName": "timestampUncertaintyNs",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "technology",
+            "columnName": "technology",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "provider",
+            "columnName": "provider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rawPayloadJson",
+            "columnName": "rawPayloadJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "normalizedPayloadJson",
+            "columnName": "normalizedPayloadJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "capabilityState",
+            "columnName": "capabilityState",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "evidenceStatus",
+            "columnName": "evidenceStatus",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'OBSERVED'"
+          },
+          {
+            "fieldPath": "provenance",
+            "columnName": "provenance",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "observationId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_observations_sessionId",
+            "unique": false,
+            "columnNames": [
+              "sessionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_observations_sessionId` ON `${TABLE_NAME}` (`sessionId`)"
+          },
+          {
+            "name": "index_observations_timestampUtcMs",
+            "unique": false,
+            "columnNames": [
+              "timestampUtcMs"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_observations_timestampUtcMs` ON `${TABLE_NAME}` (`timestampUtcMs`)"
+          },
+          {
+            "name": "index_observations_monotonicTimestampNs",
+            "unique": false,
+            "columnNames": [
+              "monotonicTimestampNs"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_observations_monotonicTimestampNs` ON `${TABLE_NAME}` (`monotonicTimestampNs`)"
+          },
+          {
+            "name": "index_observations_ingestionMonotonicTimestampNs",
+            "unique": false,
+            "columnNames": [
+              "ingestionMonotonicTimestampNs"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_observations_ingestionMonotonicTimestampNs` ON `${TABLE_NAME}` (`ingestionMonotonicTimestampNs`)"
+          },
+          {
+            "name": "index_observations_type",
+            "unique": false,
+            "columnNames": [
+              "type"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_observations_type` ON `${TABLE_NAME}` (`type`)"
+          },
+          {
+            "name": "index_observations_sessionId_sequenceNumber",
+            "unique": true,
+            "columnNames": [
+              "sessionId",
+              "sequenceNumber"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_observations_sessionId_sequenceNumber` ON `${TABLE_NAME}` (`sessionId`, `sequenceNumber`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "sessions",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sessionId"
+            ],
+            "referencedColumns": [
+              "sessionId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "pending_observations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`sessionId` TEXT NOT NULL, `sequenceNumber` INTEGER NOT NULL, `timestampUtcMs` INTEGER NOT NULL, `monotonicTimestampNs` INTEGER, `ingestionMonotonicTimestampNs` INTEGER, `timestampDomain` TEXT NOT NULL, `timestampUncertaintyNs` INTEGER, `source` TEXT NOT NULL, `technology` TEXT NOT NULL, `type` TEXT NOT NULL, `provider` TEXT NOT NULL, `rawPayloadJson` TEXT NOT NULL, `normalizedPayloadJson` TEXT NOT NULL DEFAULT '{}', `capabilityState` TEXT NOT NULL, `evidenceStatus` TEXT NOT NULL, `provenance` TEXT NOT NULL, PRIMARY KEY(`sessionId`, `sequenceNumber`), FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`sessionId`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sequenceNumber",
+            "columnName": "sequenceNumber",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestampUtcMs",
+            "columnName": "timestampUtcMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "monotonicTimestampNs",
+            "columnName": "monotonicTimestampNs",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ingestionMonotonicTimestampNs",
+            "columnName": "ingestionMonotonicTimestampNs",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "timestampDomain",
+            "columnName": "timestampDomain",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestampUncertaintyNs",
+            "columnName": "timestampUncertaintyNs",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "technology",
+            "columnName": "technology",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "provider",
+            "columnName": "provider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rawPayloadJson",
+            "columnName": "rawPayloadJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "normalizedPayloadJson",
+            "columnName": "normalizedPayloadJson",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'{}'"
+          },
+          {
+            "fieldPath": "capabilityState",
+            "columnName": "capabilityState",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "evidenceStatus",
+            "columnName": "evidenceStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "provenance",
+            "columnName": "provenance",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "sessionId",
+            "sequenceNumber"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_pending_observations_sessionId",
+            "unique": false,
+            "columnNames": [
+              "sessionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_pending_observations_sessionId` ON `${TABLE_NAME}` (`sessionId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "sessions",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sessionId"
+            ],
+            "referencedColumns": [
+              "sessionId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "orbit_catalog",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`noradCatId` INTEGER NOT NULL, `objectName` TEXT, `objectId` TEXT, `classification` TEXT, `epochRaw` TEXT NOT NULL, `epochUtcMillis` INTEGER NOT NULL, `meanMotionRevPerDay` REAL NOT NULL, `eccentricity` REAL NOT NULL, `inclinationDeg` REAL NOT NULL, `raanDeg` REAL NOT NULL, `argOfPericenterDeg` REAL NOT NULL, `meanAnomalyDeg` REAL NOT NULL, `ephemerisType` INTEGER, `elementSetNo` INTEGER, `revAtEpoch` INTEGER, `bstar` REAL NOT NULL, `meanMotionDot` REAL, `meanMotionDdot` REAL, `catalogSource` TEXT NOT NULL, `catalogSourceIdentifier` TEXT, `catalogFormat` TEXT NOT NULL, `retrievedAtUtcMillis` INTEGER NOT NULL, PRIMARY KEY(`noradCatId`))",
+        "fields": [
+          {
+            "fieldPath": "noradCatId",
+            "columnName": "noradCatId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "objectName",
+            "columnName": "objectName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "objectId",
+            "columnName": "objectId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "classification",
+            "columnName": "classification",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "epochRaw",
+            "columnName": "epochRaw",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "epochUtcMillis",
+            "columnName": "epochUtcMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "meanMotionRevPerDay",
+            "columnName": "meanMotionRevPerDay",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "eccentricity",
+            "columnName": "eccentricity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inclinationDeg",
+            "columnName": "inclinationDeg",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "raanDeg",
+            "columnName": "raanDeg",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "argOfPericenterDeg",
+            "columnName": "argOfPericenterDeg",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "meanAnomalyDeg",
+            "columnName": "meanAnomalyDeg",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ephemerisType",
+            "columnName": "ephemerisType",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "elementSetNo",
+            "columnName": "elementSetNo",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "revAtEpoch",
+            "columnName": "revAtEpoch",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "bstar",
+            "columnName": "bstar",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "meanMotionDot",
+            "columnName": "meanMotionDot",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "meanMotionDdot",
+            "columnName": "meanMotionDdot",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "catalogSource",
+            "columnName": "catalogSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "catalogSourceIdentifier",
+            "columnName": "catalogSourceIdentifier",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "catalogFormat",
+            "columnName": "catalogFormat",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retrievedAtUtcMillis",
+            "columnName": "retrievedAtUtcMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "noradCatId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9bc42ef76f169b56d202c5d36b9c949c')"
+    ]
+  }
+}

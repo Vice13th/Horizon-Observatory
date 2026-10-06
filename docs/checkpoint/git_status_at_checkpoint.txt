@@ -1,0 +1,25 @@
+ M app/src/main/kotlin/horizon/observatory/acquisition/cellular/CellInfoSource.kt
+ M app/src/main/kotlin/horizon/observatory/acquisition/gnss/GnssObservationSource.kt
+ M app/src/main/kotlin/horizon/observatory/acquisition/gnss/LocationFixSource.kt
+ M app/src/main/kotlin/horizon/observatory/acquisition/sensor/SensorObservationSource.kt
+ M app/src/main/kotlin/horizon/observatory/acquisition/service/ObservatoryService.kt
+ M app/src/main/kotlin/horizon/observatory/analysis/SessionAnalysisEngine.kt
+ M app/src/main/kotlin/horizon/observatory/core/capability/CapabilityScanner.kt
+ M app/src/main/kotlin/horizon/observatory/export/ExportEngine.kt
+ M app/src/main/kotlin/horizon/observatory/storage/repository/SessionRepository.kt
+ M app/src/main/kotlin/horizon/observatory/storage/repository/SessionRepositoryImpl.kt
+ M app/src/main/kotlin/horizon/observatory/storage/room/SessionDao.kt
+ M app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt
+ M gradlew
+?? app/src/test/kotlin/horizon/observatory/analysis/
+?? docs/ARCHITECTURE_STATE.md
+?? docs/BUILD_AND_DEVICE_VALIDATION.md
+?? docs/CHANGELOG_CHECKPOINT.md
+?? docs/EVIDENCE_SUMMARY.md
+?? docs/KNOWN_LIMITATIONS.md
+?? docs/NEXT_PHASE_CORRELATION.md
+?? docs/PROJECT_CHECKPOINT_2026-09-24.md
+?? docs/VERIFICATION_MATRIX.md
+?? docs/checkpoint/
+?? docs/patches/
+?? evidence/

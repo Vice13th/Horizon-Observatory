@@ -1,0 +1,280 @@
+--- BASELINE/HORIZON_MainActivity_REFINED_COMPILE_FIXED.kt	2026-09-23 22:05:22.454479852 +0000
++++ app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt	2026-09-23 22:07:58.592464675 +0000
+@@ -536,6 +536,8 @@
+             Text("Average C/N0: ${a.averageCn0DbHz?.let { "%.2f dB-Hz".format(it) } ?: "UNAVAILABLE"}")
+             Text("Average LTE/NR RSRP: ${a.averageRsrpDbm?.let { "%.2f dBm".format(it) } ?: "UNAVAILABLE"}")
+             Text("Average visible satellites: ${a.averageVisibleSatellites?.let { "%.1f".format(it) } ?: "UNAVAILABLE"}")
++            Text("Navigation messages: ${a.navigationMessageCount}")
++            Text("AGC: ${a.agcState} · samples=${a.agcSampleCount} · spread=${a.agcSpreadDb?.let { "%.4f dB".format(it) } ?: "UNAVAILABLE"}")
+             Text("Sequence gaps: ${a.sequenceGapCount}")
+             Text("Source-time regressions: ${a.timestampMonotonicViolations}")
+         }
+@@ -557,7 +559,7 @@
+ 
+ @Composable
+ private fun GnssScreen(obs: List<ObservationEntity>, analysis: AnalysisSnapshot) {
+-    val rawRows = obs.filter { it.type == "GNSS_RAW_MEASUREMENT" }.takeLast(120)
++    val rawRows = obs.filter { it.type == "GNSS_RAW_MEASUREMENT" }.takeLast(160)
+     val latestStatus = obs.asSequence().filter { it.type == "GNSS_STATUS" }.lastOrNull()
+     val sky = latestStatus?.let { row ->
+         runCatching { JSONObject(row.rawPayloadJson).optJSONArray("satellites") }.getOrNull()?.let { arr ->
+@@ -565,17 +567,24 @@
+                 arr.optJSONObject(index)?.let { item ->
+                     SatellitePoint(
+                         svid = item.optInt("svid", -1),
++                        constellationType = item.optInt("constellationType", 0),
+                         azimuthDeg = item.optDouble("azimuthDegrees", Double.NaN),
+                         elevationDeg = item.optDouble("elevationDegrees", Double.NaN),
+                         cn0 = item.optDouble("cn0DbHz", Double.NaN),
++                        basebandCn0 = item.optDouble("basebandCn0DbHz", Double.NaN),
++                        carrierFrequencyHz = item.optDouble("carrierFrequencyHz", Double.NaN),
+                         usedInFix = item.optBoolean("usedInFix", false)
+                     )
+                 }
+             }
+         } ?: emptyList()
+     } ?: emptyList()
+-    val cnoHistory = rawRows.mapNotNull { runCatching { JSONObject(it.rawPayloadJson).optDouble("cn0DbHz", Double.NaN) }.getOrNull() }
+-        .filter { !it.isNaN() && !it.isInfinite() }
++    val cnoHistory = rawRows.mapNotNull { numericFieldLocal(it, "cn0DbHz") }.filter { it.isFinite() }
++    val agcHistory = rawRows.mapNotNull { numericFieldLocal(it, "automaticGainControlLevelDb") }.filter { it.isFinite() }
++    val navigationMessages = obs.filter { it.type == "GNSS_NAVIGATION_MESSAGE" }.takeLast(40)
++    val matrix = sky.filter { it.svid >= 0 && it.azimuthDeg.isFinite() && it.elevationDeg.isFinite() }
++        .sortedByDescending { it.cn0 }
++        .take(14)
+ 
+     LazyColumn(
+         Modifier.fillMaxSize().padding(horizontal = 12.dp),
+@@ -583,7 +592,30 @@
+         verticalArrangement = Arrangement.spacedBy(8.dp)
+     ) {
+         item { SignalCard("GNSS signal history", "dB-Hz", analysis.averageCn0DbHz, cnoHistory) }
++        item { SignalCard("GNSS AGC history", "dB", null, agcHistory) }
++        item {
++            MetricCard(
++                "AGC DIAGNOSTIC",
++                analysis.agcState,
++                if (analysis.agcSampleCount == 0) "NO AGC MEASUREMENTS OBSERVED"
++                else "samples=${analysis.agcSampleCount} distinct=${analysis.agcDistinctLevels} spread=${analysis.agcSpreadDb?.let { "%.4f dB".format(it) } ?: "UNAVAILABLE"}"
++            )
++        }
+         item { SkyPlot(sky) }
++        item {
++            MetricCard(
++                "MULTI-SATELLITE OBSERVATION",
++                analysis.distinctSatelliteCount.toString(),
++                "latest status=${analysis.latestSatelliteCount ?: "UNAVAILABLE"} · multi-satellite epochs=${analysis.multiSatelliteEpochs}"
++            )
++        }
++        item { SatelliteMatrix(matrix) }
++        item {
++            NavigationMessagePanel(
++                count = analysis.navigationMessageCount,
++                latest = navigationMessages.lastOrNull()
++            )
++        }
+         item { MetricCard("Raw measurements", analysis.gnssRawCount.toString(), if (rawRows.isEmpty()) "NOT OBSERVED IN THIS SESSION" else "MEASURED") }
+         if (rawRows.isEmpty()) {
+             item {
+@@ -601,18 +633,88 @@
+ 
+ data class SatellitePoint(
+     val svid: Int,
++    val constellationType: Int,
+     val azimuthDeg: Double,
+     val elevationDeg: Double,
+     val cn0: Double,
++    val basebandCn0: Double,
++    val carrierFrequencyHz: Double,
+     val usedInFix: Boolean
+ )
+ 
+ @Composable
++private fun SatelliteMatrix(points: List<SatellitePoint>) {
++    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
++            Text("LIVE SATELLITE MATRIX", style = MaterialTheme.typography.titleMedium)
++            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
++                Text("SAT", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(56.dp))
++                Text("CN0", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(58.dp))
++                Text("EL", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(48.dp))
++                Text("AZ", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(52.dp))
++                Text("FREQ", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(78.dp))
++            }
++            points.forEach { point ->
++                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
++                    Text(
++                        "${constellationLabel(point.constellationType)} ${point.svid}",
++                        modifier = Modifier.width(56.dp),
++                        style = MaterialTheme.typography.labelSmall,
++                        fontWeight = FontWeight.SemiBold
++                    )
++                    Text("${"%.1f".format(point.cn0)}", modifier = Modifier.width(58.dp), style = MaterialTheme.typography.labelSmall)
++                    Text("${"%.0f°".format(point.elevationDeg)}", modifier = Modifier.width(48.dp), style = MaterialTheme.typography.labelSmall)
++                    Text("${"%.0f°".format(point.azimuthDeg)}", modifier = Modifier.width(52.dp), style = MaterialTheme.typography.labelSmall)
++                    Text(
++                        if (point.carrierFrequencyHz.isFinite()) "${"%.0f".format(point.carrierFrequencyHz / 1_000_000.0)}M" else "—",
++                        modifier = Modifier.width(78.dp),
++                        style = MaterialTheme.typography.labelSmall
++                    )
++                    Text(if (point.usedInFix) "FIX" else "TRACK", style = MaterialTheme.typography.labelSmall)
++                }
++            }
++            if (points.isEmpty()) {
++                Text("NO SATELLITE MATRIX DATA", style = MaterialTheme.typography.bodySmall)
++            }
++        }
++    }
++}
++
++@Composable
++private fun NavigationMessagePanel(count: Int, latest: ObservationEntity?) {
++    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
++            Text("NAVIGATION MESSAGE STREAM", style = MaterialTheme.typography.titleMedium)
++            Text("Observed messages: $count", style = MaterialTheme.typography.labelMedium)
++            if (latest == null) {
++                Text("NOT OBSERVED IN THIS SESSION", style = MaterialTheme.typography.bodySmall)
++            } else {
++                val json = runCatching { JSONObject(latest.rawPayloadJson) }.getOrNull()
++                Text("SVID ${json?.optInt("svid", -1)} · type ${json?.optInt("type", -1)} · status ${json?.optInt("status", -1)}", style = MaterialTheme.typography.bodySmall)
++                Text("messageId=${json?.optInt("messageId", -1)} submessageId=${json?.optInt("submessageId", -1)} length=${json?.optInt("dataLength", -1)} bytes", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
++                Text("Raw navigation payload is preserved in the observation record.", style = MaterialTheme.typography.labelSmall)
++            }
++        }
++    }
++}
++
++private fun constellationLabel(type: Int): String = when (type) {
++    1 -> "GPS"
++    2 -> "SBAS"
++    3 -> "GLO"
++    4 -> "QZSS"
++    5 -> "BDS"
++    6 -> "GAL"
++    7 -> "IRNSS"
++    else -> "UNK"
++}
++
++@Composable
+ private fun SkyPlot(points: List<SatellitePoint>) {
+     Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+             Text("SATELLITE SKY PLOT", style = MaterialTheme.typography.titleMedium)
+-            Text("Based only on observed azimuth/elevation from GnssStatus • ${points.size} plotted satellites", style = MaterialTheme.typography.labelSmall)
++            Text("Observed azimuth/elevation from GnssStatus • ${points.size} plotted satellites", style = MaterialTheme.typography.labelSmall)
+             Box(Modifier.fillMaxWidth().height(250.dp).background(Color(0xFF0D0B10))) {
+                 Canvas(Modifier.fillMaxSize().padding(12.dp)) {
+                     val diameter = min(size.width, size.height) * 0.82f
+@@ -620,11 +722,10 @@
+                     val center = Offset(size.width / 2f, size.height / 2f)
+                     val ringFractions = floatArrayOf(1f, 2f / 3f, 1f / 3f)
+                     ringFractions.forEach { fraction ->
+-                        drawCircle(Color(0xFF3A3042), radius * fraction, center, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5f))
++                        drawCircle(Color(0xFF3A3042), radius * fraction, center, style = Stroke(width = 1.5f))
+                     }
+                     drawLine(Color(0xFF3A3042), Offset(center.x - radius, center.y), Offset(center.x + radius, center.y), 1.2f)
+                     drawLine(Color(0xFF3A3042), Offset(center.x, center.y - radius), Offset(center.x, center.y + radius), 1.2f)
+-
+                     points.forEach { sat ->
+                         val radial = radius * ((90.0 - sat.elevationDeg.coerceIn(0.0, 90.0)) / 90.0).toFloat()
+                         val az = Math.toRadians(sat.azimuthDeg)
+@@ -642,42 +743,79 @@
+     }
+ }
+ 
+-private fun cellularRsrpSamples(observations: List<ObservationEntity>): List<Double> =
+-    observations.asSequence()
+-        .filter { it.type == "CELLULAR_INFO" }
+-        .mapNotNull { row ->
+-            fun read(jsonText: String): Double? = runCatching {
+-                val json = JSONObject(jsonText)
+-                listOf("rsrp", "ssRsrp").firstNotNullOfOrNull { key ->
+-                    when (val value = json.opt(key)) {
+-                        is Number -> value.toDouble()
+-                        else -> null
+-                    }
+-                }
+-            }.getOrNull()
+-            read(row.rawPayloadJson) ?: read(row.normalizedPayloadJson)
+-        }
++private fun cellularRsrpSamples(observations: List<ObservationEntity>): List<Double> {
++    val serving = observations.filter { it.type == "CELLULAR_INFO" && isServingCellRow(it) }
++    val source = if (serving.isNotEmpty()) serving else observations.filter { it.type == "CELLULAR_INFO" }
++    return source.asSequence()
++        .mapNotNull { numericFieldLocal(it, "rsrp", "ssRsrp") }
+         .filter { it.isFinite() }
+         .toList()
+         .takeLast(120)
++}
++
++private fun isServingCellRow(row: ObservationEntity): Boolean = runCatching {
++    val json = JSONObject(row.rawPayloadJson)
++    json.optBoolean("registered", false) || json.optInt("connectionStatus", 0) == 1 || json.optInt("connectionStatus", 0) == 2
++}.getOrDefault(false)
++
++private fun latestServingCellRow(observations: List<ObservationEntity>): ObservationEntity? =
++    observations.filter { it.type == "CELLULAR_INFO" && isServingCellRow(it) }
++        .maxByOrNull { it.timestampUtcMs }
++        ?: observations.filter { it.type == "CELLULAR_INFO" }.maxByOrNull { it.timestampUtcMs }
+ 
+ @Composable
+ private fun CellularScreen(obs: List<ObservationEntity>, analysis: AnalysisSnapshot) {
+-    val rows = obs.filter { it.type == "CELLULAR_INFO" }.takeLast(80)
++    val rows = obs.filter { it.type == "CELLULAR_INFO" }.takeLast(100)
+     val samples = cellularRsrpSamples(obs)
++    val latest = latestServingCellRow(obs)
++    val latestJson = latest?.let { runCatching { JSONObject(it.rawPayloadJson) }.getOrNull() }
+     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+-        item { SignalCard("Cellular RSRP history", "dBm", analysis.averageRsrpDbm, samples) }
+         item {
+             MetricCard(
+-                "LIVE CELLULAR HISTORY",
++                "LIVE SERVING CELL",
++                analysis.latestServingTechnology ?: latest?.technology ?: "UNAVAILABLE",
++                "RSRP=${analysis.latestServingRsrpDbm?.let { "%.1f dBm".format(it) } ?: "UNAVAILABLE"} · age=${analysis.latestCellAgeMs?.let { "${it} ms" } ?: "UNAVAILABLE"}"
++            )
++        }
++        item { SignalCard("Cellular RSRP history", "dBm", analysis.latestServingRsrpDbm ?: analysis.averageRsrpDbm, samples) }
++        item {
++            MetricCard(
++                "LIVE CELLULAR FEED",
+                 samples.size.toString(),
+-                if (samples.isEmpty()) "NO RSRP HISTORY OBSERVED" else "Persisted measured RSRP samples"
++                "explicit refresh=${analysis.freshCellRequestSamples} · callbacks=${analysis.cellularCallbackSamples} · total observations=${analysis.cellularCount}"
+             )
+         }
++        if (latestJson != null) {
++            item {
++                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
++                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
++                        Text("SERVING CELL", style = MaterialTheme.typography.titleMedium)
++                        Text("${latest?.technology ?: "UNKNOWN"}  MCC ${latestJson.optString("mcc", "—")}  MNC ${latestJson.optString("mnc", "—")}")
++                        Text("PCI ${latestJson.opt("pci")}  TAC ${latestJson.opt("tac")}  EARFCN ${latestJson.opt("earfcn")}", style = MaterialTheme.typography.labelMedium)
++                        Text("RSRP ${latestJson.opt("rsrp")} · RSRQ ${latestJson.opt("rsrq")} · RSSNR ${latestJson.opt("rssnr")}", style = MaterialTheme.typography.labelMedium)
++                        Text("Trigger ${latestJson.optString("acquisitionTrigger", "UNKNOWN")} · freshness ${latestJson.optString("freshness", "UNKNOWN")}", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
++                    }
++                }
++            }
++        }
+         items(rows.takeLast(40)) { ObservationRow(it) }
+     }
+ }
+ 
++private fun numericFieldLocal(row: ObservationEntity, vararg keys: String): Double? {
++    fun read(jsonText: String): Double? = runCatching {
++        val json = JSONObject(jsonText)
++        keys.firstNotNullOfOrNull { key ->
++            when (val value = json.opt(key)) {
++                is Number -> value.toDouble()
++                else -> null
++            }
++        }
++    }.getOrNull()
++    return read(row.rawPayloadJson) ?: read(row.normalizedPayloadJson)
++}
++
++
+ @Composable
+ private fun SensorsScreen(obs: List<ObservationEntity>, analysis: AnalysisSnapshot) {
+     val rows = obs.filter { it.source == "SENSOR" }.takeLast(60)

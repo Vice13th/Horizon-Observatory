@@ -1,0 +1,27 @@
+--- a/gradle/libs.versions.toml
++++ b/gradle/libs.versions.toml
+@@ -9,6 +9,7 @@
+ composeBom = "2024.12.01"
+ composeCompiler = "1.5.14"
+ junit = "4.13.2"
++orgJson = "20240303"
+ 
+ [libraries]
+ androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+@@ -27,6 +28,7 @@
+ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+ junit = { group = "junit", name = "junit", version.ref = "junit" }
++org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
+ 
+ [plugins]
+ android-application = { id = "com.android.application", version.ref = "agp" }
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -66,4 +66,6 @@
+     kapt(libs.androidx.room.compiler)
+ 
+     testImplementation(libs.junit)
++    // Local JVM tests execute outside Android's framework implementation. Provide a real JVM JSONObject implementation.
++    testImplementation(libs.org.json)
+ }

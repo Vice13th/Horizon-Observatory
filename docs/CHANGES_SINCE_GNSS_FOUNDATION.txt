@@ -1,0 +1,16 @@
+HORIZON — Changes since HORIZON_NEXT_PHASE_GNSS_DOMAIN_2026-09-24
+
+Main source changes:
+- GnssEvidenceModels.kt: added signal statistics, history points, constellation summaries and latest-satellite snapshot.
+- GnssCorrelationEngine.kt: computes latest satellite view, history, constellation summaries, and observed signal statistics.
+- SessionAnalysisEngine.kt: integrates GnssDomainSnapshot into session analysis.
+- MainActivity.kt: GNSS UI consumes correlated domain evidence; added C/N0 vs elevation, constellation summaries, correlated evidence matrix, separate antenna panel, and dedicated Antenna Observatory screen.
+- ExportEngine.kt: exports and readbacks gnss_domain_snapshot.json, satellite_evidence.csv, gnss_antenna_evidence.json.
+- GnssCorrelationEngineTest.kt: additional latest-satellite/constellation and antenna/statistics coverage.
+
+Generated documentation:
+- docs/NEXT_PHASE_AUTOMATION_BOUNDARY.md
+- docs/BUILD_GATE_NEXT.md
+- docs/AUTOMATION_COMPLETION_REPORT_2026-09-24.md
+- README_AUTOMATED_GNSS_CHECKPOINT.md
+- scripts/APPLY_GNSS_DOMAIN_COMPLETE.ps1

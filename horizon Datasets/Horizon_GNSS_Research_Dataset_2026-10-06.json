@@ -1,0 +1,514 @@
+{
+  "dataset_id": "HORIZON_GNSS_RESEARCH_DATASET_2026-10-06",
+  "version": "1.0",
+  "created_utc": "2026-10-06T06:39:32.989443+00:00",
+  "purpose": "Evidence-oriented research dataset for Horizon Observatory GNSS domain evolution.",
+  "epistemic_rules": [
+    "Evidence > narrative.",
+    "Raw evidence remains unchanged.",
+    "Ambiguous observations remain ambiguous.",
+    "Do not infer missing measurements.",
+    "Preserve provenance.",
+    "Verify before claiming success."
+  ],
+  "status_vocabulary": [
+    "VERIFIED",
+    "OBSERVED",
+    "UNVERIFIED",
+    "BLOCKED",
+    "INFERRED",
+    "RESEARCH_TARGET"
+  ],
+  "horizon_current_state": {
+    "verified": [
+      "Clean debug assemble completed successfully in the 2026-10-06 checkpoint run.",
+      "Primary APK installed and launched on SM-A075F.",
+      "Real GNSS acquisition produced thousands of observations in recorded sessions.",
+      "Two Generate Package attempts returned READY and a pulled ZIP passed structural validation.",
+      "The final checkpoint archive was opened and verified with 379 entries and SHA256 56C285A0D787828A0D2596D489EA59AB528BE672D9B109722F3C364613D319FF."
+    ],
+    "observed": [
+      "Latest satellite evidence showed correlated observations but nav=0 in the tested runtime.",
+      "GNSS signal history exposed C/N0 data.",
+      "AGC diagnostic was EXACTLY_CONSTANT on the tested device/sample window.",
+      "Display rotation could be toggled/restored."
+    ],
+    "unverified": [
+      "Live physical heading-driven skyplot rotation.",
+      "Active OrbitCore SGP4/SDP4 backend implementation.",
+      "RTK/PPK/PPP/HAS/SSR implementation in the current Horizon source.",
+      "Direct RINEX 4.01 production.",
+      "Tightly coupled GNSS/INS implementation.",
+      "Real-time spoofing detection."
+    ],
+    "blocked": [
+      "Continuous physical-heading rotation on the tested SM-A075F because the observed sensor inventory did not provide a usable rotation-vector/gyro/magnetometer path.",
+      "Full post-stop state proof was not captured after the UI stop action."
+    ]
+  },
+  "android_gnss_capabilities": [
+    {
+      "capability": "GnssMeasurementsEvent",
+      "layer": "acquisition",
+      "status": "RESEARCH_TARGET",
+      "notes": "Primary raw-measurement event surface."
+    },
+    {
+      "capability": "GnssMeasurement pseudorange",
+      "layer": "raw_observation",
+      "status": "RESEARCH_TARGET",
+      "notes": "Device/signal dependent; preserve raw values and uncertainty/flags."
+    },
+    {
+      "capability": "Carrier phase / ADR",
+      "layer": "raw_observation",
+      "status": "RESEARCH_TARGET",
+      "notes": "Required for RTK/PPK research; availability is hardware dependent."
+    },
+    {
+      "capability": "Pseudorange rate / Doppler",
+      "layer": "raw_observation",
+      "status": "RESEARCH_TARGET",
+      "notes": "Useful for velocity and tightly-coupled filtering."
+    },
+    {
+      "capability": "GnssNavigationMessage",
+      "layer": "ephemeris",
+      "status": "RESEARCH_TARGET",
+      "notes": "Availability is device/constellation dependent; current tested runtime observed nav=0."
+    },
+    {
+      "capability": "GnssAntennaInfo",
+      "layer": "antenna",
+      "status": "RESEARCH_TARGET",
+      "notes": "Use when device exposes antenna PCO/PCV/gain metadata."
+    },
+    {
+      "capability": "GnssClock",
+      "layer": "time",
+      "status": "RESEARCH_TARGET",
+      "notes": "Required for rigorous receiver-clock modeling."
+    },
+    {
+      "capability": "GnssStatus",
+      "layer": "state",
+      "status": "RESEARCH_TARGET",
+      "notes": "Use as status evidence, not as substitute for raw observations."
+    },
+    {
+      "capability": "NMEA",
+      "layer": "compatibility",
+      "status": "RESEARCH_TARGET",
+      "notes": "Useful secondary evidence; do not make it canonical when raw measurements exist."
+    }
+  ],
+  "canonical_observation_model": {
+    "raw": [
+      "event_time",
+      "gnss_clock",
+      "svid",
+      "constellation",
+      "signal_type",
+      "carrier_frequency_hz",
+      "cn0_dbhz",
+      "pseudorange_m",
+      "pseudorange_rate_mps",
+      "adr_m",
+      "adr_state",
+      "multipath_indicator",
+      "received_sv_time_ns",
+      "received_sv_time_uncertainty_ns",
+      "accumulated_delta_range_state",
+      "raw_source_id"
+    ],
+    "normalized": [
+      "epoch_id",
+      "satellite_id",
+      "signal_id",
+      "measurement_type",
+      "value",
+      "sigma",
+      "quality_flags",
+      "time_system",
+      "provenance"
+    ],
+    "derived": [
+      "geometry",
+      "azimuth_deg",
+      "elevation_deg",
+      "range_m",
+      "doppler_geometry",
+      "cycle_slip_assessment",
+      "multipath_assessment",
+      "residual"
+    ],
+    "solution": [
+      "solver_id",
+      "solution_time",
+      "ecef",
+      "lla",
+      "velocity",
+      "clock_bias",
+      "clock_drift",
+      "covariance",
+      "integrity_status",
+      "protection_level"
+    ],
+    "rule": "Derived and solution layers must never overwrite raw records."
+  },
+  "constellations_and_signals": [
+    "GPS",
+    "Galileo",
+    "GLONASS",
+    "BeiDou",
+    "QZSS",
+    "NavIC",
+    "SBAS"
+  ],
+  "positioning_tiers": [
+    {
+      "tier": 0,
+      "name": "SPP/WLS",
+      "inputs": [
+        "pseudorange",
+        "broadcast ephemeris",
+        "receiver clock"
+      ],
+      "goal": "Deterministic baseline solution and residual diagnostics."
+    },
+    {
+      "tier": 1,
+      "name": "DGNSS",
+      "inputs": [
+        "code observations",
+        "reference corrections"
+      ],
+      "goal": "Reduce common-mode code errors."
+    },
+    {
+      "tier": 2,
+      "name": "RTK/PPK",
+      "inputs": [
+        "carrier phase",
+        "code",
+        "base/reference data",
+        "broadcast/precise products"
+      ],
+      "goal": "High-accuracy relative positioning."
+    },
+    {
+      "tier": 3,
+      "name": "PPP",
+      "inputs": [
+        "code",
+        "carrier phase",
+        "precise orbit",
+        "precise clock"
+      ],
+      "goal": "Precise absolute positioning without local base."
+    },
+    {
+      "tier": 4,
+      "name": "PPP-AR / SSR / HAS",
+      "inputs": [
+        "multi-frequency observations",
+        "precise corrections",
+        "ambiguity support"
+      ],
+      "goal": "Higher convergence/accuracy with modern correction services."
+    }
+  ],
+  "fusion_stack": [
+    {
+      "stage": "GNSS-only",
+      "method": "WLS/SPP",
+      "status": "RESEARCH_TARGET"
+    },
+    {
+      "stage": "GNSS/INS",
+      "method": "EKF",
+      "status": "RESEARCH_TARGET"
+    },
+    {
+      "stage": "Tightly coupled",
+      "method": "GNSS/INS TC-EKF",
+      "status": "RESEARCH_TARGET"
+    },
+    {
+      "stage": "Robust filtering",
+      "method": "FDE/RAIM",
+      "status": "RESEARCH_TARGET"
+    },
+    {
+      "stage": "Smoothing",
+      "method": "Factor Graph Optimization",
+      "status": "RESEARCH_TARGET"
+    },
+    {
+      "stage": "Pedestrian continuity",
+      "method": "PDR",
+      "status": "RESEARCH_TARGET"
+    },
+    {
+      "stage": "Network aiding",
+      "method": "5G/Wi-Fi/Cellular evidence",
+      "status": "RESEARCH_TARGET"
+    }
+  ],
+  "integrity": [
+    "Residual monitoring",
+    "Fault Detection and Exclusion (FDE)",
+    "RAIM-style consistency checks",
+    "Cycle-slip detection",
+    "Multipath indicators",
+    "Clock discontinuity detection",
+    "C/N0 anomaly detection",
+    "Cross-source position disagreement",
+    "RFI/interference indicators",
+    "Spoofing/meaconing indicators"
+  ],
+  "formats_and_corrections": [
+    {
+      "name": "RINEX 4.01",
+      "role": "canonical scientific observation export",
+      "priority": "P0/P1"
+    },
+    {
+      "name": "RTCM",
+      "role": "correction/real-time data transport",
+      "priority": "P2"
+    },
+    {
+      "name": "NTRIP",
+      "role": "network correction transport",
+      "priority": "P2"
+    },
+    {
+      "name": "SP3",
+      "role": "precise satellite orbit products",
+      "priority": "P2"
+    },
+    {
+      "name": "CLK",
+      "role": "precise satellite/receiver clock products",
+      "priority": "P2"
+    },
+    {
+      "name": "SSR",
+      "role": "real-time state-space corrections",
+      "priority": "P3"
+    },
+    {
+      "name": "Galileo HAS",
+      "role": "high-accuracy service corrections",
+      "priority": "P3"
+    }
+  ],
+  "competitor_landscape": [
+    {
+      "name": "GPSTest",
+      "strengths": [
+        "raw measurement visibility",
+        "dual-frequency/device inspection",
+        "logging",
+        "NMEA/navigation/antenna evidence"
+      ],
+      "lesson": "Capability observatory and raw evidence UX."
+    },
+    {
+      "name": "Google GNSSLogger/GNSS Analysis",
+      "strengths": [
+        "raw GNSS logging",
+        "C/N0 analysis",
+        "WLS",
+        "residual analysis",
+        "reports"
+      ],
+      "lesson": "Scientific diagnostics and measurement semantics."
+    },
+    {
+      "name": "GNSS Compare",
+      "strengths": [
+        "Android raw measurement processing",
+        "research-oriented positioning"
+      ],
+      "lesson": "On-device scientific processing."
+    },
+    {
+      "name": "RTKLIB ecosystem",
+      "strengths": [
+        "RTK",
+        "PPK",
+        "PPP",
+        "RINEX",
+        "RTCM",
+        "SP3",
+        "NTRIP"
+      ],
+      "lesson": "Solver and correction-service breadth."
+    },
+    {
+      "name": "NSGRX research stack",
+      "strengths": [
+        "Android raw to RINEX 4.01",
+        "quality preservation"
+      ],
+      "lesson": "High-fidelity export/conversion."
+    },
+    {
+      "name": "Kshana",
+      "strengths": [
+        "deterministic replay",
+        "PNT resilience",
+        "scenario testing"
+      ],
+      "lesson": "Replay and reproducibility architecture."
+    }
+  ],
+  "research_findings": [
+    {
+      "finding_id": "RF-001",
+      "topic": "Android raw GNSS",
+      "claim": "Android exposes raw GNSS measurement APIs, but field availability is device/signal dependent.",
+      "status": "SUPPORTED",
+      "source": "Android Developers GNSS documentation",
+      "url": "https://developer.android.com/develop/sensors-and-location/sensors/gnss"
+    },
+    {
+      "finding_id": "RF-002",
+      "topic": "RINEX fidelity",
+      "claim": "Quality-preserving Android raw-to-RINEX conversion materially matters for downstream precise positioning and ambiguity processing.",
+      "status": "SUPPORTED",
+      "source": "NSGRX / University of Nottingham research output",
+      "url": "https://nottingham-repository.worktribe.com/output/70323219"
+    },
+    {
+      "finding_id": "RF-003",
+      "topic": "GNSS/INS",
+      "claim": "Recent research supports robust tightly-coupled Android GNSS/INS processing using raw measurements and fault handling.",
+      "status": "SUPPORTED",
+      "source": "NAVIGATION / University of Minnesota research record",
+      "url": "https://experts.umn.edu/en/publications/robust-android-gnss-positioning-using-single-differenced-tightly-/"
+    },
+    {
+      "finding_id": "RF-004",
+      "topic": "GNSS-PPK/PDR/FGO",
+      "claim": "Recent smartphone research combines PPK and pedestrian dead reckoning with factor-graph optimization for improved continuous positioning.",
+      "status": "SUPPORTED",
+      "source": "PMC indexed research article",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11433767/"
+    },
+    {
+      "finding_id": "RF-005",
+      "topic": "Galileo HAS / precise corrections",
+      "claim": "Galileo HAS is a real precise-correction service relevant to future PPP-class research.",
+      "status": "SUPPORTED",
+      "source": "ESA Navipedia",
+      "url": "https://gssc.esa.int/navipedia/index.php/Galileo_High_Accuracy_Service_%28HAS%29"
+    },
+    {
+      "finding_id": "RF-006",
+      "topic": "IGS precise products",
+      "claim": "IGS provides precise products and correction-service infrastructure relevant to PPP/SSR research.",
+      "status": "SUPPORTED",
+      "source": "IGS",
+      "url": "https://connect.igs.org/products-access/"
+    }
+  ],
+  "architecture_target": [
+    "GNSS acquisition",
+    "immutable raw evidence",
+    "normalization",
+    "timestamp engine",
+    "ephemeris/correction layer",
+    "geometry engine",
+    "deterministic solver stack",
+    "fusion layer",
+    "integrity layer",
+    "replay engine",
+    "Room evidence storage",
+    "RINEX/RTCM/JSON/CSV/SQLite export",
+    "scientific visualization"
+  ],
+  "terra_boundary": {
+    "rule": "Do not use SGP4/SDP4 as the GNSS positioning engine.",
+    "gnss_path": "GNSS broadcast ephemeris / precise products / SSR / HAS -> GNSS geometry and positioning",
+    "terra_path": "SGP4/SDP4 -> cataloged space-object propagation"
+  },
+  "validation_metrics": [
+    "Observation completeness",
+    "Epoch continuity",
+    "Clock discontinuity count",
+    "Cycle-slip detection rate",
+    "Residual RMS",
+    "3D position error",
+    "Horizontal position error",
+    "Velocity error",
+    "Time-to-first-fix",
+    "Convergence time",
+    "Availability",
+    "Continuity",
+    "Integrity alert latency",
+    "False alarm rate",
+    "Replay determinism",
+    "Export round-trip fidelity"
+  ],
+  "research_source_registry": [
+    {
+      "id": "SRC-001",
+      "type": "official",
+      "title": "Android GNSS developer documentation",
+      "url": "https://developer.android.com/develop/sensors-and-location/sensors/gnss"
+    },
+    {
+      "id": "SRC-002",
+      "type": "official",
+      "title": "GPSTest project / logging documentation",
+      "url": "https://github.com/barbeau/gpstest"
+    },
+    {
+      "id": "SRC-003",
+      "type": "official",
+      "title": "IGS products and access",
+      "url": "https://connect.igs.org/products-access/"
+    },
+    {
+      "id": "SRC-004",
+      "type": "official",
+      "title": "ESA Galileo HAS / Navipedia",
+      "url": "https://gssc.esa.int/navipedia/index.php/Galileo_High_Accuracy_Service_%28HAS%29"
+    },
+    {
+      "id": "SRC-005",
+      "type": "research",
+      "title": "NSGRX / University of Nottingham research output",
+      "url": "https://nottingham-repository.worktribe.com/output/70323219"
+    },
+    {
+      "id": "SRC-006",
+      "type": "research",
+      "title": "Robust Android GNSS positioning using tightly coupled GNSS/INS EKF",
+      "url": "https://experts.umn.edu/en/publications/robust-android-gnss-positioning-using-single-differenced-tightly-/"
+    },
+    {
+      "id": "SRC-007",
+      "type": "research",
+      "title": "GNSS-PPK + PDR + FGO smartphone research",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11433767/"
+    },
+    {
+      "id": "SRC-008",
+      "type": "research",
+      "title": "Android GNSS / RFI monitoring research",
+      "url": "https://www.mdpi.com/2673-4591/126/1/4"
+    }
+  ],
+  "implementation_constraints": [
+    "Do not fabricate unavailable heading/orientation.",
+    "Do not infer navigation messages when nav evidence is absent.",
+    "Do not claim RTK/PPP/INS capability until implemented and empirically verified.",
+    "Do not overwrite raw evidence with normalized or derived values.",
+    "Do not make the UI imply precision or integrity that the solver has not established.",
+    "Every derived artifact needs provenance and algorithm/version identifiers."
+  ]
+}

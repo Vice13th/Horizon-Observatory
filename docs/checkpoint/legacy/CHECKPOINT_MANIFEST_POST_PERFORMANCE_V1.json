@@ -1,0 +1,649 @@
+{
+  "checkpoint": "HORIZON_CHECKPOINT_2026-09-24_POST_PERFORMANCE_V1",
+  "created_utc": "2026-09-24T00:37:59Z",
+  "baseline": "HORIZON_CHECKPOINT_2026-09-24_POST_STOP_FIX",
+  "changes": [
+    "Stop-race stabilization",
+    "ObservatoryService import recovery",
+    "UI Performance Fix V1"
+  ],
+  "runtime_claims": "User-reported only for post-V1 responsiveness; no quantitative post-V1 memory receipt supplied.",
+  "source_file_count": 127,
+  "files": [
+    {
+      "path": "PROJECT/CHECKPOINT_FILE_INVENTORY.json",
+      "size": 22777,
+      "sha256": "59fd91e28492627fa9e77e3ad1ffc68d8054eccad7038138ff8d55a091913a85"
+    },
+    {
+      "path": "PROJECT/CHECKPOINT_MANIFEST.json",
+      "size": 20582,
+      "sha256": "0720d0d04c76ad7f7f7bd690973f74b67e734fe8ec38764ac1f0ad9602b6a7a5"
+    },
+    {
+      "path": "PROJECT/CHECKPOINT_MANIFEST_POST_STOP_FIX.json",
+      "size": 2470729,
+      "sha256": "7aa2392e3abfa11214ee70f6db5c1ff8b40143131d3f298c9cfd0f561ae40ce0"
+    },
+    {
+      "path": "PROJECT/CHECKPOINT_META_HASHES.txt",
+      "size": 186,
+      "sha256": "574dd8d038e15df7a18a797c7475d9c8cfb68a63eaab9b2c0575ca3c0baedfa0"
+    },
+    {
+      "path": "PROJECT/ENGINEERING_STATUS.md",
+      "size": 3426,
+      "sha256": "357bfff6efba0039a39720165261d4b147888b9faca023994f8970b488699c2b"
+    },
+    {
+      "path": "PROJECT/EXECUTION_STATUS_2026-09-23.md",
+      "size": 3665,
+      "sha256": "dfa28cb2faa3b0befde9f95247c25d0dec73eaac77c0be2af6afc5757c94fca4"
+    },
+    {
+      "path": "PROJECT/FINAL_RELEASE_NOTES.md",
+      "size": 1958,
+      "sha256": "b925207d1a225b46d965edb514ae8cbc72731fe98a84071043e1894983a39b34"
+    },
+    {
+      "path": "PROJECT/GRADLE_WRAPPER_NOTE.md",
+      "size": 799,
+      "sha256": "f513ffb778c3116bf578194d9534c5fdee1e88d46f695159fa09de10bfb2d7e4"
+    },
+    {
+      "path": "PROJECT/PHASE_0.5_INTEGRITY_CORE_REPORT.md",
+      "size": 2636,
+      "sha256": "13567b1dffbfd5dd0b1683a0ed0e955cf21b43cfe44fc5f524906441aa0543b5"
+    },
+    {
+      "path": "PROJECT/README.md",
+      "size": 3927,
+      "sha256": "251215343f2adbef85d21d610deeea372c9bd80672da6fa8214acb97278db3ae"
+    },
+    {
+      "path": "PROJECT/README_AUTOMATED_GNSS_CHECKPOINT.md",
+      "size": 979,
+      "sha256": "2527ffadd311524c99bcb99651e1c9eff5c13c36a68f23bb88cf5d677f3c59b7"
+    },
+    {
+      "path": "PROJECT/README_CHECKPOINT.md",
+      "size": 441,
+      "sha256": "bdc59c16ff98959106471b390c71c43a21b30f7048ee6c6ed56eaf2027eb7459"
+    },
+    {
+      "path": "PROJECT/README_NEXT_PHASE.md",
+      "size": 1801,
+      "sha256": "fa20daf7b1145c5ab16ed920405d9841027bb2e6b1a975c51a3633c0b14c9c43"
+    },
+    {
+      "path": "PROJECT/README_POST_STOP_FIX.md",
+      "size": 1043,
+      "sha256": "7e6e5dc0dec66d584e590ba6c34f2e5ec8d25bb59f9a8dd693491467cdf3840a"
+    },
+    {
+      "path": "PROJECT/SDK_BOOTSTRAP_FIX.md",
+      "size": 567,
+      "sha256": "46810171353dc2a468b5b47232c922c0f0ec661d9e32c9fa686e47f6048c8a35"
+    },
+    {
+      "path": "PROJECT/SOURCE_HASHES_2026-09-24.txt",
+      "size": 933,
+      "sha256": "b1c59dbcf2424d4eed7fdb3b13bdaa412362909edfa461c7cceb4f0aa779531b"
+    },
+    {
+      "path": "PROJECT/WRAPPER_BOOTSTRAP_FIX.md",
+      "size": 439,
+      "sha256": "63672ed230376543b4b048a454e48cce2afab3275a8d9d87f0c7ae20c2318ef3"
+    },
+    {
+      "path": "PROJECT/app/build.gradle.kts",
+      "size": 2245,
+      "sha256": "6bfea87276f7ed33f90cabcc5d9f3c484e838d2e0a761c5453a3458a1cc9696d"
+    },
+    {
+      "path": "PROJECT/app/proguard-rules.pro",
+      "size": 227,
+      "sha256": "6a4d0d8f8a0ac54e23c17432e160213f077ca7a42e7243f67c3ecf18d43227f7"
+    },
+    {
+      "path": "PROJECT/app/src/main/AndroidManifest.xml",
+      "size": 1438,
+      "sha256": "35f380c0b8b2019321c94efb3370cb846eb1f8b13625aded8d7c303a9002d884"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/HorizonApplication.kt",
+      "size": 328,
+      "sha256": "6714572721bd3c6f11ab74be9f7fbe7a49c1c7b061d85e0f160f39abb78cd4d4"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/acquisition/base/ObservationSource.kt",
+      "size": 329,
+      "sha256": "93a335f49dacd8562a3a074d6a2706518b112f4df886ac11da44eeaf45813597"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/acquisition/cellular/CellInfoSource.kt",
+      "size": 11108,
+      "sha256": "c51cb57421cb4461c2facbdb7c7eb8eede7d2caf96cd46474280cabe888a3a8d"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/acquisition/gnss/GnssObservationSource.kt",
+      "size": 13434,
+      "sha256": "b71783d6d9fa2ec57b3e8be1198333da43f38f6c6d1b23fb63e197e72f051675"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/acquisition/gnss/LocationFixSource.kt",
+      "size": 7437,
+      "sha256": "288c1c8758de50c87a0c13982592b02b1ff7f8b06931450cfc820fdf3ff08720"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/acquisition/sensor/SensorObservationSource.kt",
+      "size": 5706,
+      "sha256": "b0399c111501f261285b9dfa8d81aac3dd7d1012f5e96fcc1b9e7b65b394cd22"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/acquisition/service/ObservatoryService.kt",
+      "size": 17219,
+      "sha256": "009c9d2ea60f6f3d07bf6460ba9ef8b467f125776c9efd5a073554c16b910231"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/analysis/SessionAnalysisEngine.kt",
+      "size": 10139,
+      "sha256": "ceffe3fc220a0ba4050faa3173933ab8a266860458f1a15d7a1fd0db123b9218"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/analysis/gnss/GnssCorrelationEngine.kt",
+      "size": 18926,
+      "sha256": "c17959116f01da4eb85f7eb8d6261047a0b1f73eaeb78b1aa2d017bb9a1e6b35"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/core/capability/CapabilityScanner.kt",
+      "size": 7460,
+      "sha256": "d91da2853c84f52cc70f4a828039a5e64f3d83f25ae8e3e58ba1d583ebca5028"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/core/di/HorizonContainer.kt",
+      "size": 1627,
+      "sha256": "0d88ef6ee08ceb33e5578d112667aa64dea8a368f87a90ac1384bc950cde9995"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/core/health/HealthReporter.kt",
+      "size": 1988,
+      "sha256": "2c117fdafb05b0a68094c8ded555e9412f21ea39eb4cda0b957a9e09a54181b4"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/core/time/TimestampEngine.kt",
+      "size": 832,
+      "sha256": "693d01dac50141e10406a6979c9be0fef117c8576609e81c9778fb2f844f5f1e"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/domain/gnss/GnssEvidenceModels.kt",
+      "size": 3612,
+      "sha256": "10aa9032babac8dda097e334e70d7469db914b9f5bd98b38eed6b76f22556833"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/domain/model/IntegrityAudit.kt",
+      "size": 2769,
+      "sha256": "6d08afb7b189cfc6c6a190c23c6782c1f64e587ecfd548ac4c320425cf575759"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/domain/model/Models.kt",
+      "size": 2699,
+      "sha256": "afd2350936884c7d3df52a0957267f8d60b225ea61ac7d2b0f886e31338bbf8f"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/domain/model/SessionSequencer.kt",
+      "size": 344,
+      "sha256": "979093a992ac86300a22b92436c3b6c46730d492b9dc12cb4afa3cffbfee87a6"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/domain/model/SessionState.kt",
+      "size": 1217,
+      "sha256": "ccf8d249230005e3682459be47649ad772878a57456dceff0cf35bd17b18e7b4"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/export/ExportEngine.kt",
+      "size": 32390,
+      "sha256": "bc93211473f12057427422e29cc65272b4efa6d5fb764d136232369f1e3add5b"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/export/model/ExportManifest.kt",
+      "size": 999,
+      "sha256": "b46c22271048e9da51caca25747f409298eed307c9718c8ecd81d5b142797186"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/storage/entity/Entities.kt",
+      "size": 3166,
+      "sha256": "fb9c16176ef266bdf89eb27ec9e1c571f4331c4b319801b7f23c1ee56ad34f76"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/storage/queue/ObservationPersistenceQueue.kt",
+      "size": 2672,
+      "sha256": "d1d3eafd524d6da4410ca589474d6748581db517d31a1b716ba72045908b0530"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/storage/repository/ObservationMapper.kt",
+      "size": 2980,
+      "sha256": "9d6b51cab9cd31e2a7550037b24132fe5d3502bdf5f9554b1da1045aebff88b4"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/storage/repository/SessionRepository.kt",
+      "size": 1420,
+      "sha256": "8dbb483ea0ca09779bb8e184add5b38cf7226f1ba89c9c45959dc005dc3ec70a"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/storage/repository/SessionRepositoryImpl.kt",
+      "size": 5128,
+      "sha256": "02923d1891188b38a6caf53fcb4b3330dd17882230ec7f4b22a007a8635526bf"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/storage/room/AppDatabase.kt",
+      "size": 4664,
+      "sha256": "e98ed1efeee79f220d96040b612a43ba54f3ad559516ba157f5c0305fe8d2941"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/storage/room/ObservationDao.kt",
+      "size": 1595,
+      "sha256": "d20d3e78cf42aff9708146ad04210015b6210751008bbbad86f434e318bf046d"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/storage/room/PendingObservationDao.kt",
+      "size": 889,
+      "sha256": "9454e8babea2364f545b3dbc29d99d94d037f7700edd6eaa6cba7c6fd95255fe"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/storage/room/SessionDao.kt",
+      "size": 2315,
+      "sha256": "9b1982560c4e0d538ab63ab210d432ed6bd711bbbe3521dd6ebbf91cbf4320df"
+    },
+    {
+      "path": "PROJECT/app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt",
+      "size": 63025,
+      "sha256": "b1efd1aba917f6d4fef7f307af763237b9aaea83e7e78c8553e5a56ab4a191f4"
+    },
+    {
+      "path": "PROJECT/app/src/main/res/drawable/ic_launcher_background.xml",
+      "size": 201,
+      "sha256": "bc02ce505d0fb9aeddb8ee7d051fde3519f56637c1f2b86e6812b0dd8714c9a9"
+    },
+    {
+      "path": "PROJECT/app/src/main/res/drawable/ic_launcher_foreground.xml",
+      "size": 477,
+      "sha256": "c826e1dd85fabf52abf25572e12f9443ef2b4f7372274d7598c843fd47d6dac9"
+    },
+    {
+      "path": "PROJECT/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "size": 273,
+      "sha256": "1c832bf194d8eecd439a92bcced0df144c9f566b934b3d7865e983d8ee8dbdeb"
+    },
+    {
+      "path": "PROJECT/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "size": 273,
+      "sha256": "1c832bf194d8eecd439a92bcced0df144c9f566b934b3d7865e983d8ee8dbdeb"
+    },
+    {
+      "path": "PROJECT/app/src/main/res/values/colors.xml",
+      "size": 121,
+      "sha256": "c88b47799f88680a3209921f9120e6950b011dfcc6eebb7246a3810a40bcebd5"
+    },
+    {
+      "path": "PROJECT/app/src/main/res/values/strings.xml",
+      "size": 121,
+      "sha256": "0dab494ee660ccf662f0dafc54453a9e43f8d00174b7e9a887f5ab32c8446574"
+    },
+    {
+      "path": "PROJECT/app/src/test/kotlin/horizon/observatory/analysis/SessionAnalysisEngineTest.kt",
+      "size": 2790,
+      "sha256": "8abef6aac44a35d5037e0f7352336caabb680259ad2b4c418b1638b8b4c8b3d5"
+    },
+    {
+      "path": "PROJECT/app/src/test/kotlin/horizon/observatory/analysis/gnss/GnssCorrelationEngineTest.kt",
+      "size": 7595,
+      "sha256": "9b07575ec624ba8b571196c42d5abd5a26218ea455a83ce59d2fb4ef86ef87a1"
+    },
+    {
+      "path": "PROJECT/app/src/test/kotlin/horizon/observatory/domain/model/EvidenceMetadataTest.kt",
+      "size": 642,
+      "sha256": "153450989954d9d7076298f924592527902a579bc8121cd15a3ae21badd8e41e"
+    },
+    {
+      "path": "PROJECT/app/src/test/kotlin/horizon/observatory/domain/model/IntegrityAuditTest.kt",
+      "size": 1767,
+      "sha256": "5b0c14df7b113518b7960d41290f130d705cf96e9426f175bd219d8740e053a9"
+    },
+    {
+      "path": "PROJECT/app/src/test/kotlin/horizon/observatory/domain/model/SessionSequencerTest.kt",
+      "size": 1328,
+      "sha256": "3753d38d44c44130bab31ce09bff42844e1df39461b4a06f9e63ff1a8ed6716d"
+    },
+    {
+      "path": "PROJECT/app/src/test/kotlin/horizon/observatory/domain/model/SessionStateMachineTest.kt",
+      "size": 1489,
+      "sha256": "e6ef03904ce37aeefddfe7df0706531f715808f54f2e0d0800ac8fb1ed58d6b6"
+    },
+    {
+      "path": "PROJECT/build.gradle.kts",
+      "size": 416,
+      "sha256": "a0b14dc58200ff30ee848ec421522f2fea111c0280bc1adb1210da072aad7e8c"
+    },
+    {
+      "path": "PROJECT/docs/A07_DEVICE_VALIDATION.md",
+      "size": 2674,
+      "sha256": "976057286910bfff0d815ed29be846e8b36161a9c7212b16f94b44090e110288"
+    },
+    {
+      "path": "PROJECT/docs/ARCHITECTURE_STATE.md",
+      "size": 2202,
+      "sha256": "ac666af1e05c1db09ae4a554c8e8673d5efd44f53b24abd9c35e73d3fa5272f3"
+    },
+    {
+      "path": "PROJECT/docs/AUTOMATION_COMPLETION_REPORT_2026-09-24.md",
+      "size": 1629,
+      "sha256": "816109c272ee7667411d9f43c0491171960007e73bb04616a077c951a09156db"
+    },
+    {
+      "path": "PROJECT/docs/BUILD_AND_DEVICE_VALIDATION.md",
+      "size": 1574,
+      "sha256": "13599df1514c161567ec9b39d2847e164a17df1a1e23bb114f1b92e4754947e6"
+    },
+    {
+      "path": "PROJECT/docs/BUILD_GATE_NEXT.md",
+      "size": 740,
+      "sha256": "d09a126a30da619d0c968f9e0fd05a929a34ed0d1c25b5f1689340ca0b1f4b67"
+    },
+    {
+      "path": "PROJECT/docs/CHANGELOG_CHECKPOINT.md",
+      "size": 2573,
+      "sha256": "cce94667bf96d0c1016511332e31a7bb0cc7085d3bb4cbbaf536542529989be9"
+    },
+    {
+      "path": "PROJECT/docs/CHANGES_SINCE_GNSS_FOUNDATION.txt",
+      "size": 1075,
+      "sha256": "3f682fa80171913140c6a6089d9cf8c27072f8f531cfb28e98c7de83d31a2f0d"
+    },
+    {
+      "path": "PROJECT/docs/CURRENT_CHECKPOINT_2026-09-24_POST_STOP_FIX.md",
+      "size": 3601,
+      "sha256": "4d25b07fa8d29834538f604cf4c53d29b3cccfb608c81f6c4faece763ffb2a58"
+    },
+    {
+      "path": "PROJECT/docs/EVIDENCE_SUMMARY.md",
+      "size": 1178,
+      "sha256": "652c865139760c0d8feb7642de0cc89cca421d322dbd5fe6182b457b2b9a1faa"
+    },
+    {
+      "path": "PROJECT/docs/FINAL_DIFF.patch",
+      "size": 402266,
+      "sha256": "18e0d52eed0037d773c9badb3011baf31cdc93a3334a3c94c095783aca873229"
+    },
+    {
+      "path": "PROJECT/docs/FINAL_HANDOFF.md",
+      "size": 1240,
+      "sha256": "d3c17ae04416b09dd8c9feb25f2096f22e85c53582eb51640d75d247d545f186"
+    },
+    {
+      "path": "PROJECT/docs/GNSS_SOURCE_SANITY.md",
+      "size": 38,
+      "sha256": "580d283bda57876a4a403d35dacdfc1aafd8115957044986abbcd592f5dc8dd5"
+    },
+    {
+      "path": "PROJECT/docs/GRADLE_WRAPPER_RECOVERY.md",
+      "size": 602,
+      "sha256": "ec23d18d27d3a13d80e1ea5831e2d9416af5e6cc9b689a95b56afb081cb715bc"
+    },
+    {
+      "path": "PROJECT/docs/IMPORT_REPAIR.md",
+      "size": 1143,
+      "sha256": "4bcdf61e291e9bfc3eace9969d7d4d7f5512868d8cfc700076c7041320f89d06"
+    },
+    {
+      "path": "PROJECT/docs/KNOWN_LIMITATIONS.md",
+      "size": 1087,
+      "sha256": "2339c9193da24c856deb0cd44b48bb0c9ad39489946a68a2a83be8343ecacfbd"
+    },
+    {
+      "path": "PROJECT/docs/LATEST_RUNTIME_EVIDENCE_C40.md",
+      "size": 1369,
+      "sha256": "96f76bda50609157467443777beb023ae20c876e099cbb1a5adba28ed2bc62d2"
+    },
+    {
+      "path": "PROJECT/docs/NEXT_PHASE_AUTOMATION_BOUNDARY.md",
+      "size": 1800,
+      "sha256": "f923d9108bc43716b797a0f413b1f2755743ad00ba876eddcef5fbe3ea6c20d6"
+    },
+    {
+      "path": "PROJECT/docs/NEXT_PHASE_CORRELATION.md",
+      "size": 1105,
+      "sha256": "ad90ecaa2f51777f56efbeba771ebf81e9e45e74471798bbdc117a77d0c1b1ae"
+    },
+    {
+      "path": "PROJECT/docs/NEXT_PHASE_GNSS_DOMAIN_FOUNDATION.md",
+      "size": 2980,
+      "sha256": "073773580060aa3e8b19fe63bbc5d272bfcb7057f19df46993fd9dd6667abc50"
+    },
+    {
+      "path": "PROJECT/docs/PROJECT_CHECKPOINT_2026-09-24.md",
+      "size": 4909,
+      "sha256": "307c727e585c35c6b052094a6eef304f158ccb05c69a7295e7abf6bb1c874d7f"
+    },
+    {
+      "path": "PROJECT/docs/SDK_BUILD_RECOVERY.md",
+      "size": 701,
+      "sha256": "36144f61c70ed3ebba76908725e12124f2692f482249126d047658b011f52947"
+    },
+    {
+      "path": "PROJECT/docs/STOP_RACE_FIX.md",
+      "size": 1469,
+      "sha256": "443cacde9a43867cb268c6456dd149b152be9d25720dcbb902a4d4676936732f"
+    },
+    {
+      "path": "PROJECT/docs/VERIFICATION_MATRIX.md",
+      "size": 1945,
+      "sha256": "81cf9b9c4e3951994136a6c2392630fb56ee3c82d434bde45b9a450785c32943"
+    },
+    {
+      "path": "PROJECT/docs/VERIFICATION_MATRIX_CURRENT.md",
+      "size": 1481,
+      "sha256": "baa8a52ef85a921d6087d3129debfd475e330bbf339c4085bd0d7acbf240ddac"
+    },
+    {
+      "path": "PROJECT/docs/checkpoint/ARCHIVE_CONTENTS.txt",
+      "size": 633,
+      "sha256": "337bab01367e0ea438e4d762b08fba39c9fc612a753f00f3d9d1eef443e27bb7"
+    },
+    {
+      "path": "PROJECT/docs/checkpoint/README_BASELINE_COPY.md",
+      "size": 3927,
+      "sha256": "251215343f2adbef85d21d610deeea372c9bd80672da6fa8214acb97278db3ae"
+    },
+    {
+      "path": "PROJECT/docs/checkpoint/checkpoint_worktree.diff",
+      "size": 85512,
+      "sha256": "49af3fe7551eb2f2915f9e33d2b5e1a90a74636c1795e1b7f6006927e80ad815"
+    },
+    {
+      "path": "PROJECT/docs/checkpoint/git_status_at_checkpoint.txt",
+      "size": 1325,
+      "sha256": "87e7fd839cc0873373030ee46c9964216254df067cdea4f4398ec1cb9a039a41"
+    },
+    {
+      "path": "PROJECT/docs/checkpoint/session_evidence_summary.json",
+      "size": 28086,
+      "sha256": "4dea05a887de3c4b5caea85e7386631d7971f6290f6de0e533fe57bfd932d29d"
+    },
+    {
+      "path": "PROJECT/docs/patches/APPLY_HORIZON_NEXT_PHASE.ps1",
+      "size": 2065,
+      "sha256": "562cd61f47803e8d203a10c1654b8d99c69a962d3dd3fdb9f0d9d205300ada0a"
+    },
+    {
+      "path": "PROJECT/docs/patches/GNSS_DOMAIN_AUTOMATION_ExportEngine.diff",
+      "size": 12473,
+      "sha256": "47699ad4f67d5aa81596a5d725f41332f7cae3b8a3e1441f0428892b288c3fe2"
+    },
+    {
+      "path": "PROJECT/docs/patches/GNSS_DOMAIN_AUTOMATION_GnssCorrelationEngine.diff",
+      "size": 5165,
+      "sha256": "73066e66b7e4b6e8ff98932ef9c86cf7cb892199349fcf509ddcd8bf3daf7cf3"
+    },
+    {
+      "path": "PROJECT/docs/patches/GNSS_DOMAIN_AUTOMATION_GnssCorrelationEngineTest.diff",
+      "size": 2896,
+      "sha256": "1c90aac709df2f96c2c36d88bfe387f9226b6d6639b7d1753b2955dcf18fe2ba"
+    },
+    {
+      "path": "PROJECT/docs/patches/GNSS_DOMAIN_AUTOMATION_GnssEvidenceModels.diff",
+      "size": 2101,
+      "sha256": "4a513a46a645fd210a75de762e649af69bd9e6e95b14a4919a08e5dc357965b0"
+    },
+    {
+      "path": "PROJECT/docs/patches/GNSS_DOMAIN_AUTOMATION_MainActivity.diff",
+      "size": 24633,
+      "sha256": "594b05decd217517c3f10318845c5b0783a04951c1bf9df588507e5c2c41bdb6"
+    },
+    {
+      "path": "PROJECT/docs/patches/GNSS_DOMAIN_AUTOMATION_SessionAnalysisEngine.diff",
+      "size": 2876,
+      "sha256": "ac3e5f946fefdce8640f7d9fc0ecf28162e3122fe3748b9bddb9474f98ef504e"
+    },
+    {
+      "path": "PROJECT/docs/patches/HORIZON_COMPILE_FIX.patch",
+      "size": 7929,
+      "sha256": "4b62ce97e4dec0461853072602e7c69b70a9958f9b326133724ac96569213642"
+    },
+    {
+      "path": "PROJECT/docs/patches/HORIZON_FINAL_STOP_RACE_IMPORT_DIFF.patch",
+      "size": 3430,
+      "sha256": "17160904bc39d1ea5a3708c69137c963174fd81892f2390e0337620a3e90d8d5"
+    },
+    {
+      "path": "PROJECT/docs/patches/HORIZON_GNSS_DOMAIN_FOUNDATION.diff",
+      "size": 23886,
+      "sha256": "e0633e33f2cb709e59e6f7fc4df13bfcf488e674541c771c671552f056a9adce"
+    },
+    {
+      "path": "PROJECT/docs/patches/HORIZON_GNSS_DOMAIN_FOUNDATION.patch",
+      "size": 142,
+      "sha256": "53dd5ddec33cd6918c9cdef43dcce1b51c0249c625fa0da2df44044fd157897b"
+    },
+    {
+      "path": "PROJECT/docs/patches/HORIZON_LOCAL_JSON_TEST_FIX.patch",
+      "size": 1039,
+      "sha256": "d47c1e8dbae5694cdb8725a71c881e6d69a2b2395d8f2d2b38deb5a0be7df825"
+    },
+    {
+      "path": "PROJECT/docs/patches/HORIZON_NEXT_PHASE_FIX1.patch",
+      "size": 930,
+      "sha256": "ac25e041d33e288b74bfb38fe22eb53e037995dddffb3c4a83aa413b3b9f02fe"
+    },
+    {
+      "path": "PROJECT/docs/patches/HORIZON_NEXT_PHASE_MAIN_UI.patch",
+      "size": 15906,
+      "sha256": "2c43ce4c7e869fe99ecbb2727303cc39c4c24486c547d384cb31b66e34fccf28"
+    },
+    {
+      "path": "PROJECT/docs/patches/HORIZON_SESSION_STOP_RACE_FIX.patch",
+      "size": 2877,
+      "sha256": "bcd72a1407653357d5867596b1b2dc07bd9aefbc84abdaf68ebc513138fe3031"
+    },
+    {
+      "path": "PROJECT/docs/patches/HORIZON_TIMESTAMP_EXPORT_FIX.patch",
+      "size": 63176,
+      "sha256": "ac9da3349ea3f5282241c491ccde521877ffc9a864da882dc292aa5b21b038ab"
+    },
+    {
+      "path": "PROJECT/docs/patches/HORIZON_UI_FINAL_REFACTOR.patch",
+      "size": 31042,
+      "sha256": "e3593559c9c6a9ddbc60401e2427b73c1fd30200c0f004bce7d4c36cf2fc696e"
+    },
+    {
+      "path": "PROJECT/evidence/latest/horizon_session_c40cd3d7-f824-4e05-bfa3-95707110ea97.zip",
+      "size": 1926360,
+      "sha256": "dbd09295f122ac6d1c382afc17673cd3e82045a08421fb7025542d9cdb12cd61"
+    },
+    {
+      "path": "PROJECT/evidence/latest/session_summary.json",
+      "size": 2333901,
+      "sha256": "4582f7107bb30bd21b9595cc6206df39b2ce8d21aae9bb423e166cca685f7d8e"
+    },
+    {
+      "path": "PROJECT/evidence/sessions/horizon_session_35f8d344-5d1b-46aa-a695-5112d50eec13.zip",
+      "size": 387385,
+      "sha256": "5761a2b3348b0562fc0480a70a449d3b9be11cb46eccd133e8502ebedf0365d1"
+    },
+    {
+      "path": "PROJECT/evidence/sessions/horizon_session_f860845d-79cf-4e7d-b951-c00e0b237fe2%20%282%29.zip",
+      "size": 500895,
+      "sha256": "7784a4a725eff2d90c214c83a171b8375d70b1fe3b377aaa0ef9aed422f8aa47"
+    },
+    {
+      "path": "PROJECT/gradle/libs.versions.toml",
+      "size": 2178,
+      "sha256": "0537ab5f6d3e7ce57da63577b283212ceb0cb4468a509bbedd4da903c143ed32"
+    },
+    {
+      "path": "PROJECT/gradle/wrapper/gradle-wrapper.properties",
+      "size": 203,
+      "sha256": "dcb542328654fb670759f0cbf4710c873c585bbb52896f0c836b7b3c69d472ac"
+    },
+    {
+      "path": "PROJECT/gradle.properties",
+      "size": 190,
+      "sha256": "49655704cff97a785ef856971c03310885d69ed60fe80daa142312f9c873c190"
+    },
+    {
+      "path": "PROJECT/gradlew",
+      "size": 1926,
+      "sha256": "dd103336b6ac040d8c56522e98d45b076734dd1829f07b284154b9860182be43"
+    },
+    {
+      "path": "PROJECT/gradlew.bat",
+      "size": 2092,
+      "sha256": "c9fbde3d083806419feb73881ceff55144b10aa18d55303157fe2862e8d8c22a"
+    },
+    {
+      "path": "PROJECT/scripts/APPLY_GNSS_DOMAIN_COMPLETE.ps1",
+      "size": 1690,
+      "sha256": "3fbf7c407293f237679dc0fb52991e6c1f2ba188cf7d9ca04c7b993c6b9e7f2e"
+    },
+    {
+      "path": "PROJECT/scripts/APPLY_GNSS_DOMAIN_FOUNDATION.ps1",
+      "size": 1523,
+      "sha256": "effa4e269be56dfdd6e0e486fd8b3222089203df575564d4dc86cf1be748edb4"
+    },
+    {
+      "path": "PROJECT/scripts/BOOTSTRAP_ANDROID_SDK_WINDOWS.ps1",
+      "size": 5229,
+      "sha256": "9dd3cf7334d88e542bd976820c9f56bf58dae30c414417cbea2d340eea35070a"
+    },
+    {
+      "path": "PROJECT/scripts/BOOTSTRAP_GRADLE_WINDOWS.ps1",
+      "size": 1511,
+      "sha256": "fe151f1c1764f54dfdffbb5018ebee799ddaa59cf1dbae99a6bf355df32af91a"
+    },
+    {
+      "path": "PROJECT/scripts/BUILD_WINDOWS.ps1",
+      "size": 5945,
+      "sha256": "f934005507e80e4e9ba1a183c587fbc13dbb1bff2b181715e5761275431eb5a7"
+    },
+    {
+      "path": "PROJECT/scripts/DIAGNOSE_BUILD_WINDOWS.ps1",
+      "size": 1001,
+      "sha256": "6bf28def336a6ce962b584c262b706990d5231fefc608195125f02fd51234b43"
+    },
+    {
+      "path": "PROJECT/scripts/VERIFY_A07.ps1",
+      "size": 1725,
+      "sha256": "8f364cb90d647b2c7415950e4122791b0699c4d7d890bca85b6f4224458593a8"
+    },
+    {
+      "path": "PROJECT/scripts/VERIFY_A07.ps1.sha256.txt",
+      "size": 137,
+      "sha256": "d72d4b6c533584c1ddf831fc9dbe31dfd45918180aab0178b7a56dde4cdb5bef"
+    },
+    {
+      "path": "PROJECT/settings.gradle.kts",
+      "size": 338,
+      "sha256": "0de2afc1e6bf894193bd26d8368b80015bc2bfd4a8f765b93f57b4c838498718"
+    }
+  ]
+}

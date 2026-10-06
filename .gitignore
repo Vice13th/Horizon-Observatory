@@ -1,0 +1,65 @@
+# Horizon Observatory — repository hygiene
+# Generated/reproducible build state
+.gradle/
+.gradle-bootstrap/
+.kotlin/
+**/build/
+**/.cxx/
+**/.externalNativeBuild/
+
+# Local machine / IDE state
+local.properties
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Generated Android artifacts
+*.apk
+*.aab
+*.apks
+*.aab.sha256
+
+# Temporary/runtime UI dumps and screenshots
+/device_*.png
+/device_*.xml
+/current.xml
+/end.xml
+/ex.xml
+/e.xml
+/exgen*.xml
+/finalui.xml
+/afterstop.xml
+/gnsslive.xml
+/runtime_*.xml
+/runtime_*.png
+*_ui.xml
+*_screen.png
+
+# Temporary/export archives and local checkpoint bundles
+/export_test.zip
+/*.zip
+/**/CHECKPOINT_*.zip
+/**/checkpoint*.zip
+/**/horizon_session_*.zip
+/**/session_*.zip
+
+# Local agent handoff/duplicate snapshots
+/HorizonObservatory_FINAL_MERGED_TERRA_AGENT_PACK_v1/
+
+# Historical checkpoint manifests duplicated by curated documentation
+/CHECKPOINT_MANIFEST_POST_STOP_FIX.json
+/evidence/latest/session_summary.json
+
+# Local compiler/classpath diagnostics
+/*_classpath.txt
+/ksp_tasks.txt
+/tmp_compile.txt
+
+# Tool/editor/runtime logs and scratch output
+*_agent_*.log
+*.tmp
+*.bak
+
+# Large/generated evidence archives are intentionally ignored; metadata remains trackable.
+/evidence/**/*.zip

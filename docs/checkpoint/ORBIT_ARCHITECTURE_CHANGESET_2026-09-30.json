@@ -1,0 +1,295 @@
+{
+ "kind": "orbit-architecture + live-pose changeset (NOT a checkpoint manifest; historical manifests untouched)",
+ "label": "TEST / CANDIDATE",
+ "baseArchive": "HorizonObservatory_FINAL_MERGED__4_.zip",
+ "baseArchiveSha256": "6ea60c719510f79d9fd98ca764157c77906636a3a3502b24c9147b57d6a474a4",
+ "generatedFrom": "actual file bytes at generation time; excludes this file and orbit_foundation.patch",
+ "buildStatus": "UNVERIFIED",
+ "testExecution": "UNVERIFIED",
+ "deviceStatus": "UNVERIFIED",
+ "removed": [],
+ "modified": [
+  {
+   "path": "app/build.gradle.kts",
+   "baseSha256": "4214ccfe875b2889768f7dcdbdf60c5aa4d917d7a7dc385db05456efc8f6b3a2",
+   "sha256": "f021de3842b7737a134e25925ad61a5d27130e1dd866780e13a3a10853ec36e6"
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/OmmParser.kt",
+   "baseSha256": "bf550aff5ad7a422f037338e40ab9988c95f7a1bcddfd55cef8aacea67df8c0c",
+   "sha256": "904d521ec9545b7e5f3bc3f8a41124088ec8f88f9852f22f0f91f3b7c8ab784e"
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/OrbitCatalogEntity.kt",
+   "baseSha256": "6e728a3021046f0a3cda1556775cc67aca6a073f6ac6e55823fb4336ff64e8bd",
+   "sha256": "6a0965afcfaa47bbaca64afa4cf65d06d468dbe41f65ba4bd057c7eb3bee42aa"
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/OrbitDataSource.kt",
+   "baseSha256": "6636248bbe7c91cd925f166bfa342b3aa3aaa70ddf558d697ea35417c70176b4",
+   "sha256": "875cab7c71ed627fd105dc3acf375092b9d6887f9d176dbebacb8528c35d6003"
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/OrbitPropagator.kt",
+   "baseSha256": "539e525fc981402922f9e7740c01c22081b9ba00edd52fa95483dc9b9e865fc5",
+   "sha256": "9e1754aa9a10c4d619cba0e02afac4d94bf9d7b6d45e283174f65a55252c4c8f"
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/RoomOrbitDataSource.kt",
+   "baseSha256": "ba61f0e5fc5f8d1904c9c2f06670529c3a992e3d26c401017e3c9211d7fa3322",
+   "sha256": "b04e345a62ac4e6dc4476970613ba7dead6a5aed7a03ba10f48d86c534734a75"
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/core/di/HorizonContainer.kt",
+   "baseSha256": "0d88ef6ee08ceb33e5578d112667aa64dea8a368f87a90ac1384bc950cde9995",
+   "sha256": "44a7aba462f08a9e3ec398e518ce6043d249c79ba4619f42c1a0034e94ed0c59"
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/storage/room/AppDatabase.kt",
+   "baseSha256": "88d262d66d331f079cbdc34dddaa7d8b86d03cac83f6c3eb15f2949284385593",
+   "sha256": "fd33a1f7e041661e79f962544e001cf26ee48bc7997ab27aadc6a6eeee1411df"
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/storage/room/OrbitCatalogDao.kt",
+   "baseSha256": "caa53ac87885cfc38ff1c5466fa08d1d42536b545b876a97e118c493e956d174",
+   "sha256": "4814315b7ab381ebd0de6c976ff0b240c870f28380752c065ee0dbb989db5441"
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt",
+   "baseSha256": "ae083bba2871048d9a79bfcda393e928dee507b38eb6b71fdf8159e733124d74",
+   "sha256": "ba071d7fabd2800e0bb306aa3a2beff8d5b9d1fd3c35473fcc4598f976ee0f43"
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/astronomy/OmmParserTest.kt",
+   "baseSha256": "6066a58f94872a947aef5af876d86bcd88f20dc230b295e787cc278c511b0b63",
+   "sha256": "f0e46f088494ab2df694b01294e919a6a89b0e25a0a82fbbc95b77c1f4ed687f"
+  },
+  {
+   "path": "docs/ARCHITECTURE_STATE.md",
+   "baseSha256": "ac666af1e05c1db09ae4a554c8e8673d5efd44f53b24abd9c35e73d3fa5272f3",
+   "sha256": "97941f51a3845d8f64d7039246aa2ea4e3fbd3ee28db7423075051822ec20573"
+  },
+  {
+   "path": "docs/KNOWN_LIMITATIONS.md",
+   "baseSha256": "2339c9193da24c856deb0cd44b48bb0c9ad39489946a68a2a83be8343ecacfbd",
+   "sha256": "54bc99107fdaa1c99d0e3b6f332ece147cdb7132cb412b78d38c4d2cb5b4569a"
+  },
+  {
+   "path": "gradle/libs.versions.toml",
+   "baseSha256": "0537ab5f6d3e7ce57da63577b283212ceb0cb4468a509bbedd4da903c143ed32",
+   "sha256": "cc7d9cda536dd900d46314ce99d0b15d872a07b4ab6389cf4478c5b130d38409"
+  }
+ ],
+ "added": [
+  {
+   "path": "TEST_README.md",
+   "sha256": "d3a14d57574ac5cea791665ef8d2e68098732975d5d31f3e9e9845dff1169735",
+   "bytes": 4217
+  },
+  {
+   "path": "app/src/androidTest/kotlin/horizon/observatory/storage/room/OrbitCatalogMigrationTest.kt",
+   "sha256": "44c38357595c248574a5afcf3eee19909801e72de59961fe386756abc9fabd50",
+   "bytes": 3351
+  },
+  {
+   "path": "app/src/androidTest/kotlin/horizon/observatory/storage/room/OrbitCatalogRoomInstrumentedTest.kt",
+   "sha256": "34c3effd6db22cb28b0a7fd1756dfa42846eba1e61e015e2c304c5090bde8287",
+   "bytes": 3895
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/OmmRecord.kt",
+   "sha256": "006a598aaddb5af1779aa563b9f6762a47dc66bc6f513aaf84f4734c11bcba89",
+   "bytes": 5062
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/OrbitCatalogMapper.kt",
+   "sha256": "5f3614d2aed27fcdffd56e83b5d21cf747230fd52c7113d205b227380309172b",
+   "bytes": 2738
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/OrbitCatalogMergePolicy.kt",
+   "sha256": "221874bf3a5d8cc470f2a57474b697c90acd9435f503a4e7a9ba382cd04bfcc4",
+   "bytes": 1164
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/catalog/HttpUrlConnectionOrbitCatalogFetcher.kt",
+   "sha256": "4facfbb28d7f5980a3055fb38626c6a171bf1972b6b02c09ec1badc59ca3fe6e",
+   "bytes": 4330
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/catalog/OrbitCatalogFetcher.kt",
+   "sha256": "b6b3c4ec555140e20d1d24c050493af4918772dc2d13fb2bafe2ef0a19a864ec",
+   "bytes": 2850
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/catalog/OrbitCatalogIngestor.kt",
+   "sha256": "29a2239f3d38daf0f2577ca7ede23501d6557d6233199ed7615ca7d9445964f4",
+   "bytes": 5688
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/frames/PredictionFramePipeline.kt",
+   "sha256": "477546d966fa5ef2ff2fd72d2e787924f0041f7d846261918d936cee7c7cb339",
+   "bytes": 2709
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/identity/SatelliteIdentityMapping.kt",
+   "sha256": "e80071a4d3babbe59664f7525c19e9d1aaabdd5c070b0bd78163323875a8f0dc",
+   "bytes": 5276
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/orientation/DeviceOrientation.kt",
+   "sha256": "a5f570d6477a9925bdc2c7f14fd27770614b10460e03d06cbefcf86ebff0649e",
+   "bytes": 2804
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/prediction/ObserverPosition.kt",
+   "sha256": "dc27d3b77d2032c9413ad27ee0805a917e77ad3c191e93e197c3d9b955c227db",
+   "bytes": 490
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/prediction/PredictedSatelliteState.kt",
+   "sha256": "dd00b63fc8053fe15bd43871367974699c1e0254a0cc03f1a5a4278017d7f626",
+   "bytes": 3805
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/prediction/PredictionLayerState.kt",
+   "sha256": "9be8f97c5de9f17053a0ccac42f9d55d7df7a152c3c16db67e09b11873be8d1b",
+   "bytes": 1589
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/prediction/SatellitePredictionUseCase.kt",
+   "sha256": "8f38ee2ee07fc7c9234d5413fcca76ca3d482866e0073897c247583c71b4840a",
+   "bytes": 9681
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/propagation/OrbitPropagationEngine.kt",
+   "sha256": "d0d7aa3ca9bda8e74e9eaa2765585897c2e0147b5341b55f2ee2c57f1c50a6e5",
+   "bytes": 2548
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/propagation/Sgp4Sdp4Backend.kt",
+   "sha256": "e7583dbb0b548a620ecd9e9ca343258e1f765076db9f23283ad5dda885eb988a",
+   "bytes": 2566
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/propagation/Sgp4Sdp4PropagationEngine.kt",
+   "sha256": "2030199b566d1f5ca68bdf3cc3d9ddc45af22c931849ff6dfb08aae50917d1fe",
+   "bytes": 5135
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/time/OrbitTime.kt",
+   "sha256": "5f12c2d94e242a9d775a66c92fca5850cf12ee3da26396102cac668e09e26eed",
+   "bytes": 3342
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/astronomy/time/TimestampEngineDeviceClock.kt",
+   "sha256": "06b3a5d89cddb6b5048d13c310e4b8d5c9715f703c33e1ade3e8629cdb2c3c22",
+   "bytes": 425
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/live/MagneticDeclination.kt",
+   "sha256": "e96e7af5154d07b2a2fec98696163aeda1d25aeba4712d3e945608fe8b4c6195",
+   "bytes": 1419
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/live/ObservedSkyState.kt",
+   "sha256": "c4b95f531b96da01efffa0bb60b09ae145cd9758a2712a670aa290ffa0b57f14",
+   "bytes": 1854
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/live/PoseMath.kt",
+   "sha256": "db4d9bdca3d22e7c0e60adaadd1f6d8475e0b40b3af20576fa6b2cd19065464e",
+   "bytes": 4444
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/live/RotationVectorOrientationSource.kt",
+   "sha256": "20cd771fa74b60ecc5371afbc1aec837ee67cf3e14b9f7aeefdfb04a5dcf8990",
+   "bytes": 3009
+  },
+  {
+   "path": "app/src/main/kotlin/horizon/observatory/live/SkyProjection.kt",
+   "sha256": "bd6d0e4cd0854715bc045b2e2aa118361b87d700ad51d4087872d5fa221ade7e",
+   "bytes": 4526
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/astronomy/OrbitCatalogMapperTest.kt",
+   "sha256": "25da53f4950a965d286ffe9463b733204939fb3f6fb207cb86999c61b432e631",
+   "bytes": 2186
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/astronomy/OrbitCatalogMergePolicyTest.kt",
+   "sha256": "d4a3e5a1569ec17714f232a59d0c56dd40b9893b0baf51a929f7d5d591d55173",
+   "bytes": 1573
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/astronomy/OrbitFreshnessTest.kt",
+   "sha256": "ae8a3702c7002915e06cc9435c3564c84d9711619567258fe7c58e7b8ebce630",
+   "bytes": 2243
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/astronomy/catalog/HttpUrlConnectionOrbitCatalogFetcherTest.kt",
+   "sha256": "9a3555ab47012fcbd6235249191ba9a0b6fcf12d0174bdef97881b88addf9209",
+   "bytes": 5920
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/astronomy/catalog/OrbitCatalogIngestorTest.kt",
+   "sha256": "d13a5b03fab591ba59e8e4d54cc7be52d3fac4848da8ce13f25809ccb36d60dc",
+   "bytes": 5980
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/astronomy/frames/PredictionFramePipelineTest.kt",
+   "sha256": "96fd923cd1b7f2a4e39a9e2f1edfe0936dda9651789a4d3dbee4e13fec4ebd53",
+   "bytes": 3827
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/astronomy/identity/SatelliteIdentityResolverTest.kt",
+   "sha256": "c42ab7dec8147d333fe51dfc6aba15ad3add66c7023134befcba09b9517ca2e8",
+   "bytes": 4255
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/astronomy/prediction/SatellitePredictionUseCaseTest.kt",
+   "sha256": "7780b26bc77f8a882bb198676e8cc24217c5f1c8a96e73dee6f23ce23e9af1a6",
+   "bytes": 10879
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/astronomy/propagation/Sgp4ReferenceVectorTest.kt",
+   "sha256": "05e7b0e0582fc265511681cbc40d896f244be19926250885b862b1c2a79ae664",
+   "bytes": 1395
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/astronomy/propagation/Sgp4Sdp4PropagationEngineTest.kt",
+   "sha256": "30e31d5e008f363c1a5ef579e7b1d34877574ca2711fea769a7872206e0be080",
+   "bytes": 6477
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/live/ObservedSkyStateTest.kt",
+   "sha256": "4494f32f5a8c416957e81876c62cbc8bfefab9b17b87e4ef260252e57c629ad5",
+   "bytes": 3030
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/live/PoseMathTest.kt",
+   "sha256": "abdabcaede66d4c7d048deff0f0991b36540780d18980dbef16cdbc2332eebeb",
+   "bytes": 4212
+  },
+  {
+   "path": "app/src/test/kotlin/horizon/observatory/live/SkyProjectionTest.kt",
+   "sha256": "08b57b591fe5d858d80c5638b5d7a4fbc80df76322fd133deff49c07d5762ad8",
+   "bytes": 4259
+  },
+  {
+   "path": "app/src/test/resources/sgp4/README.md",
+   "sha256": "3caf9efea4bf1dbafbd51d12518d4012a4014b7ce584cd7e625bb3ee7fc2ef87",
+   "bytes": 574
+  },
+  {
+   "path": "docs/HANDOFF_TEST_ORBIT_FOUNDATION.md",
+   "sha256": "d3a14d57574ac5cea791665ef8d2e68098732975d5d31f3e9e9845dff1169735",
+   "bytes": 4217
+  },
+  {
+   "path": "docs/ORBIT_PREDICTION_ARCHITECTURE.md",
+   "sha256": "910c096697efb17b516d6d766cc8c59216d543b22df2add8a399ab423236b37e",
+   "bytes": 7695
+  }
+ ]
+}

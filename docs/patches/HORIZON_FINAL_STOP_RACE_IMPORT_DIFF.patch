@@ -1,0 +1,70 @@
+--- a/app/src/main/kotlin/horizon/observatory/acquisition/service/ObservatoryService.kt
++++ b/app/src/main/kotlin/horizon/observatory/acquisition/service/ObservatoryService.kt
+@@ -30,6 +30,7 @@
+ import horizon.observatory.domain.model.RawObservationView
+ import horizon.observatory.domain.model.RawObservation
+ import horizon.observatory.domain.model.SessionSequencer
++import horizon.observatory.domain.model.SessionLifecycleState
+ import horizon.observatory.domain.model.TimestampDomain
+ import horizon.observatory.core.time.TimestampEngine
+ import horizon.observatory.storage.queue.ObservationPersistenceQueue
+@@ -68,6 +69,8 @@
+     private var healthJob: Job? = null
+     /** Serializes sequence allocation with the HORIZON ingress timestamp. */
+     private val ingressMutex = Mutex()
++    /** Serializes STOP requests so duplicate stop intents cannot race the session state machine. */
++    private val stopMutex = Mutex()
+ 
+     override fun onCreate() {
+         super.onCreate()
+@@ -179,17 +182,28 @@
+     }
+ 
+     private fun stopObserving() {
+-        val sessionId = currentSessionId ?: return
++        val requestedSessionId = currentSessionId ?: return
+         serviceScope.launch {
+-            healthJob?.cancel()
+-            listOf(gnssRawSource, gnssFixSource, cellularSource, sensorSource).forEach { it.stop() }
+-            sourceJobs.forEach { job -> withTimeoutOrNull(SOURCE_STOP_TIMEOUT_MS) { job.cancelAndJoin() } }
+-            sourceJobs.clear()
+-
+-            repository.beginStopping(sessionId)
+-            persistSystemEvent(sessionId, "SESSION_STOPPING", JSONObject())
+-
+-            val drained = withTimeoutOrNull(DRAIN_TIMEOUT_MS) {
++            stopMutex.withLock {
++                // A second STOP intent may arrive while the first stop is draining the queue.
++                // Serialize STOP handling and re-read lifecycle state before mutating it.
++                val sessionId = currentSessionId ?: return@withLock
++                if (sessionId != requestedSessionId) return@withLock
++                val state = repository.getSession(sessionId)?.lifecycleState ?: return@withLock
++                if (state != SessionLifecycleState.RECORDING.name) {
++                    Log.w(SERVICE_TAG, "Ignoring duplicate/non-recording STOP for session=$sessionId state=$state")
++                    return@withLock
++                }
++
++                healthJob?.cancel()
++                listOf(gnssRawSource, gnssFixSource, cellularSource, sensorSource).forEach { it.stop() }
++                sourceJobs.forEach { job -> withTimeoutOrNull(SOURCE_STOP_TIMEOUT_MS) { job.cancelAndJoin() } }
++                sourceJobs.clear()
++
++                repository.beginStopping(sessionId)
++                persistSystemEvent(sessionId, "SESSION_STOPPING", JSONObject())
++
++                val drained = withTimeoutOrNull(DRAIN_TIMEOUT_MS) {
+                 while (observationQueue.pendingCount(sessionId) > 0) observationQueue.drain(sessionId)
+                 true
+             } ?: false
+@@ -224,8 +238,9 @@
+             currentSessionId = null
+             sequencer = null
+             Log.i(SERVICE_TAG, "Session COMPLETED session=$sessionId observations=${repository.countObservations(sessionId)}")
+-            stopForeground(STOP_FOREGROUND_REMOVE)
+-            stopSelf()
++                stopForeground(STOP_FOREGROUND_REMOVE)
++                stopSelf()
++            }
+         }
+     }
+ 

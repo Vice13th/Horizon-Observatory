@@ -1,0 +1,17 @@
+{
+  "result": "PASS",
+  "mainKotlinFiles": 30,
+  "testKotlinFiles": 6,
+  "absolutePathHits": [],
+  "missingAppResources": [],
+  "missingBuildFiles": [],
+  "restoredRegressionMismatchesAgainstLastWorkingV2": [],
+  "checks": {
+    "checksumExportPresent": true,
+    "checksumHashingPresent": true,
+    "checksumUiPresent": true,
+    "localPropertiesExcluded": true,
+    "buildDirClean": true,
+    "gradlePinned8_11_1": true
+  }
+}

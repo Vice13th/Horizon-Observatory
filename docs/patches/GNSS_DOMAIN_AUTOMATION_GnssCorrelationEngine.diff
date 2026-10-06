@@ -1,0 +1,99 @@
+--- app/src/main/kotlin/horizon/observatory/analysis/gnss/GnssCorrelationEngine.kt	2026-09-23 22:54:19.000000000 +0000
++++ PROJECT/app/src/main/kotlin/horizon/observatory/analysis/gnss/GnssCorrelationEngine.kt	2026-09-23 23:01:46.558018943 +0000
+@@ -6,6 +6,9 @@
+ import horizon.observatory.domain.gnss.SatelliteCorrelationKey
+ import horizon.observatory.domain.gnss.SatelliteEvidence
+ import horizon.observatory.domain.gnss.SatelliteEvidenceMatch
++import horizon.observatory.domain.gnss.SatelliteHistoryPoint
++import horizon.observatory.domain.gnss.ConstellationSummary
++import horizon.observatory.domain.gnss.GnssSignalStatistics
+ import horizon.observatory.storage.entity.ObservationEntity
+ import org.json.JSONObject
+ import kotlin.math.abs
+@@ -127,8 +130,77 @@
+             )
+         )
+ 
++        val latestBySatellite = ordered
++            .groupBy { BaseKey(it.constellationType, it.svid) }
++            .values
++            .mapNotNull { values ->
++                values.maxWithOrNull(compareBy<SatelliteEvidence>(
++                    { it.observationMonotonicTimestampNs ?: it.statusMonotonicTimestampNs ?: Long.MIN_VALUE },
++                    { it.rawSequenceNumber ?: it.statusSequenceNumber ?: Long.MIN_VALUE }
++                ))
++            }
++            .sortedWith(compareBy<SatelliteEvidence>({ it.constellationType }, { it.svid }))
++
++        val history = ordered.map { item ->
++            SatelliteHistoryPoint(
++                sequenceNumber = item.rawSequenceNumber ?: item.statusSequenceNumber,
++                constellationType = item.constellationType,
++                svid = item.svid,
++                carrierFrequencyHz = item.carrierFrequencyHz,
++                cn0DbHz = item.cn0DbHz,
++                basebandCn0DbHz = item.basebandCn0DbHz,
++                elevationDegrees = item.elevationDegrees,
++                azimuthDegrees = item.azimuthDegrees,
++                usedInFix = item.usedInFix,
++                agcDb = item.automaticGainControlLevelDb,
++                navigationMessageCount = item.navigationMessageCount,
++                match = item.match,
++                monotonicTimestampNs = item.observationMonotonicTimestampNs ?: item.statusMonotonicTimestampNs
++            )
++        }
++
++        val cn0Values = ordered.mapNotNull { it.cn0DbHz }
++        val elevationValues = ordered.mapNotNull { it.elevationDegrees }
++        val agcValues = ordered.mapNotNull { it.automaticGainControlLevelDb }
++        val signalStatistics = GnssSignalStatistics(
++            sampleCount = cn0Values.size,
++            averageCn0DbHz = cn0Values.averageOrNull(),
++            minCn0DbHz = cn0Values.minOrNull(),
++            maxCn0DbHz = cn0Values.maxOrNull(),
++            averageElevationDegrees = elevationValues.averageOrNull(),
++            minElevationDegrees = elevationValues.minOrNull(),
++            maxElevationDegrees = elevationValues.maxOrNull(),
++            averageAgcDb = agcValues.averageOrNull(),
++            minAgcDb = agcValues.minOrNull(),
++            maxAgcDb = agcValues.maxOrNull(),
++            distinctFrequenciesHz = ordered.mapNotNull { it.carrierFrequencyHz }
++                .distinct()
++                .sorted()
++        )
++
++        val summaries = ordered.groupBy { it.constellationType }
++            .map { (constellationType, values) ->
++                ConstellationSummary(
++                    constellationType = constellationType,
++                    evidenceCount = values.size,
++                    distinctSatelliteCount = values.map { it.svid }.toSet().size,
++                    matchedCount = values.count { it.match == SatelliteEvidenceMatch.STATUS_AND_RAW_MATCH },
++                    statusOnlyCount = values.count { it.match == SatelliteEvidenceMatch.STATUS_ONLY },
++                    rawOnlyCount = values.count { it.match == SatelliteEvidenceMatch.RAW_ONLY },
++                    navigationMessageCount = values.sumOf { it.navigationMessageCount },
++                    averageCn0DbHz = values.mapNotNull { it.cn0DbHz }.averageOrNull(),
++                    averageElevationDegrees = values.mapNotNull { it.elevationDegrees }.averageOrNull(),
++                    averageAgcDb = values.mapNotNull { it.automaticGainControlLevelDb }.averageOrNull()
++                )
++            }
++            .sortedBy { it.constellationType }
++
+         return GnssDomainSnapshot(
++            signalStatistics = signalStatistics,
+             satelliteEvidence = ordered,
++            latestSatelliteEvidence = latestBySatellite,
++            historyPoints = history,
++            constellationSummaries = summaries,
+             antennaEvidence = antenna,
+             navigationMessageCount = navRows.size,
+             correlatedMeasurementCount = matchedRawSequences.size,
+@@ -315,6 +387,8 @@
+ 
+     private fun Double.roundToLongSafe(): Long = round(this).toLong()
+ 
++    private fun List<Double>.averageOrNull(): Double? = if (isEmpty()) null else average()
++
+     private fun timeDistance(a: Long?, b: Long?): Long {
+         if (a == null || b == null) return Long.MAX_VALUE
+         return if (a >= b) a - b else b - a

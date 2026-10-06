@@ -1,0 +1,142 @@
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+index e399678..bd7e982 100644
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -24,7 +24,10 @@ android {
+         }
+     }
+ 
+-    buildFeatures { compose = true }
++    buildFeatures {
++        compose = true
++        buildConfig = true
++    }
+     composeOptions { kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get() }
+ 
+     buildTypes {
+diff --git a/app/src/main/kotlin/horizon/observatory/acquisition/cellular/CellInfoSource.kt b/app/src/main/kotlin/horizon/observatory/acquisition/cellular/CellInfoSource.kt
+index f71efcc..e7aa598 100644
+--- a/app/src/main/kotlin/horizon/observatory/acquisition/cellular/CellInfoSource.kt
++++ b/app/src/main/kotlin/horizon/observatory/acquisition/cellular/CellInfoSource.kt
+@@ -8,6 +8,8 @@ import android.telephony.CellInfo
+ import android.telephony.CellInfoGsm
+ import android.telephony.CellInfoLte
+ import android.telephony.CellInfoNr
++import android.telephony.CellIdentityNr
++import android.telephony.CellSignalStrengthNr
+ import android.telephony.CellInfoTdscdma
+ import android.telephony.CellInfoWcdma
+ import android.telephony.PhoneStateListener
+@@ -164,14 +166,14 @@ class CellInfoSource(private val context: Context) : ObservationSource {
+             }
+             is CellInfoNr -> {
+                 technology = "NR"
+-                val id = cellIdentity
++                val id = cellIdentity as CellIdentityNr
+                 payload.put("mcc", id.mccString ?: JSONObject.NULL)
+                 payload.put("mnc", id.mncString ?: JSONObject.NULL)
+                 payload.put("tac", id.tac.unavailableToNull())
+                 payload.put("nci", id.nci.unavailableToNull())
+                 payload.put("pci", id.pci.unavailableToNull())
+                 payload.put("nrarfcn", id.nrarfcn.unavailableToNull())
+-                val ss = cellSignalStrength
++                val ss = cellSignalStrength as CellSignalStrengthNr
+                 payload.put("ssRsrp", ss.ssRsrp.unavailableToNull())
+                 payload.put("ssRsrq", ss.ssRsrq.unavailableToNull())
+                 payload.put("ssSinr", ss.ssSinr.unavailableToNull())
+diff --git a/app/src/main/kotlin/horizon/observatory/acquisition/gnss/GnssObservationSource.kt b/app/src/main/kotlin/horizon/observatory/acquisition/gnss/GnssObservationSource.kt
+index 8004c75..17e67d2 100644
+--- a/app/src/main/kotlin/horizon/observatory/acquisition/gnss/GnssObservationSource.kt
++++ b/app/src/main/kotlin/horizon/observatory/acquisition/gnss/GnssObservationSource.kt
+@@ -151,8 +151,7 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
+         }.getOrDefault(false)
+ 
+         val statusRegistered = runCatching {
+-            if (Build.VERSION.SDK_INT >= 30) manager.registerGnssStatusCallback(executor, statusCallback)
+-            else LocationManagerCompat.registerGnssStatusCallback(manager, executor, statusCallback)
++            manager.registerGnssStatusCallback(statusCallback, Handler(Looper.getMainLooper()))
+         }.getOrDefault(false)
+ 
+         val navRegistered = runCatching {
+@@ -172,14 +171,14 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
+             close()
+         }
+ 
+-        closeFlow = this@callbackFlow::close
++        closeFlow = { close() }
+         awaitClose {
+             closeFlow = null
+             runCatching {
+                 if (Build.VERSION.SDK_INT >= 30) manager.unregisterGnssMeasurementsCallback(measurementCallback)
+                 else if (Build.VERSION.SDK_INT >= 24) LocationManagerCompat.unregisterGnssMeasurementsCallback(manager, measurementCallback)
+             }
+-            runCatching { LocationManagerCompat.unregisterGnssStatusCallback(manager, statusCallback) }
++            runCatching { manager.unregisterGnssStatusCallback(statusCallback) }
+             runCatching {
+                 if (Build.VERSION.SDK_INT >= 30) manager.unregisterGnssNavigationMessageCallback(navCallback)
+                 else manager.unregisterGnssNavigationMessageCallback(navCallback)
+diff --git a/app/src/main/kotlin/horizon/observatory/storage/queue/ObservationPersistenceQueue.kt b/app/src/main/kotlin/horizon/observatory/storage/queue/ObservationPersistenceQueue.kt
+index a0ac23f..d1d8c80 100644
+--- a/app/src/main/kotlin/horizon/observatory/storage/queue/ObservationPersistenceQueue.kt
++++ b/app/src/main/kotlin/horizon/observatory/storage/queue/ObservationPersistenceQueue.kt
+@@ -49,9 +49,10 @@ class RoomObservationPersistenceQueue(
+                 check(deleted == 1) { "Pending observation delete failed: $sessionId/${pending.sequenceNumber}" }
+                 true
+             }
+-            if (!didDrain) return@withLock drained
++            if (!didDrain) break
+             drained++
+         }
++        drained
+     }
+ 
+     override suspend fun pendingCount(sessionId: String): Int =
+diff --git a/app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt b/app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt
+index f54e3eb..a87cd5d 100644
+--- a/app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt
++++ b/app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt
+@@ -51,6 +51,7 @@ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.geometry.Offset
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.graphics.Path
++import androidx.compose.ui.graphics.drawscope.Stroke
+ import androidx.compose.ui.text.font.FontFamily
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+@@ -86,7 +87,7 @@ class MainActivity : ComponentActivity() {
+         var message by rememberSaveable { mutableStateOf("Ready") }
+         val sessions by container.sessionRepository.observeAllSessions().collectAsStateCompat(emptyList())
+         val latest = sessions.firstOrNull()
+-        val observations by produceState(initialValue = emptyList(), latest?.sessionId) {
++        val observations by produceState<List<ObservationEntity>>(initialValue = emptyList(), key1 = latest?.sessionId) {
+             value = if (latest == null) emptyList() else container.sessionRepository.getObservationsSnapshot(latest.sessionId)
+             while (latest != null) {
+                 delay(1200)
+@@ -187,7 +188,7 @@ private fun OverviewScreen(session: SessionEntity?, analysis: AnalysisSnapshot)
+     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+         item { MetricCard("Session", session?.sessionId ?: "NONE", session?.lifecycleState ?: "NO SESSION") }
+         item { MetricGrid(analysis) }
+-        item { SignalCard("GNSS C/N0 history", "dB-Hz", analysis.averageCn0DbHz) { } }
++        item { SignalCard("GNSS C/N0 history", "dB-Hz", analysis.averageCn0DbHz) }
+         item { SignalSummary(analysis) }
+         item { EvidenceCard(session) }
+     }
+@@ -288,8 +289,8 @@ private fun GnssScreen(obs: List<ObservationEntity>, analysis: AnalysisSnapshot)
+             }
+         } ?: emptySequence() }
+         .filter { it.svid >= 0 && !it.azimuthDeg.isNaN() && !it.elevationDeg.isNaN() }
+-        .takeLast(120)
+         .toList()
++        .takeLast(120)
+ 
+     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+         item { SignalCard("GNSS signal history", "dB-Hz", analysis.averageCn0DbHz, rows.mapNotNull { runCatching { JSONObject(it.rawPayloadJson).optDouble("cn0DbHz", Double.NaN) }.getOrNull() }.filter { !it.isNaN() }) }
+@@ -429,7 +430,7 @@ private fun MiniLineChart(samples: List<Double>) {
+                 val y = size.height * (1f - ((v - min) / range).toFloat())
+                 if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+             }
+-            drawPath(path, color = Color(0xFFE1A4FF), strokeWidth = 3f)
++            drawPath(path, color = Color(0xFFE1A4FF), style = Stroke(width = 3f))
+         }
+     }
+ }

@@ -68,7 +68,7 @@ External build/device verification remains the next gate.
 
 ## 2026-10-07 — First Device-Verified APK Release
 
-Published the first public HORIZON Observatory APK as GitHub Release v1.0.0-observatory.
+Published the first device-verified HORIZON Observatory APK as GitHub Release v1.0.0-observatory.
 
 - Target commit: a6181fb6259f463e1314f5103d0bfd84ed7cf024
 - Asset: Horizon-Observatory-v1.0.0-observatory.apk
@@ -78,3 +78,18 @@ Published the first public HORIZON Observatory APK as GitHub Release v1.0.0-obse
 - APK remains a Release Asset only; it is not committed to the repository.
 - Release does not claim production status or final scientific validation.
 - Open gates remain NORAD mapping, UTC edge cases, OrbitCore reference-vector accuracy, physical orientation, and K8 long-duration/interference validation.
+
+
+## 2026-10-07 — Physical-Device Visual Evidence
+
+A real physical-device framebuffer capture was added as the repository's primary product screenshot.
+
+- Image: `docs/assets/horizon-observatory-device-verified.png`
+- Device: Samsung SM-A075F / Android 16 / API 36
+- Capture state: completed OBSERVED SKY session; COMPLETED / IDLE
+- Observed SKY / Observation Bus UI count: 58
+- Dimensions: 720 × 1446
+- SHA-256: A6BE2027F07881245F8545A0C9FA067EB832050A2C397B66B435109A4751AFD5
+- Authenticity: real physical-device framebuffer capture; no generated UI, synthetic telemetry, or scientific-value alteration
+- Orientation wording remains explicitly north-up recorded data; no physical-heading claim is made.
+- This visual evidence is documentation-only and does not close NORAD, UTC, OrbitCore reference-vector accuracy, physical orientation, or K8 validation gates.

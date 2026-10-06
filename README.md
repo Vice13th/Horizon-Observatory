@@ -14,6 +14,20 @@ It is an **observatory stack**: acquisition, provenance, persistence, integrity,
 
 **GNSS · Satellites · Orbital Context · SGP4/SDP4 · Cellular · Sensors · Provenance · Resilient Navigation**
 
+
+## Latest Public Artifact — v1.0.0-observatory
+
+The first device-verified APK is now published as a GitHub Release Asset.
+
+- Release: [HORIZON Observatory v1.0.0](https://github.com/Vice13th/Horizon-Observatory/releases/tag/v1.0.0-observatory)
+- Tag: `v1.0.0-observatory`
+- Release target commit: `a6181fb6259f463e1314f5103d0bfd84ed7cf024`
+- APK filename: `Horizon-Observatory-v1.0.0-observatory.apk`
+- APK SHA-256: `81CE8B59491525A7EC0DA91BDA3C5C0DBDEDDAAB310EC0FB93E311FE3F474A45`
+- Device receipt: Samsung SM-A075F / Android 16 / API 36
+
+The published asset was independently downloaded and SHA-256 verified against the exact local APK bytes. This release is an evidence-backed device artifact, not a claim of final scientific validation or production release status.
+
 ## Current Status
 
 **GNSS foundation: VERIFIED / CLOSED**

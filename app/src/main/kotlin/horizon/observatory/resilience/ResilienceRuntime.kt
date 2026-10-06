@@ -95,10 +95,11 @@ class ResilienceRuntime {
                 val lon = payload?.optDouble("longitude", Double.NaN)?.takeUnless(Double::isNaN)
                 if (lat != null && lon != null) {
                     val accuracy = payload.optDouble("accuracyMeters", Double.NaN).takeUnless(Double::isNaN) ?: 9999.0
-                    val altitude = payload.optDouble("altitude", 0.0)
+                    val altitude = payload.optDouble("altitude", Double.NaN).takeUnless(Double::isNaN)
                     val speed = payload.optDouble("speedMetersPerSecond", Double.NaN).takeUnless(Double::isNaN)
                     val heading = payload.optDouble("bearingDegrees", Double.NaN).takeUnless(Double::isNaN)
-                    latestTrusted = TrustedPvt(lat, lon, altitude, speed, heading, observation.monotonicTimestampNs ?: 0L, accuracy, accuracy)
+                    val verticalAccuracy = payload.optDouble("verticalAccuracyMeters", Double.NaN).takeUnless(Double::isNaN)
+                    latestTrusted = TrustedPvt(lat, lon, altitude, speed, heading, observation.monotonicTimestampNs ?: 0L, accuracy, verticalAccuracy)
                     lastGnssEvidenceNs = observation.monotonicTimestampNs
                     hadGnssEvidence = true
                 }

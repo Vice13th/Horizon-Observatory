@@ -24,7 +24,7 @@ class DeadReckoningBridge(
             altitudeM = input.lastTrusted.altitudeM,
             timestampMonotonicNs = input.lastTrusted.timestampMonotonicNs + (input.elapsedSeconds * 1e9).toLong(),
             horizontalUncertaintyM = input.lastTrusted.horizontalUncertaintyM + uncertaintyGrowth,
-            verticalUncertaintyM = input.lastTrusted.verticalUncertaintyM + verticalGrowth,
+            verticalUncertaintyM = input.lastTrusted.verticalUncertaintyM?.plus(verticalGrowth),
             provenance = "DEAD_RECKONED_FROM_LAST_TRUSTED_PVT",
             navigationState = if (input.imuAvailable) NavigationState.INERTIAL_BRIDGING else NavigationState.GNSS_LOST
         )

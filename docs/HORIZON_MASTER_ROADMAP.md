@@ -1629,3 +1629,22 @@ K8 physical interference, open-sky truth comparison, long-run background/screen-
 Final source correction after review: interference classification ordering now gives strong JAM/SPOOF/DEGRADED evidence precedence over recovery flags, with explicit recovery remaining reachable before NORMAL. Regression coverage was extended for this precedence boundary.
 
 Final receipt: `:app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug` BUILD SUCCESSFUL; 163 unit tests, 0 failures, 0 errors, 3 existing reference-vector skips. APK SHA-256: `4641C4F855C8EB92E769E404171237CFBC11D2F345F611CBBB6DE92E590DBE0C`. `:app:connectedPrimaryDebugAndroidTest` BUILD SUCCESSFUL; 14 tests finished on SM-A075F / Android 16, 2 existing migration tests skipped. No new K8 physical-interference claim is made.
+## PROPAGATION + EVIDENCE HARDENING RECEIPT — 2026-10-06
+
+Source-audit fixes completed after real-device and OrbitCore regression:
+- OrbitCore adapter now supplies deterministic non-null OMM identity fallbacks for missing object name/ID/classification, matching the library's non-null constructor contract.
+- A deep-space GNSS-period regression now exercises OrbitCore at a 12-hour period and verifies `SDP4_DEEP_SPACE` plus finite state.
+- Resilient-location altitude is now nullable; absent altitude remains absent instead of being inferred as 0 m.
+- Observed vertical uncertainty is no longer copied from horizontal accuracy; the service requires explicit `verticalAccuracyMeters` for publishing a vertical uncertainty.
+- Resilience trusted-PVT storage preserves absent altitude and absent vertical accuracy without fabricating measurements.
+
+Verification so far: primary JVM suite `163` tests, `0` failures, `0` errors, `3` existing reference-vector tests skipped; primary APK rebuilt successfully; OrbitCore bridge debug suite `2` tests, `0` failures/errors after adapter hardening.
+
+Reference fixtures `SGP4-VER.TLE` and `tcppver.out` are vendored from the public Kshana validation fixture repository; SHA-256 are recorded in the working tree before commit. Scientific vector comparison against OrbitCore is not yet claimed until a dedicated parser/runner produces an independent receipt.
+## 2026-10-06 DEVICE + PROPAGATION HARDENING RECEIPT
+
+**Source hardening:** OrbitCore adapter now guarantees non-null OMM identity fields when upstream object name/ID/classification are absent, using deterministic provenance-preserving fallbacks. `TrustedPvt`, `NavigationEstimate`, and `ResilientLocationSnapshot` now preserve missing altitude and vertical uncertainty as `null`; the service no longer infers altitude `0 m` or copies horizontal accuracy into vertical uncertainty. JSON/provider serialization preserves explicit null altitude.
+
+**Fresh verification:** primary JVM suite `163` tests, `0` failures, `0` errors, `3` existing reference-vector skips; fresh primary APK SHA-256 `9EB1F04505DEA594C4D1789A0BFD6B8CCA51ACFA953E9D8BDC80C3B2D6E2995A`; `:app:connectedPrimaryDebugAndroidTest` BUILD SUCCESSFUL on `SM-A075F / Android 16`, `14` tests finished, `2` existing migration tests skipped; OrbitCore bridge debug suite `2` tests, `0` failures, `0` errors.
+
+**Scientific boundary:** `SGP4-VER.TLE` and `tcppver.out` are now vendored with verified SHA-256 (`D246D1D9D768ACE445A38A965713FA9BA52D80FD8A41A0502FF83D7ACFFE2881`, `687BF28DBE52DF86E8E60AB5CB4A08D1AA3DBCAF4E63B1F7AB95F044FBE3833B`). The files are provenance fixtures only at this receipt. No SGP4/SDP4 numerical accuracy claim is made until Horizon's dedicated vector runner compares OrbitCore states against the fixture rows.

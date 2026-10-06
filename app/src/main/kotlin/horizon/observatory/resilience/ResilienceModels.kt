@@ -107,12 +107,12 @@ data class NavigationTransition(
 data class TrustedPvt(
     val latitudeDeg: Double,
     val longitudeDeg: Double,
-    val altitudeM: Double,
+    val altitudeM: Double?,
     val speedMps: Double?,
     val headingDeg: Double?,
     val timestampMonotonicNs: Long,
     val horizontalUncertaintyM: Double,
-    val verticalUncertaintyM: Double
+    val verticalUncertaintyM: Double?
 )
 
 data class BridgeInput(
@@ -128,10 +128,10 @@ data class BridgeInput(
 data class NavigationEstimate(
     val latitudeDeg: Double,
     val longitudeDeg: Double,
-    val altitudeM: Double,
+    val altitudeM: Double?,
     val timestampMonotonicNs: Long,
     val horizontalUncertaintyM: Double,
-    val verticalUncertaintyM: Double,
+    val verticalUncertaintyM: Double?,
     val provenance: String,
     val navigationState: NavigationState
 )

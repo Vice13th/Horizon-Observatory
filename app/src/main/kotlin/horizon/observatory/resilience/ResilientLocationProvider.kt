@@ -12,9 +12,9 @@ import org.json.JSONObject
 data class ResilientLocationSnapshot(
     val latitudeDeg: Double,
     val longitudeDeg: Double,
-    val altitudeM: Double,
+    val altitudeM: Double?,
     val horizontalUncertaintyM: Double,
-    val verticalUncertaintyM: Double,
+    val verticalUncertaintyM: Double?,
     val timestampMonotonicNs: Long,
     val navigationState: NavigationState,
     val provenance: String
@@ -27,7 +27,7 @@ class ResilientLocationStore(context: Context) {
         prefs.edit().putString(KEY_SNAPSHOT, JSONObject()
             .put("latitudeDeg", snapshot.latitudeDeg)
             .put("longitudeDeg", snapshot.longitudeDeg)
-            .put("altitudeM", snapshot.altitudeM)
+            .put("altitudeM", snapshot.altitudeM ?: JSONObject.NULL)
             .put("horizontalUncertaintyM", snapshot.horizontalUncertaintyM)
             .put("verticalUncertaintyM", snapshot.verticalUncertaintyM)
             .put("timestampMonotonicNs", snapshot.timestampMonotonicNs)
@@ -43,7 +43,7 @@ class ResilientLocationStore(context: Context) {
             ResilientLocationSnapshot(
                 latitudeDeg = j.getDouble("latitudeDeg"),
                 longitudeDeg = j.getDouble("longitudeDeg"),
-                altitudeM = j.getDouble("altitudeM"),
+                altitudeM = if (j.isNull("altitudeM")) null else j.getDouble("altitudeM"),
                 horizontalUncertaintyM = j.getDouble("horizontalUncertaintyM"),
                 verticalUncertaintyM = j.getDouble("verticalUncertaintyM"),
                 timestampMonotonicNs = j.getLong("timestampMonotonicNs"),

@@ -278,7 +278,7 @@ class ObservatoryService : Service() {
             val lat = payload.optDouble("latitude", Double.NaN)
             val lon = payload.optDouble("longitude", Double.NaN)
             if (lat.isNaN() || lon.isNaN()) return
-            val altitude = payload.optDouble("altitude", 0.0).takeUnless { it.isNaN() } ?: 0.0
+            val altitude = payload.optDouble("altitude", Double.NaN).takeUnless { it.isNaN() }
             val accuracy = payload.optDouble("accuracyMeters", Double.NaN).takeUnless { it.isNaN() } ?: return
             resilientLocationStore.publish(
                 ResilientLocationSnapshot(
@@ -286,7 +286,7 @@ class ObservatoryService : Service() {
                     longitudeDeg = lon,
                     altitudeM = altitude,
                     horizontalUncertaintyM = accuracy,
-                    verticalUncertaintyM = accuracy,
+                    verticalUncertaintyM = payload.optDouble("verticalAccuracyMeters", Double.NaN).takeUnless { it.isNaN() } ?: return,
                     timestampMonotonicNs = observation.monotonicTimestampNs ?: return,
                     navigationState = resilienceRuntime?.navigationState ?: NavigationState.FULL_GNSS,
                     provenance = "GNSS_OBSERVED"

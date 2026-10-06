@@ -61,8 +61,8 @@ class OrbitCoreSgp4Sdp4Backend : Sgp4Sdp4Backend {
     ) {
         fun createOmm(input: Sgp4Sdp4Input): Any {
             val args = arrayOfNulls<Any>(17)
-            args[0] = input.objectName
-            args[1] = input.objectId
+            args[0] = input.objectName ?: "NORAD-${input.noradCatId}"
+            args[1] = input.objectId ?: "NORAD-${input.noradCatId}"
             args[2] = kotlinInstantFromEpochMillis(input.epochUtc.toEpochMilli())
             args[3] = input.meanMotionRadPerMin * 1440.0 / (2.0 * Math.PI)
             args[4] = input.eccentricity
@@ -71,7 +71,7 @@ class OrbitCoreSgp4Sdp4Backend : Sgp4Sdp4Backend {
             args[7] = Math.toDegrees(input.argOfPericenterRad)
             args[8] = Math.toDegrees(input.meanAnomalyRad)
             args[9] = input.ephemerisType
-            args[10] = input.classification
+            args[10] = input.classification ?: "U"
             args[11] = input.noradCatId.toInt()
             args[12] = input.elementSetNo
             args[13] = input.revAtEpoch?.toInt()

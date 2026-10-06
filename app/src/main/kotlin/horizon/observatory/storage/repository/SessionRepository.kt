@@ -25,6 +25,7 @@ interface SessionRepository {
     fun observeSession(sessionId: String): Flow<SessionEntity?>
     fun getObservations(sessionId: String): Flow<List<ObservationEntity>>
     suspend fun getObservationsSnapshot(sessionId: String): List<ObservationEntity>
+    suspend fun getRecentObservationsSnapshot(sessionId: String, limit: Int): List<ObservationEntity>
     suspend fun countObservations(sessionId: String): Int
     suspend fun minSequence(sessionId: String): Long?
     suspend fun maxSequence(sessionId: String): Long?

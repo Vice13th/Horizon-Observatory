@@ -18,6 +18,9 @@ interface ObservationDao {
     @Query("SELECT * FROM observations WHERE sessionId = :sessionId ORDER BY sequenceNumber ASC")
     suspend fun getObservationsSnapshot(sessionId: String): List<ObservationEntity>
 
+    @Query("SELECT * FROM observations WHERE sessionId = :sessionId ORDER BY sequenceNumber DESC LIMIT :limit")
+    suspend fun getRecentObservationsSnapshot(sessionId: String, limit: Int): List<ObservationEntity>
+
     @Query("SELECT COUNT(*) FROM observations WHERE sessionId = :sessionId")
     suspend fun countForSession(sessionId: String): Int
 

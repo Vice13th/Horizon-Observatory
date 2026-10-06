@@ -1111,6 +1111,28 @@ Horizon Observatory reaches Final Checkpoint only when:
 
 ---
 
+# 28. B0 — ACTIVE-WORK RECONCILIATION + PANEL RECOVERY FIREWALL
+
+**STATUS: VERIFIED — 2026-10-06 functional real-device receipt**
+
+B0 preserved the pre-existing local Satellite Observatory UI work and removed the unbounded live-session observation load from the panel/analysis path. During RECORDING, the UI reads at most the newest 512 persisted observations every 2 seconds. When the session is no longer active, the existing full snapshot path is used. This changes only the UI projection; raw Room evidence remains complete.
+
+Evidence:
+
+- RED: `:app:compilePrimaryDebugAndroidTestKotlin` failed before the new DAO method existed.
+- GREEN: the same Android-test compilation succeeded after implementation.
+- Real-device Room regression: 11 tests completed with 0 failures; 2 existing migration tests were skipped.
+- APK installed: SHA-256 `4CCE1A611F596A574C6FE9A215A588A189C61843C0FE8B8F4564BA66D8D4B3DA`.
+- Active recording reached a live UI total of 512 and remained in RECORDING state.
+- The same session later reached COMPLETED with 9,522 persisted observations: 1,428 RAW GNSS, 186 GNSS STATUS, 148 FIX, 108 CELLULAR, 7,627 SENSORS.
+- Launch/record/complete crash buffers were empty.
+- Target SM-A075F exposes no rotation-vector sensor; orientation remains explicitly unavailable, so B4/B5 physical rotation verification is blocked rather than inferred.
+- Debug gfxinfo aggregate measured 1,139 rendered frames and 94 janky frames (8.25%); this is recorded as a performance observation, not promoted to a root-cause claim.
+
+B0 is therefore closed for functional recovery. B1 is the next gate.
+
+---
+
 # 28. CURRENT NEXT ACTION
 
 **NEXT EXECUTION TARGET: PHASE B Ã¢â‚¬â€ SATELLITE OBSERVATORY UI**

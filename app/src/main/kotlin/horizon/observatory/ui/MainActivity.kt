@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -79,6 +80,7 @@ import horizon.observatory.storage.entity.ObservationEntity
 import horizon.observatory.storage.entity.SessionEntity
 import horizon.observatory.live.MagneticDeclinationProvider
 import horizon.observatory.live.ObservedSkyState
+import horizon.observatory.live.ObservedSkyPoint
 import horizon.observatory.live.SkyOrientationDecision
 import horizon.observatory.live.SkyOrientationMode
 import horizon.observatory.live.SkyProjection
@@ -116,10 +118,14 @@ class MainActivity : ComponentActivity() {
         val latestStateKey = latest?.let { "${it.sessionId}:${it.lifecycleState}" }
         val latestIsActive = latest?.lifecycleState == "RECORDING" || latest?.lifecycleState == "STOPPING"
         val observations by produceState<List<ObservationEntity>>(initialValue = emptyList(), key1 = latestStateKey) {
-            value = if (latest == null) emptyList() else container.sessionRepository.getObservationsSnapshot(latest.sessionId)
+            value = when {
+                latest == null -> emptyList()
+                latestIsActive -> container.sessionRepository.getRecentObservationsSnapshot(latest.sessionId, LIVE_OBSERVATION_WINDOW)
+                else -> container.sessionRepository.getObservationsSnapshot(latest.sessionId)
+            }
             while (latest != null && latestIsActive) {
                 delay(2000)
-                value = container.sessionRepository.getObservationsSnapshot(latest.sessionId)
+                value = container.sessionRepository.getRecentObservationsSnapshot(latest.sessionId, LIVE_OBSERVATION_WINDOW)
             }
         }
         val analysisEngine = remember { SessionAnalysisEngine() }
@@ -365,6 +371,7 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         private const val DEFAULT_COPY_BUFFER = 64 * 1024
+private const val LIVE_OBSERVATION_WINDOW = 512
     }
 
     private fun hasLocationPermission() =
@@ -640,10 +647,9 @@ private fun GnssScreen(
                 else "samples=${analysis.agcSampleCount} distinct=${analysis.agcDistinctLevels} spread=${analysis.agcSpreadDb?.let { "%.4f dB".format(it) } ?: "UNAVAILABLE"}"
             )
         }
-        item { LiveSkyPlot(observedSky, observerLat, observerLon, observerAlt, orientationSource, declinationProvider, isLive) }
+        item { LiveSkyObservatory(observedSky, observerLat, observerLon, observerAlt, orientationSource, declinationProvider, isLive) }
         item { CnoElevationPlot(domain) }
         item { ConstellationSummaryPanel(domain) }
-        item { SatelliteEvidenceMatrix(matrix) }
         item { AntennaEvidencePanel(domain) }
         item { NavigationMessagePanel(count = analysis.navigationMessageCount, latest = navigationMessages.lastOrNull()) }
         item { MetricCard("Raw measurements", analysis.gnssRawCount.toString(), if (rawRows.isEmpty()) "NOT OBSERVED IN THIS SESSION" else "MEASURED — RAW EVIDENCE PRESERVED") }
@@ -667,7 +673,7 @@ private fun GnssScreen(
  * never written into any observation or evidence.
  */
 @Composable
-private fun LiveSkyPlot(
+private fun LiveSkyObservatory(
     observed: ObservedSkyState,
     observerLat: Double?,
     observerLon: Double?,
@@ -703,7 +709,10 @@ private fun LiveSkyPlot(
         }
     }
     val decision = SkyProjection.decide(pose, declinationDeg, isLive)
-    CorrelatedSkyPlot(observed, decision)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        CorrelatedSkyPlot(observed, decision)
+        SatellitePanelField(observed, decision)
+    }
 }
 
 @Composable
@@ -767,6 +776,103 @@ private fun CorrelatedSkyPlot(observed: ObservedSkyState, orientation: SkyOrient
                     Text("E", Modifier.align(Alignment.CenterEnd).padding(end = 5.dp), style = MaterialTheme.typography.labelSmall)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SatellitePanelField(
+    observed: ObservedSkyState,
+    orientation: SkyOrientationDecision
+) {
+    val mode = orientation.mode
+    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("SATELLITE PANELS", style = MaterialTheme.typography.titleMedium)
+            Text(
+                orientation.detail,
+                style = MaterialTheme.typography.labelSmall
+            )
+            if (observed.points.isEmpty()) {
+                Text(
+                    "NO OBSERVED SATELLITES WITH VALID AZIMUTH/ELEVATION",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                return@Column
+            }
+
+            androidx.compose.foundation.layout.BoxWithConstraints(
+                Modifier
+                    .fillMaxWidth()
+                    .height(360.dp)
+                    .background(Color(0xFF0D0B10))
+            ) {
+                val density = androidx.compose.ui.platform.LocalDensity.current
+                val widthPx = with(density) { maxWidth.toPx() }
+                val heightPx = with(density) { maxHeight.toPx() }
+                val centerX = widthPx / 2f
+                val centerY = heightPx / 2f
+                val radiusPx = min(widthPx, heightPx) * 0.38f
+                val panelWidthPx = with(density) { 96.dp.toPx() }
+                val panelHeightPx = with(density) { 64.dp.toPx() }
+
+                observed.points.take(14).forEach { point ->
+                    val projected = SkyProjection.project(
+                        point.azimuthDeg,
+                        point.elevationDeg,
+                        mode
+                    ) ?: return@forEach
+                    val xDp = with(density) {
+                        (centerX + (projected.x.toFloat() * radiusPx) - panelWidthPx / 2f).toDp()
+                    }
+                    val yDp = with(density) {
+                        (centerY - (projected.y.toFloat() * radiusPx) - panelHeightPx / 2f).toDp()
+                    }
+
+                    SatellitePanelCard(
+                        point = point,
+                        modifier = Modifier.offset(x = xDp, y = yDp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SatellitePanelCard(
+    point: ObservedSkyPoint,
+    modifier: Modifier = Modifier
+) {
+    val name = "${constellationLabel(point.satelliteId.constellationType)} ${point.satelliteId.svid}"
+    Card(
+        modifier = modifier.size(width = 96.dp, height = 64.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF211A28)),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (point.usedInFix == true) Color(0xFFC875FF) else Color(0xFF4A4050)
+        )
+    ) {
+        Column(
+            Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
+            verticalArrangement = Arrangement.spacedBy(1.dp)
+        ) {
+            Text(
+                name,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
+            )
+            Text(
+                "C/N0 ${point.cn0DbHz?.let { "%.1f".format(it) } ?: "—"}",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = FontFamily.Monospace
+            )
+            Text(
+                "EL ${"%.0f".format(point.elevationDeg)}° AZ ${"%.0f".format(point.azimuthDeg)}°",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = FontFamily.Monospace
+            )
         }
     }
 }

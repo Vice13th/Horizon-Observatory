@@ -85,6 +85,8 @@ class SessionRepositoryImpl(
     override fun observeSession(sessionId: String): Flow<SessionEntity?> = sessionDao.observeSession(sessionId)
     override fun getObservations(sessionId: String): Flow<List<ObservationEntity>> = observationDao.getObservationsOrderedForSession(sessionId)
     override suspend fun getObservationsSnapshot(sessionId: String): List<ObservationEntity> = observationDao.getObservationsSnapshot(sessionId)
+    override suspend fun getRecentObservationsSnapshot(sessionId: String, limit: Int): List<ObservationEntity> =
+        observationDao.getRecentObservationsSnapshot(sessionId, limit).asReversed()
     override suspend fun countObservations(sessionId: String): Int = observationDao.countForSession(sessionId)
     override suspend fun minSequence(sessionId: String): Long? = observationDao.minSequence(sessionId)
     override suspend fun maxSequence(sessionId: String): Long? = observationDao.maxSequence(sessionId)

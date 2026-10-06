@@ -103,3 +103,12 @@ The package should not be labelled field-verified until all of the following are
 9. monotonic timestamp audit;
 10. export count reconciliation;
 11. long-run session evidence.
+
+
+## B0 — PANEL RECOVERY FIREWALL — 2026-10-06
+
+**VERIFIED:** bounded live observation projection on SM-A075F; complete-session persistence preserved.
+
+Live RECORDING UI now consumes a maximum 512-observation projection. Completed sessions continue to consume the full Room snapshot. Real-device instrumentation completed 11 tests with zero failures; the active session reached 512 live observations and later completed with 9,522 persisted observations. APK SHA-256: `4CCE1A611F596A574C6FE9A215A588A189C61843C0FE8B8F4564BA66D8D4B3DA`. Launch/record/complete crash buffers were empty.
+
+**UNVERIFIED/BLOCKED:** physical heading/panel rotation on this target because no rotation-vector sensor is available. Performance remains a follow-up measurement: the debug gfxinfo aggregate showed 1,139 frames and 94 janky frames (8.25%).

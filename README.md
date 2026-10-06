@@ -25,7 +25,7 @@ It is an **observatory stack**: acquisition, provenance, persistence, integrity,
 **GNSS · Satellites · Orbital Context · SGP4/SDP4 · Cellular · Sensors · Provenance · Resilient Navigation**
 
 
-## Latest Public Artifact — v1.0.0-observatory
+## Latest Release Artifact — v1.0.0-observatory
 
 The first device-verified APK is now published as a GitHub Release Asset.
 

@@ -1,25 +1,43 @@
-# HORIZON — Next Build Gate
+# HORIZON — Next Build Gate / UI Phase
 
-The source-level automation stage is complete for the current GNSS domain increment.
+## Current checkpoint
 
-Run on the Windows project root:
+HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED
 
-```powershell
-.\gradlew.bat :app:testDebugUnitTest --no-daemon --console=plain
-```
+The GNSS acquisition → Observation Bus → Room → readback → export → semantic-normalization evidence chain is already VERIFIED/CLOSED. Do not rerun it merely as ceremony when no relevant source surface changed.
 
-Then:
+## Active next gate: UI / Observatory presentation
 
-```powershell
-.\gradlew.bat assembleDebug --no-daemon --console=plain
-```
+Work only in presentation/state-projection boundaries.
 
-Then install the generated APK on the physical SM-A075F and run one new recording session.
+Required sequence:
 
-Expected new export entries:
+1. Inspect actual local working tree before editing.
+2. Identify the canonical live/persisted projection feeding the affected UI.
+3. Run a focused UI/unit regression before changes when practical.
+4. Implement one bounded UI slice.
+5. Run focused tests.
+6. Assemble the affected build.
+7. Install/run on SM-A075F when available.
+8. Capture screenshot/runtime/performance evidence where relevant.
+9. Update checkpoint/handoff/matrix only when evidence changes.
+10. Commit and push with an explicit receipt.
 
-- `gnss_domain_snapshot.json`
-- `satellite_evidence.csv`
-- `gnss_antenna_evidence.json`
+## UI acceptance priorities
 
-The raw `observations.json`, `observations.csv`, and `horizon_session.sqlite` remain the source-of-truth persistence artifacts. Derived GNSS files are analysis products and are not replacements for raw evidence.
+- Dynamic satellite information remains evidence-backed.
+- No fabricated satellite names or telemetry.
+- No raw evidence mutation.
+- No duplicate collectors or unbounded polling.
+- Long sessions remain stable.
+- Orientation behavior is only enabled when a valid orientation source exists.
+- Responsive/mobile layout remains readable.
+- Scientific propagation and persistence contracts remain unchanged.
+
+## Deferred gates
+
+- NORAD mapping: UNKNOWN.
+- Device-specific UTC edge case: UNVERIFIED.
+- K8 physical interference / long-run validation: PENDING.
+
+No receipt → no epistemic upgrade.

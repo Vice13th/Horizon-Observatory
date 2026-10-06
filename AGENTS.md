@@ -90,32 +90,44 @@ K0 capability contract
 
 Parallelize K0/K1/K2/K3/K4/K5/K6/K7 wherever dependencies and file ownership permit.
 
-## Current HORIZON priority
+## Current HORIZON checkpoint — 2026-10-06
 
-Current panel = UNSTABLE.
+**CHECKPOINT:** HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED
 
-Immediate target:
+Fresh real-device evidence closed the GNSS measurement evidence gate through persistence and export. The canonical receipt is:
+docs/verification/device-receipts/HORIZON_MEASUREMENT_ROOM_READBACK_8cf1c36f-8387-4bc9-b850-22d2c754d5e9.md
 
-`B0 — Active-Work Reconciliation + Panel Recovery Firewall`
+**VERIFIED**
+- SM-A075F / Android 16 / API 36 real GNSS acquisition.
+- Fresh session 8cf1c36f-8387-4bc9-b850-22d2c754d5e9.
+- 3,250 observations; sequence 1..3250 contiguous.
+- Ingestion timestamps 3250/3250, non-decreasing.
+- Bounded raw GNSS evidence retained: 25 rows with constellation/SVID/C/N0/SV time/pseudorange-rate/ADR.
+- Explicit JSON nulls preserved for carrierPhase and carrierPhaseUncertainty.
+- Room readback, ExportEngine, checksum verification, and export readback.
+- Direct instrumentation: 1 test / 0 failure / 0 error.
+- Semantic normalization GNSS_SEMANTIC_NORMALIZATION_V1 with normalized_payload_keys_bounded=[10], DERIVED classification, and rawPayloadPreserved=true.
+- Full JVM suite: 167 tests / 0 failures / 0 errors / 3 pre-existing skips.
+- Export SHA-256: b5697add8563c8380f85f7bc2bc403a5041a2a9f7d3194cc11883b922174e64e.
 
-Before touching UI source:
-1. inspect actual working tree;
-2. identify uncommitted/unpushed work;
-3. identify active ownership/processes when exposed;
-4. preserve local work;
-5. checkpoint before overlapping edits.
+**OPEN / DO NOT GUESS**
+- NORAD mapping: UNKNOWN; resolver remains empty-table and no SVID→NORAD guesses are allowed.
+- Device-specific UTC edge-case verification: UNVERIFIED.
+- Source timestamp regressions: 150 in the fresh session; diagnostic only, not an ingestion-order failure.
+- K8 physical interference/long-run validation remains pending.
+- Heading/panel rotation remains device-limited when the target exposes no valid orientation source.
 
-Do not overwrite local UI from GitHub state alone.
+**FROZEN FOR THIS CHECKPOINT**
+- Propagation / OrbitCore / SGP4 / SDP4.
+- Raw evidence semantics.
+- Persistence schema and verified evidence path unless a new failure receipt requires intervention.
 
-Do not add new UI features until B0 passes.
+**CURRENT PRIORITY**
+B0 is CLOSED. UI work is now authorized, but it must remain presentation-only and evidence-preserving. Focus on observatory UX, satellite-panel clarity, skyplot presentation, responsiveness, and visual polish. Do not reopen scientific propagation or add new RF domains during this checkpoint.
 
-Then use the fast-track order:
-- B1–B3 UI evidence/polish as independent work
-- K0–K7 Emergency Navigation / GNSS Interference Resilience in parallel
-- scientific propagation/solver gates in parallel where dependencies permit
-- K8 physical/long-run validation when hardware evidence is available
-- external location delivery validation
-- final integration and release verification
+Read docs/CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED.md, then docs/HANDOFF_2026-10-06_GNSS_FOUNDATION.md, then docs/AGENT_PROMPT_PACK_2026-10-06.md before material work.
+
+Do not use chat history as repository truth. Inspect the actual local worktree before any UI edit. If local state cannot be inspected, do not overwrite UI source from GitHub alone.
 
 ## Evidence
 

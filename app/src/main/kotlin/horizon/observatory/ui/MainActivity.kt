@@ -87,7 +87,6 @@ import horizon.observatory.live.SkyProjection
 import horizon.observatory.domain.model.IntegrityAudit
 import horizon.observatory.domain.model.RawObservationView
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.collectLatest
@@ -118,19 +117,18 @@ class MainActivity : ComponentActivity() {
         val latestStateKey = latest?.let { "${it.sessionId}:${it.lifecycleState}" }
         val latestIsActive = latest?.lifecycleState == "RECORDING" || latest?.lifecycleState == "STOPPING"
         val observations by produceState<List<ObservationEntity>>(initialValue = emptyList(), key1 = latestStateKey) {
-            value = when {
-                latest == null -> emptyList()
-                latestIsActive -> container.sessionRepository.getRecentObservationsSnapshot(latest.sessionId, LIVE_OBSERVATION_WINDOW)
-                else -> container.sessionRepository.getObservationsSnapshot(latest.sessionId)
-            }
-            while (latest != null && latestIsActive) {
-                delay(2000)
-                value = container.sessionRepository.getRecentObservationsSnapshot(latest.sessionId, LIVE_OBSERVATION_WINDOW)
+            if (latest == null) {
+                value = emptyList()
+            } else {
+                container.sessionRepository.getObservations(latest.sessionId).collectLatest { rows ->
+                    value = if (latestIsActive) rows.takeLast(LIVE_OBSERVATION_WINDOW) else rows
+                }
             }
         }
         val analysisEngine = remember { SessionAnalysisEngine() }
         var analysis by remember { mutableStateOf(analysisEngine.analyze(emptyList())) }
-        LaunchedEffect(latest?.sessionId, latest?.lifecycleState, observations.size) {
+        val observationVersion = observations.lastOrNull()?.sequenceNumber
+        LaunchedEffect(latest?.sessionId, latest?.lifecycleState, observationVersion) {
             analysis = withContext(Dispatchers.Default) {
                 analysisEngine.analyze(observations)
             }
@@ -785,14 +783,24 @@ private fun SatellitePanelField(
     observed: ObservedSkyState,
     orientation: SkyOrientationDecision
 ) {
-    val mode = orientation.mode
     Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17121D))) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("SATELLITE PANELS", style = MaterialTheme.typography.titleMedium)
-            Text(
-                orientation.detail,
-                style = MaterialTheme.typography.labelSmall
-            )
+        Column(
+            Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("SATELLITES", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "${observed.points.size} OBSERVED · ${observed.points.size} SHOWN",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
+
             if (observed.points.isEmpty()) {
                 Text(
                     "NO OBSERVED SATELLITES WITH VALID AZIMUTH/ELEVATION",
@@ -801,39 +809,31 @@ private fun SatellitePanelField(
                 return@Column
             }
 
-            androidx.compose.foundation.layout.BoxWithConstraints(
-                Modifier
-                    .fillMaxWidth()
-                    .height(360.dp)
-                    .background(Color(0xFF0D0B10))
-            ) {
-                val density = androidx.compose.ui.platform.LocalDensity.current
-                val widthPx = with(density) { maxWidth.toPx() }
-                val heightPx = with(density) { maxHeight.toPx() }
-                val centerX = widthPx / 2f
-                val centerY = heightPx / 2f
-                val radiusPx = min(widthPx, heightPx) * 0.38f
-                val panelWidthPx = with(density) { 96.dp.toPx() }
-                val panelHeightPx = with(density) { 64.dp.toPx() }
-
-                observed.points.take(14).forEach { point ->
-                    val projected = SkyProjection.project(
-                        point.azimuthDeg,
-                        point.elevationDeg,
-                        mode
-                    ) ?: return@forEach
-                    val xDp = with(density) {
-                        (centerX + (projected.x.toFloat() * radiusPx) - panelWidthPx / 2f).toDp()
-                    }
-                    val yDp = with(density) {
-                        (centerY - (projected.y.toFloat() * radiusPx) - panelHeightPx / 2f).toDp()
-                    }
-
-                    SatellitePanelCard(
-                        point = point,
-                        modifier = Modifier.offset(x = xDp, y = yDp)
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                observed.points
+                    .sortedWith(
+                        compareByDescending<ObservedSkyPoint> { it.usedInFix == true }
+                            .thenByDescending { it.cn0DbHz ?: Double.NEGATIVE_INFINITY }
+                            .thenBy { it.satelliteId.constellationType }
+                            .thenBy { it.satelliteId.svid }
                     )
-                }
+                    .chunked(3)
+                    .forEach { row ->
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            row.forEach { point ->
+                                SatellitePanelCard(
+                                    point = point,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            repeat(3 - row.size) {
+                                Spacer(Modifier.weight(1f))
+                            }
+                        }
+                    }
             }
         }
     }
@@ -844,37 +844,69 @@ private fun SatellitePanelCard(
     point: ObservedSkyPoint,
     modifier: Modifier = Modifier
 ) {
-    val name = "${constellationLabel(point.satelliteId.constellationType)} ${point.satelliteId.svid}"
+    val constellationCode = satelliteShortCode(point.satelliteId.constellationType)
+    val satelliteCode = "$constellationCode${point.satelliteId.svid}"
+    val observedAccent = Color(0xFFE45756)
+    val neutral = Color(0xFF3A3434)
     Card(
-        modifier = modifier.size(width = 96.dp, height = 64.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF211A28)),
+        modifier = modifier.height(46.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF151112)),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            if (point.usedInFix == true) Color(0xFFC875FF) else Color(0xFF4A4050)
+            if (point.usedInFix == true) observedAccent else neutral
         )
     ) {
         Column(
-            Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
-            verticalArrangement = Arrangement.spacedBy(1.dp)
+            Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            Text(
-                name,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1
-            )
-            Text(
-                "C/N0 ${point.cn0DbHz?.let { "%.1f".format(it) } ?: "—"}",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = FontFamily.Monospace
-            )
-            Text(
-                "EL ${"%.0f".format(point.elevationDeg)}° AZ ${"%.0f".format(point.azimuthDeg)}°",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = FontFamily.Monospace
-            )
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    satelliteCode,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+                Text(
+                    if (point.usedInFix == true) "FIX" else "TRACK",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (point.usedInFix == true) observedAccent else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "C/N0 ${point.cn0DbHz?.let { "%.1f".format(it) } ?: "—"}",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = FontFamily.Monospace
+                )
+                Text(
+                    "EL ${"%.0f".format(point.elevationDeg)}°",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
+}
+
+private fun satelliteShortCode(type: Int): String = when (type) {
+    1 -> "G"
+    2 -> "S"
+    3 -> "R"
+    4 -> "J"
+    5 -> "C"
+    6 -> "E"
+    7 -> "I"
+    else -> "U"
 }
 
 @Composable

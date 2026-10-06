@@ -121,3 +121,16 @@ Record:
 - explicit UNVERIFIED/BLOCKED items.
 
 No receipt → no epistemic upgrade.
+
+
+## UI DESIGN TOOL GATE — B1/B2
+
+B1/B2 must begin with a real design/prototype pass before substantial Compose implementation.
+
+Canonical contract:
+`docs/TOOL_FIRST_UI_DESIGN_EXECUTION_CONTRACT_2026-10-06.md`
+
+Preferred tool path:
+Figma → MagicPath → tldraw, with Canva/Adobe only for actual asset-production needs when available.
+
+Required evidence includes the actual tool used and demonstrable design output. Code compilation alone does not establish visual completion.

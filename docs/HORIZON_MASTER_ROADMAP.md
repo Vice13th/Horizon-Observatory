@@ -1447,7 +1447,7 @@ Evidence:
 - Active recording reached a live UI total of 512 and remained in RECORDING state.
 - The same session later reached COMPLETED with 9,522 persisted observations: 1,428 RAW GNSS, 186 GNSS STATUS, 148 FIX, 108 CELLULAR, 7,627 SENSORS.
 - Launch/record/complete crash buffers were empty.
-- Target SM-A075F exposes no rotation-vector sensor; orientation remains explicitly unavailable, so B4/B5 physical rotation verification is blocked rather than inferred.
+- Target SM-A075F exposes a coarse `TYPE_DEVICE_ORIENTATION (27)` sensor, but no `TYPE_ROTATION_VECTOR`, `TYPE_GAME_ROTATION_VECTOR`, `TYPE_GEOMAGNETIC_ROTATION_VECTOR`, `TYPE_MAGNETIC_FIELD`, or `TYPE_HEADING`; continuous north-referenced heading therefore remains unavailable and B4/B5 physical rotation verification is blocked rather than inferred.
 - Debug gfxinfo aggregate measured 1,139 rendered frames and 94 janky frames (8.25%); this is recorded as a performance observation, not promoted to a root-cause claim.
 
 B0 is therefore closed for functional recovery. B1 is the next gate.

@@ -31,6 +31,6 @@
 
 | B0 panel recovery firewall | VERIFIED | Real-device active recording capped UI projection at 512; completed session retained 9,522 persisted observations; 11 instrumentation tests passed |
 | B0 raw evidence preservation | VERIFIED | Completed session total 9,522 > live projection cap 512; full snapshot path remained active after completion |
-| B4 orientation source on SM-A075F | BLOCKED | Runtime explicitly reports no rotation-vector sensor; no valid heading source was available |
+| B4 orientation source on SM-A075F | BLOCKED | Sensor inventory exposes only coarse `TYPE_DEVICE_ORIENTATION (27)` among orientation-related sensors; no rotation-vector, geomagnetic rotation-vector, magnetic-field, or heading sensor was exposed |
 | B5 empirical panel/skyplot rotation | BLOCKED | Requires a device exposing a valid orientation source; not inferred on sensorless target |
 | B0 performance observation | MEASURED / FOLLOW-UP | Debug gfxinfo aggregate: 1,139 frames, 94 janky (8.25%); no root-cause attribution |

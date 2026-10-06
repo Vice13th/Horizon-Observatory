@@ -136,3 +136,18 @@ Scientific truth may not.
 ## Final design test
 The result should look like a serious scientific observation instrument before a reviewer reads the source.
 It must also make observed vs derived vs predicted state unmistakable.
+
+
+## Tool-First Design Gate
+
+This redesign is **design-first, not Compose-first**.
+
+Before substantial implementation, the agent must inspect the current runtime's available design/prototyping capabilities and use the strongest relevant one. Preferred:
+Figma → MagicPath → tldraw.
+
+Canva/Adobe are optional asset-production tools only when actually available and useful.
+
+The agent must produce a demonstrable visual design/prototype and a design receipt before broad implementation. Skipping an available design tool without a recorded reason is a gate violation.
+
+Canonical execution contract:
+`docs/TOOL_FIRST_UI_DESIGN_EXECUTION_CONTRACT_2026-10-06.md`

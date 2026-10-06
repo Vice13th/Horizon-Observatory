@@ -956,9 +956,9 @@ Any nondeterminism must be measured and documented.
 
 # 19.5. PHASE K — EMERGENCY NAVIGATION / GNSS INTERFERENCE RESILIENCE
 
-**Priority: P2 → P4**
+**Priority: P0 → P3 — FAST TRACK**
 
-This is the product-level resilience track for degraded-GNSS operation. It MUST build on verified raw evidence and MUST NOT bypass the scientific gates.
+This is now the primary parallel delivery track after B0. It MUST build on verified raw evidence and MUST NOT bypass safety/scientific gates. B4/B5 orientation limitations do not block K software implementation.
 
 ## K0 — Capability discovery
 
@@ -1332,12 +1332,83 @@ The agent should choose the fastest path that still leaves:
 
 Until changed by fresh repository evidence:
 
-1. B0 panel recovery firewall.
-2. B1–B6 only after B0 passes.
-3. Scientific propagation/solver gates.
-4. Emergency Navigation / Interference Resilience.
-5. Horizon Resilient Location Bridge.
-6. Long-run/device/release verification.
+1. B0 panel recovery firewall — VERIFIED; do not reopen unless regression evidence appears.
+2. K0–K7 Emergency Navigation software fast track — run in parallel with independent UI/scientific work.
+3. B1–B3 UI evidence/polish — parallel when ownership is independent.
+4. Scientific propagation/solver gates — parallel where dependencies permit.
+5. K8 physical/long-run validation — batched after local K work is ready.
+6. External location delivery and final integration/release verification.
+
+# 24.4 K FAST-TRACK EXECUTION MODE
+
+**STATUS: ACTIVE CONTROL POLICY — 2026-10-06**
+
+After B0 is verified, K becomes a parallel P0/P1 delivery track.
+
+## Objective
+
+Finish every K workstream that can be implemented and verified without physical interference testing **as fast as safely possible**, then batch all hardware-dependent evidence into the final remote/device gate.
+
+## Dependency policy
+
+These do NOT block K:
+
+- B4/B5 orientation hardware limitation on SM-A075F;
+- cosmetic UI polish outside K;
+- unavailable physical jammer test environment.
+
+These DO block only the specific claims they concern:
+
+- device capability claims → K0;
+- real interference classification → K1/K8;
+- real-world continuity/accuracy claims → K8;
+- production release claims → final integration.
+
+## Parallel execution matrix
+
+| Workstream | Start | Evidence path |
+|---|---|---|
+| K0 | Immediate | local capability contracts + device receipt when available |
+| K1 | Immediate after K0 data model | replay/golden data + later device validation |
+| K2 | After K1 data model | unit/property/replay tests |
+| K3 | After K2 contracts | state-machine tests + replay |
+| K4 | Parallel with K3 | uncertainty/trajectory tests + replay |
+| K5 | After K3/K4 interfaces | lifecycle/service tests + controlled runtime |
+| K6 | Parallel with K2–K5 | configuration + regression tests |
+| K7 | Parallel with K5/K6 | API/bridge tests + supported-device verification |
+| K8 | Prepare continuously | single batched physical-device/long-run verification |
+
+## Autonomous continuation
+
+After each K gate:
+
+1. record fresh evidence;
+2. update the roadmap;
+3. immediately start the next unblocked K gate;
+4. continue independent K workstreams in parallel.
+
+Do not return to the user for ordinary sequencing decisions.
+
+## No-false-finish rule
+
+K is not COMPLETE until K8 has current reproducible evidence.
+
+A fully implemented K0–K7 is **SOFTWARE COMPLETE / HARDWARE VALIDATION PENDING**, not field verified.
+
+## Remote efficiency
+
+Do all K design, implementation, unit tests, replay, simulation, export validation, and API work locally.
+
+When physical evidence is available, run one batched session covering:
+
+K0 capability
++ K1 degradation/loss
++ K3 transitions
++ K5 background/screen-off
++ K7 bridge
++ K8 long-run/recovery
+
+and collect all required receipts in one pass.
 
 # 25. MANDATORY ROADMAP UPDATE PROTOCOL
 

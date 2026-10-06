@@ -59,6 +59,37 @@ Reuse long-lived build/test processes.
 Use one batched remote verification pass for physical-device evidence.
 Never use remote to inspect source already available locally.
 
+## K FAST-TRACK EXECUTION OVERRIDE
+
+Horizon is time-critical. Once B0 is VERIFIED, Emergency Navigation / GNSS Interference Resilience becomes a **PARALLEL P0/P1 engineering track** and MUST NOT wait for blocked orientation work.
+
+Rules:
+
+- Do NOT wait for B4/B5 orientation hardware limitations before implementing K.
+- Do NOT wait for all UI polish before implementing K.
+- B1–B3 UI work and K software work may proceed in parallel when file ownership is independent.
+- K0–K7 software architecture, state machine, evidence model, replay/simulation, tests, persistence, emergency mode, reception-optimization profile, and explicit external-location API work should be completed locally first.
+- K8 physical/device validation is the only late hardware gate; prepare its exact verification batch while local K work continues.
+- Use golden/synthetic/replay datasets for K development when physical interference testing is unavailable, but label those results separately from real-device evidence.
+- Every K component must preserve raw evidence and explicit uncertainty/provenance.
+- After each K gate passes, immediately continue to the next K gate without waiting for user prompts.
+- Do not declare K COMPLETE until K8 and all required release evidence are genuinely verified.
+- If a hardware-only subgate is BLOCKED, park only that subgate and continue every independent K workstream.
+
+Preferred K execution order:
+
+K0 capability contract
+→ K1 interference evidence
+→ K2 survivor/trust ranking
+→ K3 resilience state machine
+→ K4 last-trusted PVT + uncertainty bridge
+→ K5 Emergency Navigation mode
+→ K6 Reception Optimization
+→ K7 Horizon Resilient Location API/bridge
+→ K8 real-device/long-run validation
+
+Parallelize K0/K1/K2/K3/K4/K5/K6/K7 wherever dependencies and file ownership permit.
+
 ## Current HORIZON priority
 
 Current panel = UNSTABLE.
@@ -78,12 +109,13 @@ Do not overwrite local UI from GitHub state alone.
 
 Do not add new UI features until B0 passes.
 
-Then proceed through the master roadmap:
-- B1–B6 UI recovery
-- scientific GNSS propagation/solver gates
-- Emergency Navigation / GNSS Interference Resilience
-- external location delivery
-- long-run/device/release verification
+Then use the fast-track order:
+- B1–B3 UI evidence/polish as independent work
+- K0–K7 Emergency Navigation / GNSS Interference Resilience in parallel
+- scientific propagation/solver gates in parallel where dependencies permit
+- K8 physical/long-run validation when hardware evidence is available
+- external location delivery validation
+- final integration and release verification
 
 ## Evidence
 

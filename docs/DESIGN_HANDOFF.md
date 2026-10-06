@@ -36,3 +36,36 @@ No random purple/green recoloring, fake scientific data, decorative telemetry pr
 
 ## Verification gate
 Audit loading and transient states on real device / representative runtime where available, capture screenshots, and separate design intent from verified behavior.
+
+## Execution hardening
+
+### OBSERVED implementation anchors
+- Primary UI source: app/src/main/kotlin/horizon/observatory/ui/MainActivity.kt
+- UI is Compose + Material 3.
+- HorizonTheme is currently the central theme entry point.
+- The current primary color is purple (#C875FF) and the current surface/background are dark.
+- Inspected resources contain launcher colors but no dedicated custom splash implementation was identified.
+
+### CURRENT baseline versus TARGET
+The purple Compose accent is the current baseline. The target is cyan/teal scientific instrumentation with restrained amber semantics. Migrate the theme coherently through shared tokens; do not recolor individual cards independently.
+
+### Evidence boundary
+Observed, raw, normalized, derived, predicted/propagated, inferred, unavailable and unverified states are semantic contracts. Visual treatment must not merge them or create decorative values that look measured.
+
+### Loading hard rule
+Do not invent a fake boot sequence. There is no verified dedicated custom splash in the inspected resource tree. Design only real startup, capability, permission, acquisition, analysis, propagation, export, empty, degraded and recovery states unless a real new lifecycle state is deliberately implemented.
+
+### Sky/evidence hard rule
+The sky plot, satellite panels, C/N0, elevation, azimuth, fix status and orbit state remain backed by real available observations or explicitly derived state. Decorative geometry must never masquerade as a measurement.
+
+### Change boundary
+A visual task must not rewrite acquisition, Room persistence, timestamping, analysis, orbit propagation, resilience, or domain models. Keep Compose/Material 3 and use theme/components rather than duplicating per-screen styles.
+
+### Device boundary
+The target is the Samsung Galaxy A07 / SM-A075F on Android 16/API 36. Do not claim device-level visual verification without physical-device evidence.
+
+### Stop and report
+Stop if a visual request would require fabricated telemetry, collapsing observed and predicted state, a new heavy graphics dependency, or an unverified custom startup architecture.
+
+### Evidence required before completion
+Verify portrait and landscape, cold start, permission/capability states, active GNSS acquisition, rotating sky plot/satellite panels, analysis/propagation, export, empty/degraded/error states, history/replay and Easter Eggs. Separate runtime evidence from design intent.

@@ -35,6 +35,7 @@ import horizon.observatory.domain.model.TimestampDomain
 import horizon.observatory.core.time.TimestampEngine
 import horizon.observatory.storage.queue.ObservationPersistenceQueue
 import horizon.observatory.storage.repository.SessionRepository
+import horizon.observatory.resilience.EmergencyNavigationController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -61,6 +62,7 @@ class ObservatoryService : Service() {
     private lateinit var sensorSource: SensorObservationSource
     private lateinit var healthReporter: HealthReporter
     private lateinit var capabilityScanner: horizon.observatory.core.capability.CapabilityScanner
+    private lateinit var emergencyNavigationController: EmergencyNavigationController
 
     private var currentSessionId: String? = null
     private var lastClosedSessionId: String? = null
@@ -82,6 +84,7 @@ class ObservatoryService : Service() {
         cellularSource = container.cellularSource
         sensorSource = container.sensorSource
         capabilityScanner = container.capabilityScanner
+        emergencyNavigationController = EmergencyNavigationController(this)
         healthReporter = HealthReporter(serviceScope)
 
         serviceScope.launch {
@@ -97,8 +100,15 @@ class ObservatoryService : Service() {
             ACTION_START -> handleActionStart()
             ACTION_STOP -> if (currentSessionId == null) stopSelf() else stopObserving()
             ACTION_EXPORT -> exportLastClosedSession()
+            ACTION_SET_EMERGENCY_NAVIGATION -> {
+                val enabled = intent.getBooleanExtra(EXTRA_ENABLED, false)
+                emergencyNavigationController.updateEnabled(enabled)
+                if (enabled) handleActionStart()
+                else if (currentSessionId == null) stopSelf() else stopObserving()
+            }
+            null -> if (emergencyNavigationController.enabled) handleActionStart()
         }
-        return START_NOT_STICKY
+        return if (emergencyNavigationController.enabled) START_STICKY else START_NOT_STICKY
     }
 
     private fun handleActionStart() {
@@ -362,6 +372,8 @@ class ObservatoryService : Service() {
         const val ACTION_START = "ACTION_START"
         const val ACTION_STOP = "ACTION_STOP"
         const val ACTION_EXPORT = "ACTION_EXPORT"
+        const val ACTION_SET_EMERGENCY_NAVIGATION = "ACTION_SET_EMERGENCY_NAVIGATION"
+        const val EXTRA_ENABLED = "enabled"
         private const val DRAIN_TIMEOUT_MS = 10_000L
         private const val SOURCE_STOP_TIMEOUT_MS = 3_000L
         private const val SERVICE_TAG = "HorizonService"

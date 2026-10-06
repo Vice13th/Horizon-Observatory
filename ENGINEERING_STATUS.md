@@ -127,3 +127,14 @@ Implemented deterministic interference evidence assessment, measurement trust ra
 Receipt: `:app:testPrimaryDebugUnitTest :app:testT1DebugUnitTest` — BUILD SUCCESSFUL, including `ResilienceEngineTest` 6/6. A prior RED receipt caught and fixed an empty-evidence state-classification bug before this green run.
 
 **Not yet a K0-K4 PASS:** the new engines are not yet wired into `ObservatoryService`/Room-derived resilience events.
+
+
+## K5-K7 SOFTWARE RECEIPT — 2026-10-06
+
+**K5 Emergency Navigation:** persistent enable/disable controller is implemented and wired into the existing foreground `ObservatoryService`. When enabled, the service requests `START_STICKY`; on null restart intent it can resume the service path. Device invocation from ADB shell was correctly rejected because the service remains `exported=false`; this is a security boundary, not a crash. UI-triggered lifecycle and screen-off/background continuity remain DEVICE-UNVERIFIED.
+
+**K6 Reception Optimization:** explicit ON/OFF policy and deterministic policy engine implemented. It only affects derived trust policy; raw observations are untouched. No RF/antenna gain is claimed.
+
+**K7 Horizon Resilient Location:** explicit read-only `ContentProvider` contract implemented at `content://horizon.observatory.resilient-location/latest`, protected by a dedicated read permission. Published snapshots preserve navigation state and provenance. Android instrumentation verified the provider contract on SM-A075F. Android mock/test-location injection is intentionally not implemented/claimed.
+
+Receipt: `:app:connectedPrimaryDebugAndroidTest` — 14 tests completed, 0 failures; 2 migration tests skipped by existing contract.

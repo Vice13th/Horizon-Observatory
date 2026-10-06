@@ -41,7 +41,7 @@
 | K3 navigation continuity | IMPLEMENTED / TESTED | Debounced explicit state machine; transition tests green |
 | K4 dead-reckoning bridge | IMPLEMENTED / TESTED | Last-trusted PVT bridge, explicit dead-reckoned provenance, uncertainty growth; no fabricated heading |
 | K0-K4 service integration | UNVERIFIED | Domain engines not yet wired into live ObservatoryService/Room derived-event path |
-| K5 Emergency Navigation | UNIMPLEMENTED | No production emergency-mode state/lifecycle implementation yet |
-| K6 Reception Optimization | UNIMPLEMENTED | No production optimization profile yet |
-| K7 Resilient Location | UNIMPLEMENTED | No explicit Horizon location API/mock bridge yet |
+| K5 Emergency Navigation | IMPLEMENTED / DEVICE-PARTIAL | Persistent mode controller + foreground-service integration; ADB shell cannot invoke internal exported=false service; UI/background/screen-off recovery remains unverified |
+| K6 Reception Optimization | IMPLEMENTED / TESTED | Explicit ON/OFF software policy + deterministic trust-policy reuse; no physical RF gain claimed |
+| K7 Resilient Location | IMPLEMENTED / DEVICE-VERIFIED CONTRACT | Read-only ContentProvider with dedicated permission; instrumentation verified explicit snapshot/provenance contract; mock/test-location bridge remains unimplemented |
 | K8 hardware validation | BLOCKED / PENDING | Requires batched real-device degradation/loss/recovery and long-run evidence |

@@ -161,3 +161,26 @@ Never invent measurements, device capabilities, test results, API behavior, or c
 Complete means relevant tests/build/device verification and durable evidence.
 
 If a required external capability is unavailable, mark BLOCKED once, preserve evidence, and continue independent workstreams.
+
+
+## UI TOOL-FIRST OVERRIDE — B1/B2
+
+B1/B2 UI/UX work is **DESIGN-FIRST, TOOL-FIRST**.
+
+Canonical contract:
+`docs/TOOL_FIRST_UI_DESIGN_EXECUTION_CONTRACT_2026-10-06.md`
+
+Before substantial UI implementation:
+- inspect the actually exposed design/prototyping tools;
+- use Figma as the primary design surface when available;
+- use MagicPath for interactive exploration when useful;
+- use tldraw for structural wireframes when useful;
+- use Canva/Adobe only when actually available and useful for visual assets;
+- produce a demonstrable visual design/prototype before broad implementation;
+- record tool usage in the design receipt.
+
+Skipping an available design tool without an explicit recorded reason is a UI-gate violation.
+
+Required path:
+`INSPECT → REPRODUCE → DESIGN TOOL → VISUAL REVIEW → IMPLEMENT → TEST → BUILD → DEVICE VERIFY → VISUAL QA → DOCUMENT`
+

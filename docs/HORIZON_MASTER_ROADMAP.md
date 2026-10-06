@@ -1185,6 +1185,160 @@ Build/cache folders are excluded from repository checkpoints unless specifically
 
 ---
 
+# 24.3 FAST EXECUTION / AUTONOMOUS OPERATION CONTRACT
+
+**Priority: P0**
+
+The project is time-critical. Execution MUST minimize latency without lowering verification standards.
+
+## 24.3.1 Reasoning mode
+
+- `reasoning_effort=high` is a session-level invariant whenever the host/runtime supports configurable reasoning effort.
+- Set it once at session initialization; do not ask the user to re-issue it for later turns.
+- Never voluntarily downgrade reasoning effort mid-task because a step appears easy.
+- If the host does not expose a configurable reasoning parameter, use the strongest available reasoning mode and record the limitation once; do not loop on the setting.
+
+## 24.3.2 Tool/plugin auto-use
+
+At session start, discover available tools/plugins once and build an internal capability map.
+
+Use relevant installed capabilities automatically; the user must NOT need to remind the agent.
+
+Priority for HORIZON work:
+
+- Superpowers: using-superpowers, writing-plans, systematic-debugging, executing-plans, test-driven-development, verification-before-completion, requesting-code-review, receiving-code-review, finishing-a-development-branch.
+- Codex workflows: code-work, code-verification, bug-investigation, feature-development, feature-testing, comprehensive-qa, pre-release-review, orchestrate-work, resume-interrupted-task, session-handoff.
+- Research/tooling: GitHub, Context7, Exa, SciSpace.
+- Remote execution: Remote Desktop Commander only when physical device/runtime evidence is required.
+- Security plugins only when the changed surface or task actually requires security review.
+
+Do not invoke irrelevant plugins merely to satisfy a checklist.
+
+## 24.3.3 LOCAL-FIRST / REMOTE-LAST
+
+Default execution location is the agent's local authorized workspace.
+
+Perform locally whenever possible:
+
+- repository inspection;
+- source analysis;
+- search/indexing;
+- edits;
+- refactoring;
+- unit tests;
+- static checks;
+- compilation;
+- Gradle/build;
+- package generation;
+- artifact analysis;
+- export parsing;
+- replay;
+- documentation.
+
+Use remote/physical-device execution only for evidence that local execution cannot establish:
+
+- ADB install/launch;
+- real device GNSS;
+- sensors;
+- screen-off/background behavior;
+- rotation behavior;
+- long-running runtime behavior;
+- physical resource/thermal/battery measurements.
+
+Never use remote execution to inspect code that is already locally available.
+
+## 24.3.4 BATCH / PARALLEL TOOLING
+
+- Batch independent file reads/searches.
+- Run independent tests/checks in parallel when they do not share mutable state.
+- Prefer one long-lived build/test process plus output polling over repeated process creation.
+- Prefer one batched remote verification session over many small remote calls.
+- Do not make serial remote calls for independent evidence.
+- Do not re-run a command whose receipt already proves the same condition unless the source/build/device state changed.
+
+## 24.3.5 AUTONOMOUS CONTINUATION
+
+After a gate passes:
+
+1. record evidence;
+2. update the roadmap/journal;
+3. immediately select the next unblocked gate;
+4. continue execution without waiting for a user prompt.
+
+The agent may pause only for:
+
+- an explicit authorization boundary;
+- destructive action requiring user approval;
+- unavailable required hardware/tool;
+- unresolved ambiguity that materially changes the implementation;
+- a hard failure after the retry budget is exhausted.
+
+A normal engineering decision is NOT a reason to ask the user.
+
+## 24.3.6 NO PROGRESS THEATER
+
+Do not confuse documentation volume with project progress.
+
+A cycle is not complete merely because:
+
+- a plan was written;
+- a README was updated;
+- a PR was opened;
+- a script was generated;
+- a plausible explanation was produced.
+
+Progress requires an actual implementation, test, artifact, or verified environmental improvement.
+
+## 24.3.7 RETRY / DEADLOCK CONTROL
+
+For a failing operation:
+
+- Attempt 1: diagnose.
+- Attempt 2: use one materially different valid method.
+- Attempt 3: mark BLOCKED/FAILED, preserve evidence, and continue independent work.
+
+No infinite retry.
+No repeated environment probing without new information.
+No rebuild loops.
+
+## 24.3.8 UI EMERGENCY RULE
+
+Because the current panel is unstable:
+
+`B0 PANEL RECOVERY` owns UI execution until it passes.
+
+Do not expand the UI while B0 is failing.
+
+Do not rewrite the entire `MainActivity` or replace the panel architecture merely to remove symptoms.
+
+## 24.3.9 FINISH-FAST / FINISH-CORRECTLY
+
+The optimization target is:
+
+`MAXIMUM VERIFIED PROGRESS PER TOOL CALL`
+
+not minimum tool count.
+
+The agent should choose the fastest path that still leaves:
+
+- a coherent source tree;
+- passing relevant tests;
+- known build state;
+- explicit device verification state;
+- durable evidence;
+- an updated roadmap.
+
+## 24.3.10 CURRENT PRIORITY
+
+Until changed by fresh repository evidence:
+
+1. B0 panel recovery firewall.
+2. B1–B6 only after B0 passes.
+3. Scientific propagation/solver gates.
+4. Emergency Navigation / Interference Resilience.
+5. Horizon Resilient Location Bridge.
+6. Long-run/device/release verification.
+
 # 25. MANDATORY ROADMAP UPDATE PROTOCOL
 
 For EVERY future material change:

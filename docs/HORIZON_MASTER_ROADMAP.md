@@ -83,6 +83,34 @@ Terra visualization
 
 GNSS positioning and Terra orbital propagation MUST NOT be silently coupled.
 
+## 2.1 RESILIENT NAVIGATION / EXTERNAL LOCATION TARGET
+
+Horizon shall preserve the best defensible navigation state during GNSS degradation/loss using evidence-backed sources:
+
+    GNSS raw/status/PVT
+          + IMU / orientation
+          + cellular/network evidence
+          + last trusted navigation state
+          + validated prediction/constraints
+          ↓
+    RESILIENCE ENGINE
+          ↓
+    Horizon Navigation State
+          ↓
+    optional external-location integration
+          ↓
+    consumer applications
+
+Hard boundaries:
+
+- Software may optimize GNSS session handling, assistance, measurement selection, interference awareness, and recovery, but MUST NOT claim physical RF/antenna gain.
+- Resilient navigation estimates MUST carry provenance and uncertainty.
+- Observed, inferred, predicted, and dead-reckoned states MUST remain distinct.
+- External location delivery is an optional output path; it MUST NOT become the source of scientific truth.
+
+The external-delivery roadmap has three separate targets: internal Horizon navigation state; an explicit API/feed for cooperating applications; and an optional Android mock/test-location bridge where the device/configuration permits it. Android's documented mock-location workflow is primarily a testing mechanism, so universal transparent delivery into arbitrary third-party apps is NOT a release guarantee.
+
+
 ---
 
 # 3. COMPLETED WORK Ã¢â‚¬â€ HISTORICAL EXECUTION RECORD
@@ -537,7 +565,63 @@ Acceptance:
 
 ---
 
-# 11. PHASE B Ã¢â‚¬â€ SATELLITE OBSERVATORY UI
+# 11. PHASE B Ã¢â‚¬â€ OBSERVATORY UI / PANEL RECOVERY
+
+**Priority: P0 → P1**
+
+## B0 — ACTIVE-WORK RECONCILIATION + PANEL RECOVERY FIREWALL
+
+**Status: REQUIRED BEFORE NEW UI FEATURE WORK**
+
+The current Observatory panel is treated as **UNSTABLE**. Recover correctness and runtime stability before visual expansion.
+
+### B0.0 Active-work reconciliation
+
+Before editing any UI file:
+
+- inspect the actual working tree;
+- inspect uncommitted changes and active execution sessions when available;
+- identify files currently owned by another execution path;
+- preserve unpushed user/model work;
+- create or reuse a checkpoint before taking ownership of overlapping files;
+- never overwrite local work merely because GitHub does not contain it.
+
+If the active workspace cannot be inspected, do NOT claim it is clean and do NOT perform destructive UI replacement from GitHub state alone.
+
+### B0.1 Panel triage
+
+Investigate with evidence:
+
+- stale satellite panels;
+- rotation/configuration state loss;
+- excessive snapshot polling;
+- main-thread database/analysis work;
+- full-list recomputation;
+- Compose recomposition storms;
+- duplicate collectors;
+- long-session UI memory retention;
+- lifecycle leaks;
+- skyplot rendering cost;
+- panel/model state coupling.
+
+### B0.2 Canonical-state firewall
+
+The UI consumes canonical live/persisted state through a stable projection layer. No composable may own scientific state, acquisition truth, session truth, persistence truth, or navigation truth.
+
+### B0.3 B0 acceptance
+
+- satellite data refreshes continuously during acquisition;
+- rotation does not freeze or replace live state;
+- duplicate collectors are eliminated;
+- no unbounded polling remains;
+- UI remains responsive during recording;
+- no new crash/ANR is introduced;
+- raw observations and persistence integrity remain unchanged;
+- real-device evidence demonstrates recovery.
+
+**UI FEATURE FREEZE:** B1–B6 remain blocked until B0 passes.
+
+
 
 **Priority: P1**
 
@@ -870,6 +954,68 @@ Any nondeterminism must be measured and documented.
 
 ---
 
+# 19.5. PHASE K — EMERGENCY NAVIGATION / GNSS INTERFERENCE RESILIENCE
+
+**Priority: P2 → P4**
+
+This is the product-level resilience track for degraded-GNSS operation. It MUST build on verified raw evidence and MUST NOT bypass the scientific gates.
+
+## K0 — Capability discovery
+
+Measure target-device availability of raw GNSS, C/N0, AGC, pseudorange/received satellite time, Doppler, ADR/carrier phase where available, navigation messages, multi-constellation/frequency, IMU/orientation, and cellular measurements.
+
+## K1 — Interference evidence
+
+Monitor measurable changes such as C/N0 collapse, AGC behavior where exposed, satellite/used-in-fix changes, constellation/band dropout, Doppler consistency, clock behavior, measurement age, and cross-source disagreement. Produce evidence-backed states such as NORMAL, DEGRADED, JAM-LIKELY, SPOOF-LIKELY, UNKNOWN, and RECOVERY; these are hypotheses, not proof of physical cause.
+
+## K2 — Measurement trust / survivor selection
+
+Rank surviving measurements using signal stability, temporal continuity, freshness, Doppler/ADR consistency where available, geometry/residual consistency, and source agreement. Never destroy raw evidence. Record down-weight/reject decisions and reasons.
+
+## K3 — Navigation continuity state machine
+
+Use explicit states:
+
+FULL_GNSS → GNSS_DEGRADED → PARTIAL_GNSS → GNSS_LOST → INERTIAL_BRIDGING → CELL_AIDED → MULTI_SOURCE_FUSION → RECOVERY
+
+Transitions require evidence. Dead reckoning MUST carry increasing uncertainty and MUST NOT be represented as fresh GNSS.
+
+## K4 — Last-trusted-state / dead-reckoning bridge
+
+Use last trusted PVT, valid velocity/heading, IMU evidence, cellular evidence where useful, and explicit uncertainty growth. Preserve the last known good state for recovery without rewriting historical observations.
+
+## K5 — Emergency Navigation Mode
+
+User-facing mode: EMERGENCY NAVIGATION = ON.
+
+When enabled, maintain the resilience engine and local session according to Android lifecycle/background rules. Target foreground-service resilience, screen-off/background operation where permitted, process/service recovery, continuous local track persistence, automatic state transitions, and automatic recovery when GNSS returns.
+
+## K6 — Reception Optimization profile
+
+User-facing option: RECEPTION OPTIMIZATION = ON/OFF.
+
+This may activate only verified software-side optimizations such as receiver/session persistence, assistance freshness management, stale-measurement handling, survivor weighting, interference-aware filtering, adaptive recovery, and power-aware profiles. It MUST NOT claim physical antenna/RF gain.
+
+## K7 — Horizon Resilient Location Bridge
+
+Keep three outputs separate:
+
+1. internal Horizon navigation state;
+2. explicit API/feed for applications integrated with Horizon;
+3. optional Android mock/test-location bridge for supported controlled configurations.
+
+The bridge is explicitly enabled, stoppable, recoverable, provenance-preserving where the receiving interface permits, and must never fabricate an indefensible position. Universal transparent injection into arbitrary third-party production apps is not a release guarantee because Android documents mock-location primarily as a testing mechanism.
+
+## K8 — Real-world validation
+
+Validate open-sky baseline, controlled degradation, GNSS loss, intermittent GNSS, sensor dropout, cellular availability changes, recovery, long-running emergency mode, background/screen-off, and service/application restart.
+
+Measure continuity, time without fresh GNSS, position error against known truth where available, uncertainty growth, recovery time, event loss, crash/ANR rate, and resource/battery cost.
+
+No field claim without reproducible evidence.
+
+---
+
 # 20. GOLDEN DATASET / TEST STRATEGY
 
 Maintain separate golden datasets for:
@@ -923,6 +1069,12 @@ Each dataset requires:
 | G18 Replay | Deterministic replay | RESEARCH TARGET |
 | G19 Final integration | Full system regression | NOT STARTED |
 | G20 Final checkpoint | Verified release state | NOT STARTED |
+| G21 Panel recovery firewall | UI live-state correctness / stability | NEXT |
+| G22 Emergency navigation engine | Degraded/lost GNSS continuity with provenance | RESEARCH TARGET |
+| G23 Interference evidence | Evidence-driven jamming/spoofing indicators | RESEARCH TARGET |
+| G24 Horizon external location API | Explicit feed for cooperating applications | RESEARCH TARGET |
+| G25 Android location bridge | Mock/test-location path on supported configurations | RESEARCH TARGET |
+| G26 Emergency long-run | Background/screen-off/process recovery | RESEARCH TARGET |
 
 ---
 
@@ -1017,6 +1169,175 @@ Build/cache folders are excluded from repository checkpoints unless specifically
 - 316 source-timestamp regressions were observed and preserved as diagnostic evidence.
 - Detailed receipt: `docs/receipts/POST_MIGRATION_REGRESSION_2026-10-06.md`.
 - Phase B Satellite Observatory UI is now the next execution target.
+
+# 24.2 CHANGELOG — 2026-10-06 RESILIENCE SCOPE / UI FIREWALL
+
+**STATUS: ROADMAP CONTROL UPDATE**
+
+- Existing Phase A verified baseline is preserved.
+- The unstable Observatory panel is now protected by mandatory B0 recovery before B1–B6 feature work.
+- Active-work reconciliation is mandatory before overlapping UI edits.
+- Emergency Navigation / GNSS Interference Resilience is now a first-class roadmap phase.
+- Reception Optimization is defined as software-side optimization only; physical RF/antenna gain is explicitly not claimed.
+- Horizon Resilient Location is separated into internal navigation state, an explicit cooperating-app API, and an optional Android mock/test bridge.
+- Universal transparent delivery to arbitrary third-party applications is explicitly not guaranteed.
+- This update changes documentation/control only; no production source, Gradle, Room schema, or UI implementation was changed.
+
+---
+
+# 24.3 FAST EXECUTION / AUTONOMOUS OPERATION CONTRACT
+
+**Priority: P0**
+
+The project is time-critical. Execution MUST minimize latency without lowering verification standards.
+
+## 24.3.1 Reasoning mode
+
+- `reasoning_effort=high` is a session-level invariant whenever the host/runtime supports configurable reasoning effort.
+- Set it once at session initialization; do not ask the user to re-issue it for later turns.
+- Never voluntarily downgrade reasoning effort mid-task because a step appears easy.
+- If the host does not expose a configurable reasoning parameter, use the strongest available reasoning mode and record the limitation once; do not loop on the setting.
+
+## 24.3.2 Tool/plugin auto-use
+
+At session start, discover available tools/plugins once and build an internal capability map.
+
+Use relevant installed capabilities automatically; the user must NOT need to remind the agent.
+
+Priority for HORIZON work:
+
+- Superpowers: using-superpowers, writing-plans, systematic-debugging, executing-plans, test-driven-development, verification-before-completion, requesting-code-review, receiving-code-review, finishing-a-development-branch.
+- Codex workflows: code-work, code-verification, bug-investigation, feature-development, feature-testing, comprehensive-qa, pre-release-review, orchestrate-work, resume-interrupted-task, session-handoff.
+- Research/tooling: GitHub, Context7, Exa, SciSpace.
+- Remote execution: Remote Desktop Commander only when physical device/runtime evidence is required.
+- Security plugins only when the changed surface or task actually requires security review.
+
+Do not invoke irrelevant plugins merely to satisfy a checklist.
+
+## 24.3.3 LOCAL-FIRST / REMOTE-LAST
+
+Default execution location is the agent's local authorized workspace.
+
+Perform locally whenever possible:
+
+- repository inspection;
+- source analysis;
+- search/indexing;
+- edits;
+- refactoring;
+- unit tests;
+- static checks;
+- compilation;
+- Gradle/build;
+- package generation;
+- artifact analysis;
+- export parsing;
+- replay;
+- documentation.
+
+Use remote/physical-device execution only for evidence that local execution cannot establish:
+
+- ADB install/launch;
+- real device GNSS;
+- sensors;
+- screen-off/background behavior;
+- rotation behavior;
+- long-running runtime behavior;
+- physical resource/thermal/battery measurements.
+
+Never use remote execution to inspect code that is already locally available.
+
+## 24.3.4 BATCH / PARALLEL TOOLING
+
+- Batch independent file reads/searches.
+- Run independent tests/checks in parallel when they do not share mutable state.
+- Prefer one long-lived build/test process plus output polling over repeated process creation.
+- Prefer one batched remote verification session over many small remote calls.
+- Do not make serial remote calls for independent evidence.
+- Do not re-run a command whose receipt already proves the same condition unless the source/build/device state changed.
+
+## 24.3.5 AUTONOMOUS CONTINUATION
+
+After a gate passes:
+
+1. record evidence;
+2. update the roadmap/journal;
+3. immediately select the next unblocked gate;
+4. continue execution without waiting for a user prompt.
+
+The agent may pause only for:
+
+- an explicit authorization boundary;
+- destructive action requiring user approval;
+- unavailable required hardware/tool;
+- unresolved ambiguity that materially changes the implementation;
+- a hard failure after the retry budget is exhausted.
+
+A normal engineering decision is NOT a reason to ask the user.
+
+## 24.3.6 NO PROGRESS THEATER
+
+Do not confuse documentation volume with project progress.
+
+A cycle is not complete merely because:
+
+- a plan was written;
+- a README was updated;
+- a PR was opened;
+- a script was generated;
+- a plausible explanation was produced.
+
+Progress requires an actual implementation, test, artifact, or verified environmental improvement.
+
+## 24.3.7 RETRY / DEADLOCK CONTROL
+
+For a failing operation:
+
+- Attempt 1: diagnose.
+- Attempt 2: use one materially different valid method.
+- Attempt 3: mark BLOCKED/FAILED, preserve evidence, and continue independent work.
+
+No infinite retry.
+No repeated environment probing without new information.
+No rebuild loops.
+
+## 24.3.8 UI EMERGENCY RULE
+
+Because the current panel is unstable:
+
+`B0 PANEL RECOVERY` owns UI execution until it passes.
+
+Do not expand the UI while B0 is failing.
+
+Do not rewrite the entire `MainActivity` or replace the panel architecture merely to remove symptoms.
+
+## 24.3.9 FINISH-FAST / FINISH-CORRECTLY
+
+The optimization target is:
+
+`MAXIMUM VERIFIED PROGRESS PER TOOL CALL`
+
+not minimum tool count.
+
+The agent should choose the fastest path that still leaves:
+
+- a coherent source tree;
+- passing relevant tests;
+- known build state;
+- explicit device verification state;
+- durable evidence;
+- an updated roadmap.
+
+## 24.3.10 CURRENT PRIORITY
+
+Until changed by fresh repository evidence:
+
+1. B0 panel recovery firewall.
+2. B1–B6 only after B0 passes.
+3. Scientific propagation/solver gates.
+4. Emergency Navigation / Interference Resilience.
+5. Horizon Resilient Location Bridge.
+6. Long-run/device/release verification.
 
 # 25. MANDATORY ROADMAP UPDATE PROTOCOL
 
@@ -1135,25 +1456,38 @@ B0 is therefore closed for functional recovery. B1 is the next gate.
 
 # 28. CURRENT NEXT ACTION
 
-**NEXT EXECUTION TARGET: PHASE B Ã¢â‚¬â€ SATELLITE OBSERVATORY UI**
+**NEXT EXECUTION TARGET: PHASE B1 — EVIDENCE-PRESERVING SATELLITE IDENTITY**
 
-Phase A is closed and verified. The next execution sequence is:
+Phase A is closed and the post-migration/export baseline is verified. The previous Phase B plan is now gated behind B0 so the unstable panel is repaired before visual expansion.
 
-1. inspect the current SatellitePanel / CameraObservatory implementation;
-2. trace actual satellite identity data from persisted observations into the UI;
-3. implement compact evidence-derived satellite identifiers inside each panel;
-4. remove redundant labels below panels;
-5. implement orientation-aware panel placement only from a valid runtime orientation source;
-6. preserve explicit UNAVAILABLE behavior when orientation evidence is absent;
-7. verify skyplot/panel rotation direction empirically on device;
-8. run UI/build/unit regression;
-9. install and verify on the target device;
-10. update this roadmap with receipts;
-11. commit code + roadmap;
-12. push and verify origin/main;
-13. then proceed to Phase C scientific SGP4/SDP4 reference-vector validation.
+Execution order:
 
-**Scientific identity, satellite names, and orientation must remain evidence-derived. No fabricated labels or measurements.**
+1. inspect the actual working tree and active/unpushed work;
+2. protect overlapping local work with a checkpoint/branch;
+3. diagnose the UI path from canonical state → UI projection → rendering;
+4. make the smallest safe correction;
+5. run targeted UI/unit/build regression;
+6. install and verify on SM-A075F;
+7. only after B0 passes, execute B1–B6;
+8. continue scientific propagation/solver gates;
+9. execute Phase K Emergency Navigation in dependency order;
+10. implement external-location delivery only after the resilience state itself is verified.
+
+B0 is now verified. Continue immediately with B1–B6 in dependency order:
+
+1. trace actual `constellationType` + `svid` identity from persisted observations into the satellite panel;
+2. preserve compact evidence-derived identity only; never infer NORAD/catalog identity;
+3. keep redundant labels below panels removed;
+4. use orientation-aware placement only when a valid runtime orientation source exists;
+5. preserve explicit UNAVAILABLE behavior otherwise;
+6. empirically verify rotation direction on a device with a valid orientation sensor;
+7. run UI/build/unit regression and install verification;
+8. then continue scientific propagation/solver gates.
+
+**CRITICAL:** If active workspace inspection is unavailable, preserve unpushed work and do not overwrite/regenerate UI source.
+
+
+
 
 ---
 

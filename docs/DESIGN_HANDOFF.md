@@ -37,6 +37,9 @@ No random purple/green recoloring, fake scientific data, decorative telemetry pr
 ## Verification gate
 Audit loading and transient states on real device / representative runtime where available, capture screenshots, and separate design intent from verified behavior.
 
+> WORKFLOW: INSPECT → REPORT → IMPLEMENT → VERIFY
+> BEFORE IMPLEMENTATION: Read AGENTS.md, CHECKPOINT.md, and the current roadmap/technical-gap document. Reconcile this handoff with those sources before changing code.
+
 ## Execution hardening
 
 ### OBSERVED implementation anchors

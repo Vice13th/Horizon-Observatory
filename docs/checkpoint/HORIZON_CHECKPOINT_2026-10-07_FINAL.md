@@ -73,3 +73,26 @@
 - Fresh Doppler/pseudorange-rate extraction: UNVERIFIED.
 - Export/readback checksum reconciliation: UNVERIFIED.
 - NORAD, UTC, OrbitCore, physical orientation, and K8 remain open scientific gates.
+
+
+## Evidence-Closure Addendum — 2026-10-07
+
+The remaining device evidence gaps were closed using the existing completed session `7f9066a6-17c6-4307-ac48-4274379742ec` and existing `ExportEngine`; no production/source/scientific behavior was changed.
+
+- Export SUCCESS: `2341` observations.
+- Counts reconciled: Room/runtime `2341`; manifest `2341`; `observations.json` `2341`; `observations.csv` `2341`.
+- Sequence range `1..2341`; manifest and direct exported-JSON audit both show contiguous sequence numbers.
+- Direct sequence advancement evidence: `394 → 448 → 485` in the same persisted session.
+- Direct ingestion timestamp ordering audit: non-decreasing across all `2341` observations.
+- Archive checksum: `7CFEC70335EA78788109DB6E64316E0A5D1E8F0024C645CC328633AD73D5556C`.
+- Independent second ADB readback produced the identical archive SHA-256; checksum MATCH.
+- Archive internal checksum verification: `13` entries, `0` mismatches.
+- Fresh raw GNSS measurement evidence: `136` rows; observed Android `constellationType` values `1,3,5,6`.
+- Fresh SVID evidence: `constellationType=1, svid=10` observed at sequences `394`, `448`, `485`, `529`, `570`.
+- Fresh raw pseudorange-rate evidence: observed values include `-570.5701293676533`, `-571.730778755728`, and `-571.7120009486173` m/s. No Doppler estimate was substituted.
+- Satellite evidence CSV: `182` rows; observed `constellationType` values `1,2,3,5,6`.
+- Source timestamp regressions remain diagnostic (`262`); ingestion ordering remains clean.
+
+Evidence status: SEQUENCE VERIFIED; SVID VERIFIED; CONSTELLATION VERIFIED as observed Android `constellationType`; PSEUDORANGE-RATE VERIFIED as raw observed field; EXPORT/READBACK/CHECKSUM VERIFIED.
+
+NORAD, UTC edge cases, OrbitCore reference accuracy, physical heading/orientation, and K8 remain open scientific gates.

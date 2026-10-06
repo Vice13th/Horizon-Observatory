@@ -76,3 +76,32 @@ Preserve the verified Horizon Observatory state after the accepted B3/B4 live-da
 ### Integrity
 - No production code, tests, Gradle/configuration, scientific state, raw evidence, or user artifacts were modified for this verification run.
 - This addendum records only newly observed evidence; historical receipts remain unchanged.
+
+
+## Evidence-Closure Addendum — 2026-10-07
+
+Controlled export/readback closure was completed against the latest completed device session `7f9066a6-17c6-4307-ac48-4274379742ec` using the existing `ExportEngine`; no production/source changes were made.
+
+- Export completed successfully with `2341` observations.
+- Export archive: `horizon_session_7f9066a6-17c6-4307-ac48-4274379742ec.zip`.
+- Manifest count: `2341`; JSON count: `2341`; CSV count: `2341`.
+- Manifest sequence range: `1..2341`; manifest `sequenceContiguous=true`; direct JSON sequence walk independently confirmed continuity `1..2341`.
+- Direct sequence advancement evidence from persisted GNSS rows: `seq=394`, then `seq=448`, then `seq=485`; therefore `M>N` is directly observed in the same completed session.
+- Direct ingestion timestamp ordering check over all `2341` exported observations was non-decreasing.
+- Export archive SHA-256: `7CFEC70335EA78788109DB6E64316E0A5D1E8F0024C645CC328633AD73D5556C`.
+- A second independent ADB readback of the same device archive produced the identical SHA-256; archive transport/readback checksum MATCH.
+- Internal archive checksum verification reported `13` checksum entries and `0` mismatches.
+- Fresh persisted GNSS raw evidence contained `136` raw measurement rows. Observed Android `constellationType` values in raw measurements: `1,3,5,6`.
+- Fresh raw samples include real SVID evidence, e.g. `constellationType=1, svid=10` at sequences `394`, `448`, `485`, `529`, `570`.
+- Fresh raw GNSS evidence contains actual `pseudorangeRateMetersPerSecond`; sample values include `-570.5701293676533`, `-571.730778755728`, and `-571.7120009486173` m/s. These are OBSERVED raw Android measurements, not estimated Doppler.
+- Satellite evidence CSV contained `182` correlated/status evidence rows with observed `constellationType` values `1,2,3,5,6`; provenance remains correlation-derived and no NORAD identity was assigned.
+- `sourceTimestampRegressions=262` remains a diagnostic property of asynchronous source timestamps; `ingestionTimestampsNonDecreasing=true` and the export integrity audit remains clean.
+
+### Evidence gaps closed
+- Sequence advancement: VERIFIED.
+- SVID: VERIFIED.
+- Constellation: VERIFIED as observed Android `constellationType` values; no constellation inference from SVID was used.
+- Pseudorange-rate: VERIFIED as an observed raw GNSS field. Doppler itself remains not claimed.
+- Export/readback/count/checksum: VERIFIED for the completed session and exported archive.
+
+Scientific gates remain unchanged: NORAD mapping, UTC edge cases, OrbitCore reference-vector accuracy, physical heading/orientation, and K8 long-duration/interference validation remain open.

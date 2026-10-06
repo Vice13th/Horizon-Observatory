@@ -4,7 +4,7 @@
 >
 > Repository: Vice13th/Horizon-Observatory  
 > Branch: main  
-> Current remote HEAD: e719d88f6cd7e4dc2c83fa29750009356ce7154e  
+> Current remote HEAD: **inspect `main` directly; do not hard-code a SHA inside status documents.**
 > Current checkpoint: HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED
 >
 > **Important:** the previously recorded workspace path C:\Horizon\horizon_stage2 is historical context only. A local handoff from that workspace MUST NOT be treated as a pushed repository change unless a Git commit/receipt proves it.

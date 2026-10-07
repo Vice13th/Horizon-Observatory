@@ -15,7 +15,7 @@
 >
 > **Current verified foundation:** GNSS acquisition → Observation Bus → Room → readback → export → checksum/readback → semantic normalization is VERIFIED/CLOSED.
 >
-> **Open gates:** NORAD mapping UNKNOWN; device-specific UTC edge case UNVERIFIED; physical orientation/panel rotation UNVERIFIED/BLOCKED; scientific OrbitCore reference-vector accuracy UNVERIFIED; K8 physical interference/long-run validation PENDING.
+> **Open gates:** NORAD mapping UNKNOWN; device-specific UTC edge case UNVERIFIED; physical orientation/panel rotation UNVERIFIED/BLOCKED; scientific OrbitCore reference-vector accuracy PARTIAL / VERIFIED CASES; epoch-edge and broader vector coverage UNVERIFIED; K8 physical interference/long-run validation PENDING.
 >
 > The older ledger below remains historical evidence and is intentionally retained; dated later receipts supersede earlier statuses.
 
@@ -1686,3 +1686,19 @@ Reference fixtures `SGP4-VER.TLE` and `tcppver.out` are vendored from the public
 
 ## Build/environment note
 Gradle 8.11.1 deprecation and SDK XML mismatch warnings remain non-blocking. Do not alter toolchain solely for this checkpoint.
+
+
+# 28.5 ORBITCORE REFERENCE-VECTOR RECEIPT — 2026-10-07
+
+**STATUS: VERIFIED FOR TWO REPRESENTATIVE CASES / NOT FULL SCIENTIFIC CLOSURE**
+
+A dedicated independent numerical receipt was added to `orbitcore-bridge`. The real OrbitCore runtime was compared against the vendored `SGP4-VER.TLE` / `tcppver.out` verification data for:
+
+- near-earth case `00005`: epoch and +360 min;
+- deep-space 12-hour resonant case `08195`: epoch, +120 min, +1440 min.
+
+All five OrbitCore state comparisons passed with position tolerance `1e-6 km` and velocity tolerance `1e-9 km/s`. The reference state values were independently reproduced with Python `sgp4` before being used in the Kotlin assertions.
+
+Independent provenance: the CelesTrak/Vallado verification material describes `TCPPVER.OUT` as verification results for the supplied TLE test cases and specifies TEME position/velocity outputs; the same material documents the SGP4/SDP4 verification methodology.
+
+This does **not** close the entire scientific propagation gate. Remaining work includes broader reference-case coverage, epoch-before/after cases, parser-driven fixture execution, and production integration verification.

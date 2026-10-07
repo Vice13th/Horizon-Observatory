@@ -261,3 +261,10 @@ Remaining:
 - Orientation-dependent UI remains bounded by target-device sensor availability.
 
 Freeze rule: UI work must not alter propagation, OrbitCore, SGP4/SDP4, or raw-evidence semantics without a new evidence-backed checkpoint.
+
+
+## ORBITCORE REFERENCE-VECTOR RECEIPT — 2026-10-07
+
+**VERIFIED FOR REPRESENTATIVE CASES:** `orbitcore-bridge` now has dedicated numerical assertions against the vendored SGP4 verification fixture. Near-earth case 00005 was checked at epoch and +360 minutes; deep-space 12-hour resonant case 08195 was checked at epoch, +120 minutes, and +1440 minutes. All 5 state comparisons passed at `1e-6 km` position and `1e-9 km/s` velocity tolerance. The expected values were independently reproduced with Python `sgp4` before the Kotlin assertions.
+
+**Boundary:** this is not full SGP4/SDP4 scientific closure. Broader fixture coverage, epoch-edge cases, parser-driven execution, and production integration remain open.

@@ -7,7 +7,7 @@
 > **Current verified foundation:** GNSS acquisition → Observation Bus → Room persistence → readback → export → checksum → semantic normalization is VERIFIED/CLOSED on SM-A075F.  
 > **Current resilience state:** K0–K7 software integration is implemented and explicitly receipted where marked VERIFIED/DEVICE-OBSERVED.  
 > **Current UI lane:** presentation-only; raw evidence, persistence/export semantics, and propagation remain protected.  
-> **Open:** NORAD mapping UNKNOWN, device-specific UTC edge case UNVERIFIED, physical orientation/panel rotation UNVERIFIED/BLOCKED on the target evidence, scientific OrbitCore reference-vector accuracy UNVERIFIED, K8 physical interference/long-run validation PENDING.
+> **Open:** NORAD mapping UNKNOWN, device-specific UTC edge case UNVERIFIED, physical orientation/panel rotation UNVERIFIED/BLOCKED on the target evidence, scientific OrbitCore reference-vector accuracy PARTIAL / VERIFIED CASES, K8 physical interference/long-run validation PENDING.
 >
 > Rows below are a cumulative evidence history. Older rows may use statuses that were correct at the time they were written; they must not be read as the current project verdict.
 
@@ -97,3 +97,6 @@ Reference fixtures `SGP4-VER.TLE` and `tcppver.out` are vendored from the public
 **Fresh verification:** primary JVM suite `163` tests, `0` failures, `0` errors, `3` existing reference-vector skips; fresh primary APK SHA-256 `9EB1F04505DEA594C4D1789A0BFD6B8CCA51ACFA953E9D8BDC80C3B2D6E2995A`; `:app:connectedPrimaryDebugAndroidTest` BUILD SUCCESSFUL on `SM-A075F / Android 16`, `14` tests finished, `2` existing migration tests skipped; OrbitCore bridge debug suite `2` tests, `0` failures, `0` errors.
 
 **Scientific boundary:** `SGP4-VER.TLE` and `tcppver.out` are now vendored with verified SHA-256 (`D246D1D9D768ACE445A38A965713FA9BA52D80FD8A41A0502FF83D7ACFFE2881`, `687BF28DBE52DF86E8E60AB5CB4A08D1AA3DBCAF4E63B1F7AB95F044FBE3833B`). The files are provenance fixtures only at this receipt. No SGP4/SDP4 numerical accuracy claim is made until Horizon's dedicated vector runner compares OrbitCore states against the fixture rows.
+
+| OrbitCore representative reference vectors | VERIFIED / PARTIAL | Real OrbitCore bridge matches independent reference states for near-earth case 00005 at 0/360 min and deep-space resonant case 08195 at 0/120/1440 min; 5/5 state comparisons passed at 1e-6 km / 1e-9 km/s |
+| OrbitCore full scientific reference closure | UNVERIFIED | Broader fixture coverage, epoch-edge cases, parser-driven execution, and production integration remain |

@@ -55,9 +55,6 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      - name: Verify Gradle wrapper
-        run: sha256sum gradle/wrapper/gradle-wrapper.jar
-
       - name: Run JVM tests and compile all debug installation flavors
         run: >-
           ./gradlew
@@ -67,7 +64,7 @@ jobs:
           :app:testPrimaryDebugUnitTest
           :app:testT1DebugUnitTest
           :propagation-contract:test
-          :orbitcore-bridge:test
+          :orbitcore-bridge:testDebugUnitTest
           :app:assemblePrimaryDebug
           :app:assembleTsDebug
           :app:assembleT1Debug

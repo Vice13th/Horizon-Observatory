@@ -1,0 +1,70 @@
+name: Horizon Android CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "orbitcore-bridge/**"
+      - "propagation-contract/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradlew"
+      - "gradlew.bat"
+      - ".github/workflows/android-ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "orbitcore-bridge/**"
+      - "propagation-contract/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradlew"
+      - "gradlew.bat"
+      - ".github/workflows/android-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: horizon-android-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-jvm-and-debug-build:
+    name: JVM tests and debug flavor builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 17 and Gradle cache
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Run JVM tests and compile all debug installation flavors
+        run: >-
+          ./gradlew
+          --no-daemon
+          --stacktrace
+          --console=plain
+          :app:testPrimaryDebugUnitTest
+          :app:testT1DebugUnitTest
+          :propagation-contract:test
+          :orbitcore-bridge:testDebugUnitTest
+          :app:assemblePrimaryDebug
+          :app:assembleTsDebug
+          :app:assembleT1Debug

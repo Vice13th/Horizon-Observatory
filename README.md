@@ -70,7 +70,7 @@ Latest runtime evidence on the target device additionally records:
 - carrier phase and AGC capability: **UNVERIFIED**
 
 See:
-- `docs/CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED.md`
+- `docs/VERIFICATION_MATRIX_CURRENT.md`
 - `docs/LATEST_RUNTIME_EVIDENCE_C40.md`
 - `docs/receipts/POST_MIGRATION_REGRESSION_2026-10-06.md`
 

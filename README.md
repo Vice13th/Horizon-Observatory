@@ -25,22 +25,27 @@ It is an **observatory stack**: acquisition, provenance, persistence, integrity,
 **GNSS · Satellites · Orbital Context · SGP4/SDP4 · Cellular · Sensors · Provenance · Resilient Navigation**
 
 
-## Latest Release Artifact — v1.0.0-observatory
+## Latest APK — 2026-10-14 device build
 
-The first device-verified APK is now published as a GitHub Release Asset.
+**[Download the latest APK](https://github.com/Vice13th/Horizon-Observatory/releases/download/v1.0.0-observatory-device-2026-10-14/Horizon-Observatory-v1.0.0-observatory-device-2026-10-14.apk)** · [Release notes, verification details, and checksum](https://github.com/Vice13th/Horizon-Observatory/releases/tag/v1.0.0-observatory-device-2026-10-14)
 
-- Release: [HORIZON Observatory v1.0.0](https://github.com/Vice13th/Horizon-Observatory/releases/tag/v1.0.0-observatory)
-- Tag: `v1.0.0-observatory`
-- Release target commit: `a6181fb6259f463e1314f5103d0bfd84ed7cf024`
-- APK filename: `Horizon-Observatory-v1.0.0-observatory.apk`
-- APK SHA-256: `81CE8B59491525A7EC0DA91BDA3C5C0DBDEDDAAB310EC0FB93E311FE3F474A45`
-- Device receipt: Samsung SM-A075F / Android 16 / API 36
+- Release tag: `v1.0.0-observatory-device-2026-10-14` (pre-release)
+- Variant/package: `primaryDebug` / `horizon.observatory.debug`
+- App version: `1.0.0-observatory` (versionCode `1`)
+- Tested device: Samsung SM-A075F, Android 16 / API 36
+- APK size: 10,623,016 bytes (about 10.1 MiB)
+- APK SHA-256: `327756805061763A2CD691E1F4D46ACDE1DE352E26A7E9594A46DFE779F72D33`
+- [SHA-256 sidecar](https://github.com/Vice13th/Horizon-Observatory/releases/download/v1.0.0-observatory-device-2026-10-14/Horizon-Observatory-v1.0.0-observatory-device-2026-10-14.apk.sha256)
 
-The published asset was independently downloaded and SHA-256 verified against the exact local APK bytes. This release is an evidence-backed device artifact, not a claim of final scientific validation or production release status.
+The APK signature and package metadata were checked, and this exact artifact was installed/launched on the target device. The public-checkout JVM test tasks `:app:testPrimaryDebugUnitTest` and `:orbitcore-bridge:test` passed.
+
+**Important:** this is a debug-signed device build, not a production/Play Store release. It was built from a preserved local source snapshot without Git metadata, so it is not claimed to be reproducible from the release tag's source commit. Device launch verification is not full validation of every feature.
+
+The earlier [v1.0.0-observatory release](https://github.com/Vice13th/Horizon-Observatory/releases/tag/v1.0.0-observatory) remains available as a separate artifact.
 
 ## Current Status
 
-**GNSS foundation: VERIFIED / CLOSED**
+**Core GNSS evidence pipeline: verified for the documented checkpoint; broader device and scientific gates remain open.**
 
 The current evidence chain is verified on a physical Samsung SM-A075F through:
 

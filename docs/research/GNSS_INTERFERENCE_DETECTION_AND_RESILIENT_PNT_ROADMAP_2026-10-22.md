@@ -152,6 +152,26 @@ Only after lab/dataset gates: diverse open-sky and urban field sessions with an 
 
 Proceed with P0 and P1 immediately, then P2 with a transparent baseline detector. Do not start ML-first work or promise “persistent satellite lock.” Keep integrity accounting, interference detection, spoofing suspicion, and PNT fallback as distinct state machines with explicit provenance and uncertainty.
 
+## Research update — cross-device evidence (2026-10-22)
+
+The current literature reinforces the multi-indicator design and argues against a fixed global threshold:
+
+- **Tegedor et al. (2026), “Monitoring Radio Frequency Interference Affecting GNSS Using Android Smartphones,” European Navigation Conference 2025.** The reported Android AGC proof-of-concept detects potential intentional and unintentional interference, while noting that small AGC shifts may not imply interference and that smartphone-model differences matter. [Record](https://consensus.app/papers/monitoring-radio-frequency-interference-affecting-gnss-tegedor-gioia/bcf0988079ea5e35b6c7c4eadfda8785/?utm_source=chatgpt)
+- **Tegedor et al. (2026), “Field Detection of GNSS Interference Using Smartphones at Jammertest 2025.”** Reports controlled static, dynamic, and airborne evaluation with dual-frequency smartphones, using AGC per band as a complementary indicator. This supports evaluating by device, frequency band, movement and test condition rather than asserting a universal detector. [Record](https://consensus.app/papers/field-detection-of-gnss-interference-using-smartphones-at-tegedor-piccolo/7781aa91975353b59802702923c43c9a/?utm_source=chatgpt)
+- **Rustamov, Minetto & Dovis (2023), “Improving GNSS Spoofing Awareness in Smartphones via Statistical Processing of Raw Measurements,” IEEE Open Journal of the Communications Society 4, 873–891.** Reports that spatial/temporal correlation of satellite C/N0 series can help expose spoofing behavior in a controlled evaluation. Keep this as a distinct spoofing-consistency path, not a jamming-only feature. [Record](https://consensus.app/papers/improving-gnss-spoofing-awareness-in-smartphones-via-rustamov-minetto/af8d00b23b2652f6a59fa6a0d7a38883/?utm_source=chatgpt)
+- **Gogoi et al. (2018), “A Controlled-Environment Quality Assessment of Android GNSS Raw Measurements,” Electronics.** Finds raw measurement quality and behavior vary between controlled and real environments, with device-specific effects including duty cycling. This supports explicit feature availability and input-quality masks. [Record](https://consensus.app/papers/a-controlledenvironment-quality-assessment-of-android-gogoi-minetto/c25559219d2b5c99b0c3a9a3b40cdc5b/?utm_source=chatgpt)
+
+### Consequences for implementation
+
+1. Treat event-level AGC as **band-scoped telemetry**, not a standalone alarm; preserve frequency and constellation fields and missingness.
+2. Use distinct but composable evidence paths for broad C/N0/AGC degradation, spoofing-style cross-satellite/time/location inconsistencies, environmental attenuation/multipath context, and software acquisition/admission loss.
+3. During baselining, capture both benign disturbances and nominal sessions for each device/firmware cohort. Train and evaluate splits by **device and session**, not random observation rows.
+4. Do not infer the absence of interference from an empty AGC collection, stable AGC, or missing raw GNSS events. Emit `INSUFFICIENT_DATA` or `RECEIVER_OR_PIPELINE_DEGRADED` if the observations cannot support a conclusion.
+
+**Official Android API cross-check:** `GnssMeasurementsEvent.getGnssAutomaticGainControls()` was added in API 33. Android states that supported implementations report AGC even before satellites are acquired; unsupported devices return an empty collection. The per-measurement AGC accessor was deprecated at API 33. Android's own Spoof/Jam feature is labelled experimental and says it will not catch all attacks, especially when opened after values have stabilized. See the official [event API](https://developer.android.com/reference/android/location/GnssMeasurementsEvent), [AGC type](https://developer.android.com/reference/android/location/GnssAutomaticGainControl.html), [measurement API](https://developer.android.com/reference/android/location/GnssMeasurement), and [detection guidance](https://developer.android.com/develop/sensors-and-location/sensors/gnss-spoof-jam).
+
+**Source-alignment note (VERIFIED by code inspection, 2026-10-22):** canonical GitHub `main`'s `GnssObservationSource.kt` currently calls `trySend` directly and uses the per-measurement AGC accessor; it does not contain the diagnostics/event-level AGC implementation observed in `C:\\Projects\\Horizon`, which is an unversioned source copy. Do not copy that whole file over `main`. First create/verify a clean checkout of the canonical repository, then port the smallest patch with failing tests and preserve all current session-integrity gates.
+
 ## Source links
 
 - Android GNSS raw measurements: https://developer.android.com/develop/sensors-and-location/sensors/gnss

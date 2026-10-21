@@ -45,7 +45,7 @@
 - [x] **Step 2: Run focused test** and verify the missing production class caused the failure.
 - [x] **Step 3: Implement non-blocking counters** with atomics/ConcurrentHashMap and `trySend`; group counts by observation type. Counters remain in memory only.
 - [x] **Step 4: Re-run focused test**. Five tests passed (including mixed fan-out).
-- [x] **Step 5: Commit** after full review (pending).
+- [x] **Step 5: Commit** after full review — committed as `34f00e6f2b1beb1458aa0e617089cf3e066f0eff`.
 
 ### Task 2: Integrate GNSS callbacks without changing payloads
 
@@ -62,7 +62,7 @@
 - [x] **Step 3: Route existing GNSS sends through the helper** for measurements, status, navigation and antenna outputs. `trySend` stays non-blocking. Payloads/fields were inspected and preserved.
 - [x] **Step 4: Run the full unit suite and APK assemble** `:app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug --rerun-tasks`.
 - [x] **Step 5: Review source diff and payload construction**; commit is pending.
- 
+
 **Coverage limit:** a dedicated Android callback integration test was not added because system callback registration requires a different test seam. The shared admission component has direct unit coverage; all current source paths were inspected and the full unit/build tasks pass.
 
 ### Task 3: Record implementation evidence in docs
@@ -81,5 +81,5 @@
 - [x] Focused primitive tests observed failing before the implementation and passing after.
 - [x] Full `:app:testPrimaryDebugUnitTest` and `:app:assemblePrimaryDebug` passed in a forced 46-task run; 168 tests, 0 failures/errors, 3 skips.
 - [x] Changed files are limited to admission accounting, direct unit tests, roadmap, plan, README and status; original `C:\Projects\Horizon` remains untouched.
-- [ ] Commit hashes are recorded after commit.
+- [x] Commit hash recorded: `34f00e6f2b1beb1458aa0e617089cf3e066f0eff`.
 

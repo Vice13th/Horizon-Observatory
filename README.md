@@ -342,3 +342,12 @@ The repository treats the **current source, current checkpoint, canonical device
 
 **HORIZON Observatory**  
 **Observe the evidence. Preserve the boundary. Derive without fabrication.**
+
+
+## GNSS interference detection and resilient PNT (research roadmap, 2026-10-22)
+
+A new evidence-backed roadmap proposes capability-aware AGC/C/N0 monitoring, explicit incomplete-data states, an explainable multi-indicator detector, and uncertainty-aware PNT fallback. It does **not** claim a detector is implemented or validated, and no software can guarantee satellite lock under effective RF interference. The first priority is callback/queue/persistence loss accounting, followed by API-aware signal telemetry and a transparent anomaly engine.
+
+- [Research and implementation roadmap](docs/research/GNSS_INTERFERENCE_DETECTION_AND_RESILIENT_PNT_ROADMAP_2026-10-22.md)
+- Official Android references: [raw GNSS](https://developer.android.com/develop/sensors-and-location/sensors/gnss), [jamming/spoofing](https://developer.android.com/develop/sensors-and-location/sensors/gnss-spoof-jam), [GnssMeasurement/AGC API](https://developer.android.com/reference/android/location/GnssMeasurement)
+- Peer-reviewed baseline: [Spens et al., NAVIGATION (2022)](https://navi.ion.org/content/69/3/navi.537); [Miralles et al. (2018)](https://doi.org/10.33012/2018.15883)

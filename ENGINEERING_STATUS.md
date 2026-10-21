@@ -268,3 +268,16 @@ Freeze rule: UI work must not alter propagation, OrbitCore, SGP4/SDP4, or raw-ev
 **VERIFIED FOR REPRESENTATIVE CASES:** `orbitcore-bridge` now has dedicated numerical assertions against the vendored SGP4 verification fixture. Near-earth case 00005 was checked at epoch and +360 minutes; deep-space 12-hour resonant case 08195 was checked at epoch, +120 minutes, and +1440 minutes. All 5 state comparisons passed at `1e-6 km` position and `1e-9 km/s` velocity tolerance. The expected values were independently reproduced with Python `sgp4` before the Kotlin assertions.
 
 **Boundary:** this is not full SGP4/SDP4 scientific closure. Broader fixture coverage, epoch-edge cases, parser-driven execution, and production integration remain open.
+
+
+---
+
+## Research roadmap update — 2026-10-22
+
+**Status: PROPOSED / NOT IMPLEMENTED OR FIELD-VALIDATED.** The next development path is to fix and measure callback-to-persistence loss first, then implement API-aware AGC/C/N0 telemetry, then an explainable multi-indicator interference/anomaly state machine, and finally uncertainty-aware PNT fallback. Do not promise persistent satellite lock under effective RF jamming.
+
+**Platform requirement:** API 33+ should use event-level AGC via GnssMeasurementsEvent.getGnssAutomaticGainControls() where available; the per-measurement GnssMeasurement AGC accessor is deprecated at API 33. AGC is hardware-dependent and may be missing; missingness must not be interpreted as “no jamming.” C/N0 and satellite loss are also affected by obstruction, orientation and multipath.
+
+**Validation gate:** collect device/session-separated benign baselines; test obstruction/orientation/motion before any authorized shielded RF work; measure precision/recall, false alarms per device-hour, detection latency, abstention, and confidence intervals. No over-the-air jamming tests. Preserve separate states for generic degradation, suspected interference, spoofing suspicion, pipeline loss, insufficient data and unavailable PNT.
+
+Full plan: [GNSS interference and resilient PNT roadmap](docs/research/GNSS_INTERFERENCE_DETECTION_AND_RESILIENT_PNT_ROADMAP_2026-10-22.md). Historical status below remains historical and does not establish that the new detector exists.

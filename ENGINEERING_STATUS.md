@@ -4,6 +4,17 @@
 > **Current remote HEAD: **inspect `main` directly; do not hard-code a SHA inside status documents.**
 > **Current checkpoint:** HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED
 
+## GNSS acquisition loss accounting — isolated branch checkpoint (2026-10-22)
+
+**VERIFIED in canonical checkout, not merged:** `feat/gnss-acquisition-loss-accounting-2026-10-22` adds a source-local admission diagnostics primitive and routes each existing GNSS callback `trySend` path through it. The primitive counts callback batches, expected output rows, construction attempts/successes, send attempts, admitted rows, capacity rejections, closed-channel rejections, construction failures, and per-observation-type outcomes. A source-local snapshot can be inspected in code. This patch does not persist counters, guarantee complete callbacks from Android, replace the session queue/drop ledger, or change session integrity rules.
+
+**MEASURED:** fresh forced `:app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug --rerun-tasks` completed with BUILD SUCCESSFUL (46 tasks executed). Test XML: 168 tests, 0 failures, 0 errors, 3 pre-existing skipped tests. Compiler still reports pre-existing Gradle 8.11.1/SDK XML compatibility warnings and deprecated per-measurement AGC warnings. This validates build/unit tests on canonical source only; it is not field interference validation.
+
+**P1 still NOT IMPLEMENTED:** API-33 `GnssMeasurementsEvent.getGnssAutomaticGainControls()` ingestion, capability/missingness semantics, multi-indicator interference/spoofing state machine, alternate PNT/holdover, and device/session-separated receiver ground truth. Do not claim jamming detection or continuous satellite lock from this change.
+
+Plan: `docs/superpowers/plans/2026-10-22-gnss-acquisition-loss-accounting.md`.
+Research contract: `docs/research/GNSS_INTERFERENCE_DETECTION_AND_RESILIENT_PNT_ROADMAP_2026-10-22.md`.
+
 ## Current verdict
 
 **GNSS evidence foundation: VERIFIED / CLOSED.**  

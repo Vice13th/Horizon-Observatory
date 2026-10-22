@@ -73,3 +73,34 @@ The Notion Field Test Handoff records a candidate at `C:\Projects\Horizon\artifa
 
 ## Evidence conventions
 Use **VERIFIED** only for facts freshly checked against the named source. Use **OBSERVED** for tool-returned state not independently cross-checked. Use **MEASURED** only for tests/metrics actually executed and captured. Mark **INFERRED**, **ASSUMED**, or **UNVERIFIED** explicitly. Retain historical receipts with their original provenance.
+
+## Review checkpoint — 2026-10-22 (fresh remote inspection)
+
+### PR #8 source review
+- **VERIFIED:** Re-fetched the PR head source files directly from branch `feat/gnss-acquisition-loss-accounting-2026-10-22`. `AcquisitionDiagnostics.kt` blob SHA: `c75d2ed8bffed4e753d246cc78fcd680f28478f1`; `GnssObservationSource.kt` blob SHA: `36ecbdf3de8e48fd7f957885abebe1ed1195d577`; focused test blob SHA: `aaac527c3296e75bf8aad57d1154cf8b614587f4`.
+- **OBSERVED:** The five focused tests assert accepted sends, capacity rejection, closed-channel rejection, constructor failure, and batch fan-out. They do not exercise the production GNSS status callback's payload-building path or assert status/nav callback exceptions and registration lifecycle diagnostics.
+- **OBSERVED — review concern:** In `onSatelliteStatusChanged`, elapsed-time and satellite `JSONArray/JSONObject` payload construction occurs before `diagnostics.recordSingleCallback(...)`; if that construction throws, no callback/start/failure counter records it. The payload path is therefore outside the diagnostics boundary.
+- **OBSERVED — metric semantics:** measurement batches increment expected rows by `eventArgs.measurements.size`; antenna batches by list size; status and navigation callbacks each call `recordSingleCallback` (expected one). There is no direct count of per-family callback events, and no counters for callback payload failures before `offer`.
+- **OBSERVED — lifecycle concern to test:** `GnssObservationSource` owns a single diagnostics object for the source instance and its default session ID is `UNASSIGNED`. Snapshots therefore accumulate across repeated flow collections and are not intrinsically tied to a particular persisted session unless callers supply/associate additional context (the inspected constructor currently does not).
+- **OBSERVED — exception boundary:** `offer` catches `Exception` from observation construction but does not catch failures from `channel.trySend` itself. This avoids broad Throwable swallowing, but expected exception/cancellation behavior should be explicitly tested/documented.
+- **VERIFIED from PR metadata:** PR #8 body claims 168 unit tests passed and a debug APK hash, but this session did not run Gradle locally; retain as author-reported evidence, not freshly MEASURED.
+
+### CI and merge gates
+- **VERIFIED:** PR #8 head SHA `2721d88822e52ed5f347d8317928e708e5d65d08` has zero GitHub Actions runs returned for its exact head SHA; check-runs endpoint reports `total_count: 0`; combined status state is `pending` with zero statuses. PR #7 head SHA `5834bc758a4faf039633a23a5f6da1052e6b0e67` has zero returned workflow runs.
+- **VERIFIED:** The reachable `android-ci.yml` file on branch `ci/android-minimal-20261012` includes PR triggers but only for changes to `app/**`, `orbitcore-bridge/**`, `propagation-contract/**`, Gradle/build files, or the workflow itself. PR #7 touches docs/README/status only, so it does not match that path filter. PR #8 does change `app/**`, so no run remains unexplained.
+- **OBSERVED:** Workflow listing returns one historical failed run for PR #5 on 2026-10-12, not for #7/#8.
+- **VERIFIED:** Public `/rulesets` endpoint returned `[]`. **UNVERIFIED:** branch-protection endpoint was denied with HTTP 403; absence of required checks cannot be concluded.
+- **UNVERIFIED:** Fetching `.github/workflows/android-ci.yml` from `main` returned 404 while fetching it at `ci/android-minimal-20261012` succeeded. Reconcile whether the workflow is absent from main or the connector's contents route is inconsistent before treating it as canonical CI configuration.
+
+### Research traceability review
+- **VERIFIED:** Consensus full records were fetched for:
+  - Spens et al., “Detecting GNSS Jamming and Spoofing on Android Devices” (2022), *NAVIGATION: Journal of the Institute of Navigation*, DOI `10.33012/navi.537`; the paper describes Android-native comparison methods including AGC and C/N0, network-vs-GNSS location and GNSS-vs-system time.
+  - Rustamov, Minetto & Dovis, “Improving GNSS Spoofing Awareness in Smartphones via Statistical Processing of Raw Measurements” (2023), *IEEE Open Journal of the Communications Society* 4:873–891; the record supports a separate spoofing-consistency path based on cross-correlation in satellite C/N0 time series.
+  - Tegedor et al., “Monitoring Radio Frequency Interference Affecting GNSS Using Android Smartphones” (2026 record / European Navigation Conference 2025); the record explicitly warns that small AGC variations may not indicate interference and smartphone models differ.
+- **VERIFIED:** Official Android API reference for `GnssMeasurementsEvent.getGnssAutomaticGainControls()` says the API reports a collection, reports it when measurement engine runs (even before satellite acquisition on supporting implementations), and returns an empty collection on unsupported devices. The `GnssAutomaticGainControl` reference says AGC behavior depends on hardware design and that changes are more meaningful within a given hardware design than global absolute values.
+- **UNVERIFIED:** The linked 2026 conference paper record was found at Consensus, but a primary proceedings/full-text source, exact final publication metadata, and peer-review/version status were not independently checked in this pass.
+- **VERIFIED / boundary:** Roadmap proposals and target metrics remain proposed targets, not achieved Horizon results; no detector or physical interference test is claimed.
+
+### Research tool access observed
+- **OBSERVED:** Exa returned useful official Android API content. SciSpace returned relevant paper metadata. Consensus search plus fetch succeeded for three records. Acumen request failed internally. Elicit and Sider results were included in a multi-call response but output truncation prevented reliable per-provider auditing; do not label their full workflow validated.
+- No edits to either PR branch, no comments or reviews posted, no merge, no Gradle run, and no device operation were performed in this checkpoint.

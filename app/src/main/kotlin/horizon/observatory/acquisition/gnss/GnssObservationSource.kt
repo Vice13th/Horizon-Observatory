@@ -69,35 +69,37 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
         val statusCallback = object : GnssStatus.Callback() {
             override fun onSatelliteStatusChanged(status: GnssStatus) {
                 val elapsed = android.os.SystemClock.elapsedRealtimeNanos()
-                val satellites = JSONArray()
-                for (i in 0 until status.satelliteCount) {
-                    val row = JSONObject()
-                        .put("svid", status.getSvid(i))
-                        .put("constellationType", status.getConstellationType(i))
-                        .put("azimuthDegrees", status.getAzimuthDegrees(i).toDouble())
-                        .put("elevationDegrees", status.getElevationDegrees(i).toDouble())
-                        .put("cn0DbHz", status.getCn0DbHz(i).toDouble())
-                        .put("usedInFix", status.usedInFix(i))
-                        .put("hasAlmanacData", status.hasAlmanacData(i))
-                        .put("hasEphemerisData", status.hasEphemerisData(i))
-                    if (Build.VERSION.SDK_INT >= 26 && status.hasCarrierFrequencyHz(i)) {
-                        row.put("carrierFrequencyHz", status.getCarrierFrequencyHz(i).toDouble())
-                    } else {
-                        row.put("carrierFrequencyHz", JSONObject.NULL)
-                    }
-                    if (Build.VERSION.SDK_INT >= 30 && status.hasBasebandCn0DbHz(i)) {
-                        row.put("basebandCn0DbHz", status.getBasebandCn0DbHz(i).toDouble())
-                    } else {
-                        row.put("basebandCn0DbHz", JSONObject.NULL)
-                    }
-                    satellites.put(row)
-                }
-                val payload = JSONObject()
-                    .put("satelliteCount", status.satelliteCount)
-                    .put("satellites", satellites)
                 diagnostics.recordSingleCallback(
                     channel = channel,
                     block = {
+                        // Keep the entire callback-to-observation conversion inside the diagnostics
+                        // boundary so serialization/accessor failures count as construction failures.
+                        val satellites = JSONArray()
+                        for (i in 0 until status.satelliteCount) {
+                            val row = JSONObject()
+                                .put("svid", status.getSvid(i))
+                                .put("constellationType", status.getConstellationType(i))
+                                .put("azimuthDegrees", status.getAzimuthDegrees(i).toDouble())
+                                .put("elevationDegrees", status.getElevationDegrees(i).toDouble())
+                                .put("cn0DbHz", status.getCn0DbHz(i).toDouble())
+                                .put("usedInFix", status.usedInFix(i))
+                                .put("hasAlmanacData", status.hasAlmanacData(i))
+                                .put("hasEphemerisData", status.hasEphemerisData(i))
+                            if (Build.VERSION.SDK_INT >= 26 && status.hasCarrierFrequencyHz(i)) {
+                                row.put("carrierFrequencyHz", status.getCarrierFrequencyHz(i).toDouble())
+                            } else {
+                                row.put("carrierFrequencyHz", JSONObject.NULL)
+                            }
+                            if (Build.VERSION.SDK_INT >= 30 && status.hasBasebandCn0DbHz(i)) {
+                                row.put("basebandCn0DbHz", status.getBasebandCn0DbHz(i).toDouble())
+                            } else {
+                                row.put("basebandCn0DbHz", JSONObject.NULL)
+                            }
+                            satellites.put(row)
+                        }
+                        val payload = JSONObject()
+                            .put("satelliteCount", status.satelliteCount)
+                            .put("satellites", satellites)
                         RawObservation(
                             type = ObservationType.GNSS_STATUS,
                             utcTimestampMs = TimestampEngine.elapsedNanosToUtcMillis(elapsed),
@@ -150,17 +152,18 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
         val navCallback = object : GnssNavigationMessage.Callback() {
             override fun onGnssNavigationMessageReceived(event: GnssNavigationMessage) {
                 val elapsed = android.os.SystemClock.elapsedRealtimeNanos()
-                val payload = JSONObject()
-                    .put("type", event.type)
-                    .put("svid", event.svid)
-                    .put("messageId", event.messageId)
-                    .put("submessageId", event.submessageId)
-                    .put("status", event.status)
-                    .put("dataLength", event.data.size)
-                    .put("dataBase64", Base64.getEncoder().encodeToString(event.data))
                 diagnostics.recordSingleCallback(
                     channel = channel,
                     block = {
+                        // Include payload serialization and byte encoding in callback diagnostics.
+                        val payload = JSONObject()
+                            .put("type", event.type)
+                            .put("svid", event.svid)
+                            .put("messageId", event.messageId)
+                            .put("submessageId", event.submessageId)
+                            .put("status", event.status)
+                            .put("dataLength", event.data.size)
+                            .put("dataBase64", Base64.getEncoder().encodeToString(event.data))
                         RawObservation(
                             type = ObservationType.GNSS_NAVIGATION_MESSAGE,
                             utcTimestampMs = TimestampEngine.elapsedNanosToUtcMillis(elapsed),

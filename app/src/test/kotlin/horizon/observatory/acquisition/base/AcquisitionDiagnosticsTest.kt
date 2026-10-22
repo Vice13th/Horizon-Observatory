@@ -85,6 +85,28 @@ class AcquisitionDiagnosticsTest {
     }
 
     @Test
+    fun singleCallbackConstructionFailureIsCountedAndCallbackFinished() {
+        val diagnostics = AcquisitionDiagnostics("gnss")
+        val channel = Channel<RawObservation>(capacity = 1)
+
+        assertFalse(
+            diagnostics.recordSingleCallback(
+                block = { throw IllegalStateException("payload serialization failed") },
+                channel = channel,
+            )
+        )
+
+        val snapshot = diagnostics.snapshot()
+        assertEquals(1L, snapshot.callbackEventsReceived)
+        assertEquals(0L, snapshot.callbackEventsInFlight)
+        assertEquals(1L, snapshot.expectedObservations)
+        assertEquals(0L, snapshot.observationsConstructed)
+        assertEquals(0L, snapshot.sendAttempts)
+        assertEquals(1L, snapshot.constructionFailures)
+        assertEquals(IllegalStateException::class.java.name, snapshot.lastFailure)
+    }
+
+    @Test
     fun callbackBatchExpectedCardinalityIsTrackedSeparatelyFromAdmissions() {
         val diagnostics = AcquisitionDiagnostics("gnss")
         val channel = Channel<RawObservation>(capacity = 2)

@@ -61,7 +61,7 @@
 - [x] **Step 2: Run full suite** and verify failures are not due to source edits.
 - [x] **Step 3: Route existing GNSS sends through the helper** for measurements, status, navigation and antenna outputs. `trySend` stays non-blocking. Payloads/fields were inspected and preserved.
 - [x] **Step 4: Run the full unit suite and APK assemble** `:app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug --rerun-tasks`.
-- [x] **Step 5: Review source diff and payload construction**; commit is pending.
+- [x] **Step 5: Review source diff and payload construction.** Follow-up review moved status and navigation payload serialization inside the diagnostics callback wrapper; see the dated review receipt below.
 
 **Coverage limit:** a dedicated Android callback integration test was not added because system callback registration requires a different test seam. The shared admission component has direct unit coverage; all current source paths were inspected and the full unit/build tasks pass.
 
@@ -83,3 +83,28 @@
 - [x] Changed files are limited to admission accounting, direct unit tests, roadmap, plan, README and status; original `C:\Projects\Horizon` remains untouched.
 - [x] Commit hash recorded: `34f00e6f2b1beb1458aa0e617089cf3e066f0eff`.
 
+
+
+---
+
+## Follow-up review receipt — 2026-10-22
+
+### Finding and change
+- **OBSERVED:** onSatelliteStatusChanged built the per-satellite JSON array/object before entering recordSingleCallback; a runtime exception in a GNSS status accessor or JSON payload construction would bypass callback and construction-failure accounting.
+- **OBSERVED:** onGnssNavigationMessageReceived similarly built the JSON payload and Base64 data before entering the diagnostics wrapper.
+- **CHANGE:** moved both payload construction paths inside the recordSingleCallback block. This keeps payload construction/serialization within the existing try/catch(Exception) in offer, so expected construction exceptions increment constructionFailures, preserve expectedObservations=1, do not increment constructed/send-attempt counters, and still run callbackFinished in finally.
+- **CHANGE:** added singleCallbackConstructionFailureIsCountedAndCallbackFinished, asserting callback count, in-flight cleanup, expected cardinality, no constructed/send-attempt row, and construction-failure type.
+- **BOUNDARY:** this is a unit test of the shared diagnostics wrapper, not an Android framework callback integration test. The status/nav production callback accessors are not mocked end-to-end.
+
+### Verification evidence
+- **MEASURED:** :app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug --rerun-tasks — BUILD SUCCESSFUL, 46 actionable tasks executed.
+- **MEASURED:** JUnit XML for AcquisitionDiagnosticsTest reports 6 tests, 0 failures, 0 errors, 0 skipped; full report records 169 tests, 0 failures, 0 errors, 3 existing skips.
+- **MEASURED:** rebuilt local debug APK SHA-256: 61879CA6F44CE965ABFF202B810016BB04381DDBE0C92B5E6C66D81100ED0732. Not installed, not device-tested, not a release artifact.
+- **MEASURED:** git diff --check returned no whitespace errors. Git emitted only a working-tree LF-to-CRLF conversion warning for the edited test file.
+- **OBSERVED:** build still emits the existing Gradle 8.11.1 compatibility warning and deprecated Android GNSS measurement property warnings.
+- **UNVERIFIED:** current GitHub Actions result for the updated commit; physical device/session behavior; source-specific callback integration; persistence/session export of these counters; repeated callbackFlow collection lifecycle behavior.
+- **STOP CONDITION:** do not claim GNSS interference detection, receiver-level completeness, persisted diagnostic reconciliation, or final field validation from this patch.
+
+- **MEASURED — cross-flavor regression:** `:app:testT1DebugUnitTest :propagation-contract:test :orbitcore-bridge:testDebugUnitTest :app:assembleT1Debug --rerun-tasks` completed `BUILD SUCCESSFUL` (70 actionable tasks executed). `:propagation-contract:test` has no test sources in this checkout; OrbitCore bridge debug unit tests executed successfully.
+- **MEASURED — third app flavor:** `:app:assembleTsDebug` completed `BUILD SUCCESSFUL` (40 actionable tasks; 38 executed, 2 up-to-date).
+- **Boundary:** these are local build/unit-test receipts, not Android instrumentation, install, launch, receiver behavior, or field validation.

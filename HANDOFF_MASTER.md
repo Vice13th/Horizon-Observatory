@@ -136,3 +136,26 @@ Use **VERIFIED** only for facts freshly checked against the named source. Use **
 6. User conducts final device testing; no field-test or release-ready claim is made.
 
 This dated section supersedes the earlier “no Gradle run / no PR edits” statement for this continuation only; that earlier statement remains a correct receipt for its original checkpoint.
+
+
+## Session-scoped acquisition diagnostics — 2026-10-22
+
+### Change and verification
+- **VERIFIED:** PR #8 feature branch commit `d30a44b4a1617ebcfbfc80c07cbde631a976c42d` adds session-scoped GNSS acquisition diagnostics and stores the final snapshot in the existing `SESSION_STOPPING` system-event details.
+- **CHANGE:** `GnssObservationSource.beginSession(sessionId)` resets the diagnostics window per service session. Each cold `callbackFlow` collection captures its own diagnostics instance; delayed cleanup only publishes a final snapshot if that instance is still current, avoiding overwriting a newer session's snapshot.
+- **CHANGE:** `AcquisitionDiagnosticsSnapshot.toJsonObject()` serializes callback/in-flight counts, expected/constructed/send/admission/rejection/failure counters, callback durations, optional last failure, and per-observation-type counts. The existing stop event is reused, so no extra sequence number/row is allocated for diagnostics.
+- **CHANGE:** added a serialization unit test and persisted the session-tagged receipt through the existing observation/session export path. This is not a queue/persistence acknowledgement and does not replace fail-closed integrity checks.
+
+### Fresh local verification
+- **MEASURED:** forced multi-flavor Gradle command `:app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug :app:testT1DebugUnitTest :app:assembleT1Debug :app:assembleTsDebug :propagation-contract:test :orbitcore-bridge:testDebugUnitTest --rerun-tasks` completed `BUILD SUCCESSFUL`; 152 actionable tasks executed.
+- **MEASURED:** primary JUnit report: 170 tests, 0 failures, 0 errors, 3 existing skips. Focused `AcquisitionDiagnosticsTest`: 7 tests, 0 failures/errors/skips.
+- **MEASURED:** `git diff --check` passed. Primary debug APK SHA-256: `B45D3A6DC0274A2FFAE18C8E5F57C6E2110D73C306BEEC6CD9ACCCE2CA034CBF`. Not installed/device-tested; not a release artifact.
+- **OBSERVED:** Gradle 8.11.1 compatibility and deprecated Android GNSS API warnings remain. `:propagation-contract:test` has no test sources in this checkout.
+
+### State and remaining gates
+- **VERIFIED:** PR #8 remains open, draft, unmerged, and reported mergeable; current implementation commit is `d30a44b4a1617ebcfbfc80c07cbde631a976c42d`. The branch also contains a merge from current `main` to keep the handoff history aligned.
+- **OBSERVED:** exact-head GitHub Actions runs and combined statuses remain empty. This is not a green remote-CI receipt.
+- **UNVERIFIED:** actual Android callback integration and late-callback behavior at stop; physical-device stop/readback/export; abnormal process death before `SESSION_STOPPING`; accepted-send versus queue/database/export reconciliation; UI exposure.
+- The final snapshot is written only through the normal stop event. It is not guaranteed to survive process death before that event and may report nonzero callbacks-in-flight if platform callbacks are still running during cleanup.
+- Next P0 gate: add an injectable seam for actual status/navigation callback conversion and lifecycle testing; then reconcile source admission counters with persistence outcomes. P1 event-level AGC remains a separate milestone with explicit unsupported/empty/missingness semantics and API 26–32 guards.
+- User will conduct final device testing. No install, device test, RF activity, merge, or release occurred.

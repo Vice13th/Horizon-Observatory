@@ -2,6 +2,7 @@
 
 import horizon.observatory.domain.model.RawObservation
 import kotlinx.coroutines.channels.SendChannel
+import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
@@ -158,4 +159,32 @@ internal data class AcquisitionDiagnosticsSnapshot(
     val callbackDurationMaxNs: Long,
     val lastFailure: String?,
     val observationsByType: Map<String, AcquisitionObservationTypeSnapshot>,
-)
+) {
+    /** Stable JSON payload for the session-stop receipt; counters remain diagnostic, not integrity proof. */
+    fun toJsonObject(): JSONObject = JSONObject().apply {
+        put("sourceName", sourceName)
+        put("sessionId", sessionId)
+        put("callbackEventsReceived", callbackEventsReceived)
+        put("callbackEventsInFlight", callbackEventsInFlight)
+        put("expectedObservations", expectedObservations)
+        put("observationsConstructed", observationsConstructed)
+        put("sendAttempts", sendAttempts)
+        put("sendAccepted", sendAccepted)
+        put("sendRejectedCapacity", sendRejectedCapacity)
+        put("sendRejectedClosed", sendRejectedClosed)
+        put("constructionFailures", constructionFailures)
+        put("callbackDurationTotalNs", callbackDurationTotalNs)
+        put("callbackDurationMaxNs", callbackDurationMaxNs)
+        lastFailure?.let { put("lastFailure", it) }
+        put("observationsByType", JSONObject().apply {
+            observationsByType.forEach { (name, counters) ->
+                put(name, JSONObject()
+                    .put("observationsConstructed", counters.observationsConstructed)
+                    .put("sendAttempts", counters.sendAttempts)
+                    .put("sendAccepted", counters.sendAccepted)
+                    .put("sendRejectedCapacity", counters.sendRejectedCapacity)
+                    .put("sendRejectedClosed", counters.sendRejectedClosed))
+            }
+        })
+    }
+}

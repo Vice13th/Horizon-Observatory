@@ -107,6 +107,28 @@ class AcquisitionDiagnosticsTest {
     }
 
     @Test
+    fun snapshotJsonPreservesSessionAndPerTypeAdmissionCounters() {
+        val diagnostics = AcquisitionDiagnostics("gnss", sessionId = "session-42")
+        val channel = Channel<RawObservation>(capacity = 1)
+        val started = diagnostics.callbackStarted(expectedObservations = 1)
+        diagnostics.offer(channel) { observation() }
+        diagnostics.callbackFinished(started)
+
+        val json = diagnostics.snapshot().toJsonObject()
+        assertEquals("gnss", json.getString("sourceName"))
+        assertEquals("session-42", json.getString("sessionId"))
+        assertEquals(1L, json.getLong("callbackEventsReceived"))
+        assertEquals(1L, json.getLong("expectedObservations"))
+        assertEquals(1L, json.getLong("sendAccepted"))
+        assertEquals(
+            1L,
+            json.getJSONObject("observationsByType")
+                .getJSONObject(ObservationType.GNSS_RAW_MEASUREMENT.name)
+                .getLong("sendAccepted")
+        )
+    }
+
+    @Test
     fun callbackBatchExpectedCardinalityIsTrackedSeparatelyFromAdmissions() {
         val diagnostics = AcquisitionDiagnostics("gnss")
         val channel = Channel<RawObservation>(capacity = 2)

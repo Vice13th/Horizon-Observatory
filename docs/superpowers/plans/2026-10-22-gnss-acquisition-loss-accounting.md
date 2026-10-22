@@ -6,7 +6,7 @@
 
 **Architecture:** Introduce a small acquisition admission-accounting component that wraps a non-suspending `SendChannel.trySend` operation and exposes immutable counters. The canonical GNSS measurements callback records N expected output rows, one per `eventArgs.measurements` entry (canonical code does not add a clock row here). Single-row status/navigation callbacks and collection-valued antenna paths account for their actual output cardinality. Do not redesign callback buffer capacity, silently drop fewer events, or alter persistence/session state machines in P0.
 
-**Observed implementation state:** source-local counters are in-memory only; the snapshot is not yet persisted or exposed in UI/session audit. Queue/persistence losses remain separate follow-up work.
+**Current implementation state:** live counters are in-memory during collection. The GNSS source starts a fresh diagnostics window per service session, captures a collection-local snapshot during flow cleanup, and places the final snapshot in the existing SESSION_STOPPING system-event details so it is retained in normal session persistence/export. The snapshot is not reconciled with queue/persistence outcomes and is not exposed in UI; abnormal process death may prevent the stop receipt from being written.
 
 **Tech Stack:** Kotlin, Android `callbackFlow`, `kotlinx.coroutines.channels.SendChannel`, JUnit 4, existing Android Gradle flavors.
 
@@ -79,9 +79,9 @@
 
 - [x] `git diff --check` passes.
 - [x] Focused primitive tests observed failing before the implementation and passing after.
-- [x] Full `:app:testPrimaryDebugUnitTest` and `:app:assemblePrimaryDebug` passed in a forced 46-task run; 168 tests, 0 failures/errors, 3 skips.
-- [x] Changed files are limited to admission accounting, direct unit tests, roadmap, plan, README and status; original `C:\Projects\Horizon` remains untouched.
-- [x] Commit hash recorded: `34f00e6f2b1beb1458aa0e617089cf3e066f0eff`.
+- [x] Latest forced multi-flavor Gradle run passed (152 actionable tasks); primary unit report: 170 tests, 0 failures, 0 errors, 3 existing skips. T1 unit tests, OrbitCore bridge unit tests, and primary/T1/TS debug assembly also passed.
+- [x] Changed files cover admission accounting, GNSS source/session-stop integration, direct unit tests, roadmap, plan, README and status; original `C:\Projects\Horizon` remains untouched.
+- [x] Initial primitive commit recorded: `34f00e6f2b1beb1458aa0e617089cf3e066f0eff`; subsequent follow-up commit hashes are recorded in the dated receipts below.
 
 
 
@@ -108,3 +108,27 @@
 - **MEASURED — cross-flavor regression:** `:app:testT1DebugUnitTest :propagation-contract:test :orbitcore-bridge:testDebugUnitTest :app:assembleT1Debug --rerun-tasks` completed `BUILD SUCCESSFUL` (70 actionable tasks executed). `:propagation-contract:test` has no test sources in this checkout; OrbitCore bridge debug unit tests executed successfully.
 - **MEASURED — third app flavor:** `:app:assembleTsDebug` completed `BUILD SUCCESSFUL` (40 actionable tasks; 38 executed, 2 up-to-date).
 - **Boundary:** these are local build/unit-test receipts, not Android instrumentation, install, launch, receiver behavior, or field validation.
+
+
+---
+
+## Session-scoped diagnostic receipt — 2026-10-22
+
+### Implementation
+- **CHANGE:** added beginSession(sessionId) to reset the GNSS accounting window at session start. Each callbackFlow collection captures its own diagnostics object, so a later session cannot reset counters that callbacks from an earlier collection still reference.
+- **CHANGE:** flow cleanup captures the final collection-local snapshot after unregister attempts. A delayed cleanup writes the snapshot only if its diagnostics object is still the source's current session instance, preventing an older collection from overwriting a newer session snapshot.
+- **CHANGE:** the existing SESSION_STOPPING system event now stores a gnssAcquisitionDiagnostics object containing session ID, callback/in-flight counts, expected/constructed/attempted/admitted/rejected counts, construction failures, callback durations, last failure when present, and per-observation-type counters. Because this uses the existing stop event, no extra sequence row is introduced; normal session persistence/export includes the receipt.
+- **CHANGE:** AcquisitionDiagnosticsSnapshot.toJsonObject has a unit test asserting session identity and per-type admission counters survive serialization.
+
+### Verification
+- **MEASURED:** forced command :app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug :app:testT1DebugUnitTest :app:assembleT1Debug :app:assembleTsDebug :propagation-contract:test :orbitcore-bridge:testDebugUnitTest --rerun-tasks completed BUILD SUCCESSFUL; 152 actionable tasks executed.
+- **MEASURED:** primary JUnit HTML summary reports 170 tests, 0 failures, 3 ignored/existing skips; focused AcquisitionDiagnosticsTest XML reports 7 tests, 0 failures, 0 errors, 0 skipped.
+- **MEASURED:** git diff --check returned no whitespace errors; only LF-to-CRLF working-tree warnings appeared.
+- **MEASURED:** primary debug APK SHA-256: B45D3A6DC0274A2FFAE18C8E5F57C6E2110D73C306BEEC6CD9ACCCE2CA034CBF. It was not installed or device-tested and is not a release artifact.
+- **OBSERVED:** Gradle 8.11.1 compatibility and deprecated Android GNSS API warnings remain.
+
+### Boundaries and open gates
+- **VERIFIED by code path:** the final counters are embedded in SESSION_STOPPING details, which are persisted as a system-event observation and included in the existing observation export path. No separate database schema or new sequence row was introduced.
+- **UNVERIFIED:** normal physical-device stop/readback/export of this payload; abnormal process death before SESSION_STOPPING; late callbacks still in flight at snapshot time; repeated-flow lifecycle under real Android callback scheduling; source accepted-send vs queue/persistence/export reconciliation; UI exposure.
+- Counters describe callbacks delivered to Horizon only. They do not estimate receiver/Android events never delivered, do not constitute persistence acknowledgements, and do not change fail-closed integrity semantics.
+- Final device testing remains with the user; no installation, device test, RF activity, merge, or release occurred.

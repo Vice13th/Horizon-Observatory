@@ -34,10 +34,19 @@ import java.util.Base64
 import java.util.concurrent.Executor
 
 class GnssObservationSource(private val context: Context) : ObservationSource {
-    private val diagnostics = AcquisitionDiagnostics("gnss")
+    @Volatile private var diagnostics = AcquisitionDiagnostics("gnss")
+    @Volatile private var latestDiagnosticsSnapshot: AcquisitionDiagnosticsSnapshot? = null
 
-    /** Latest source-local admission accounting; session queue/persistence diagnostics are separate. */
-    internal fun diagnosticsSnapshot(): AcquisitionDiagnosticsSnapshot = diagnostics.snapshot()
+    /** Start a fresh accounting window before the service collects this source for a session. */
+    internal fun beginSession(sessionId: String) {
+        require(sessionId.isNotBlank()) { "sessionId must not be blank" }
+        diagnostics = AcquisitionDiagnostics("gnss", sessionId = sessionId)
+        latestDiagnosticsSnapshot = null
+    }
+
+    /** Latest session-local admission accounting; this is not a persistence acknowledgement. */
+    internal fun diagnosticsSnapshot(): AcquisitionDiagnosticsSnapshot =
+        latestDiagnosticsSnapshot ?: diagnostics.snapshot()
 
     private val locationManager = context.getSystemService(LocationManager::class.java)
     private val executor: Executor = Executor { it.run() }
@@ -51,6 +60,9 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
         }
 
     override val observationFlow: Flow<RawObservation> = callbackFlow {
+        // Capture one immutable diagnostics instance for this flow collection. A later session
+        // cannot reset counters that callbacks from this collection are still using.
+        val diagnostics = this@GnssObservationSource.diagnostics
         val manager = locationManager ?: run { close(); return@callbackFlow }
         if (status != SourceStatus.AVAILABLE) { close(); return@callbackFlow }
 
@@ -227,6 +239,10 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
             }
             if (Build.VERSION.SDK_INT >= 30 && antennaRegistered && antennaListener != null) {
                 runCatching { manager.unregisterAntennaInfoListener(antennaListener) }
+            }
+            // Do not let a delayed cleanup from an older collection overwrite a newer session.
+            if (this@GnssObservationSource.diagnostics === diagnostics) {
+                latestDiagnosticsSnapshot = diagnostics.snapshot()
             }
         }
     }

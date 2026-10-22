@@ -104,3 +104,35 @@ Use **VERIFIED** only for facts freshly checked against the named source. Use **
 ### Research tool access observed
 - **OBSERVED:** Exa returned useful official Android API content. SciSpace returned relevant paper metadata. Consensus search plus fetch succeeded for three records. Acumen request failed internally. Elicit and Sider results were included in a multi-call response but output truncation prevented reliable per-provider auditing; do not label their full workflow validated.
 - No edits to either PR branch, no comments or reviews posted, no merge, no Gradle run, and no device operation were performed in this checkpoint.
+
+
+## Development continuation checkpoint — 2026-10-22 (PR #8 follow-up)
+
+### Source change
+- **VERIFIED:** commit `51e3db5420b3f5cef206ece936292b21d3282942` was pushed to `feat/gnss-acquisition-loss-accounting-2026-10-22`; PR #8 head now points to this commit.
+- **CHANGE:** GNSS satellite-status and navigation-message payload construction now occurs inside `AcquisitionDiagnostics.recordSingleCallback`, ensuring exceptions during payload construction/serialization are included in the existing construction-failure accounting boundary.
+- **CHANGE:** added `singleCallbackConstructionFailureIsCountedAndCallbackFinished` to verify expected cardinality, failure classification, no false constructed/send-attempt counts, and cleanup of the in-flight callback counter.
+- Raw observation fields, timestamps, provenance, callback fan-out, non-blocking `trySend`, and fail-closed session-integrity semantics were not intentionally changed.
+
+### Fresh local verification (Hive / Windows canonical checkout)
+- **MEASURED:** `:app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug --rerun-tasks` — BUILD SUCCESSFUL, 46 tasks; 169 tests, 0 failures, 0 errors, 3 existing skips.
+- **MEASURED:** `:app:testT1DebugUnitTest :propagation-contract:test :orbitcore-bridge:testDebugUnitTest :app:assembleT1Debug --rerun-tasks` — BUILD SUCCESSFUL, 70 actionable tasks. `:propagation-contract:test` has no test sources in this checkout.
+- **MEASURED:** `:app:assembleTsDebug` — BUILD SUCCESSFUL, 40 actionable tasks (38 executed, 2 up-to-date).
+- **MEASURED:** `git diff --check` passed before commit. Primary debug APK SHA-256: `61879CA6F44CE965ABFF202B810016BB04381DDBE0C92B5E6C66D81100ED0732`.
+- **Boundary:** local APK was not installed or device-tested; it is not a release artifact. Gradle 8.11.1 compatibility and deprecated Android GNSS measurement API warnings remain.
+
+### PR and CI state after push
+- **VERIFIED:** PR #8 remains open/draft/unmerged and is currently reported mergeable. Latest head SHA: `51e3db5420b3f5cef206ece936292b21d3282942`.
+- **OBSERVED:** exact-head Actions workflow list and combined commit statuses returned empty. This is not a green CI receipt; remote CI is still unverified.
+- **VERIFIED:** PR #8 body now includes the new finding, fix commit, test totals, cross-flavor results, and artifact boundary.
+- No merge, review submission, device install, or RF operation occurred.
+
+### Remaining P0/P1 gates
+1. Add a test seam for actual Android status/navigation callback payload conversion and exception behavior.
+2. Decide and test diagnostics lifecycle/session association across repeated flow collections; current counters are source-local/in-memory and default session ID is `UNASSIGNED`.
+3. Add reconciliation with queue/persistence outcomes before claiming end-to-end admission completeness.
+4. Confirm canonical CI workflow/branch protection; no remote check run is currently verified.
+5. Keep API-33 event-level AGC, missingness semantics, multi-indicator state machine, PNT fallback, and independent field ground truth as separate future milestones.
+6. User conducts final device testing; no field-test or release-ready claim is made.
+
+This dated section supersedes the earlier “no Gradle run / no PR edits” statement for this continuation only; that earlier statement remains a correct receipt for its original checkpoint.

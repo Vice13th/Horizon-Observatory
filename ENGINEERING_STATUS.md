@@ -4,6 +4,17 @@
 > **Current remote HEAD: **inspect `main` directly; do not hard-code a SHA inside status documents.**
 > **Current checkpoint:** HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED
 
+## GNSS acquisition loss accounting — isolated branch checkpoint (2026-10-22)
+
+**VERIFIED in canonical checkout, not merged:** `feat/gnss-acquisition-loss-accounting-2026-10-22` adds a source-local admission diagnostics primitive and routes each existing GNSS callback `trySend` path through it. The primitive counts callback batches, expected output rows, construction attempts/successes, send attempts, admitted rows, capacity rejections, closed-channel rejections, construction failures, and per-observation-type outcomes. A source-local snapshot can be inspected in code. Live counters remain in-memory while collecting; the final session-tagged snapshot is now recorded inside the existing SESSION_STOPPING system-event details and follows the normal persistence/export path. This does not reconcile send acceptance with queue/persistence outcomes, guarantee complete callbacks from Android, replace the session queue/drop ledger, or change session integrity rules.
+
+**MEASURED — follow-up review 2026-10-22:** after moving satellite-status/navigation payload construction inside `recordSingleCallback` and adding the session-scoped stop receipt, a fresh forced `:app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug --rerun-tasks` completed with BUILD SUCCESSFUL (46 tasks executed). Test report: 170 tests, 0 failures, 0 errors, 3 existing skips. `git diff --check` passed. Fresh local debug APK SHA-256: `B45D3A6DC0274A2FFAE18C8E5F57C6E2110D73C306BEEC6CD9ACCCE2CA034CBF`. This is a build artifact only; it was not installed or device-tested and is not a release artifact. Compiler still reports Gradle 8.11.1 compatibility and deprecated Android API warnings. Cross-flavor follow-up also passed `:app:testT1DebugUnitTest :propagation-contract:test :orbitcore-bridge:testDebugUnitTest :app:assembleT1Debug --rerun-tasks` (70 actionable tasks) and `:app:assembleTsDebug` (40 actionable tasks). `:propagation-contract:test` has no test sources in this checkout. These validate local build/unit-test gates only; they are not field interference validation.
+
+**P1 still NOT IMPLEMENTED:** API-33 `GnssMeasurementsEvent.getGnssAutomaticGainControls()` ingestion, capability/missingness semantics, multi-indicator interference/spoofing state machine, alternate PNT/holdover, and device/session-separated receiver ground truth. Do not claim jamming detection or continuous satellite lock from this change.
+
+Plan: `docs/superpowers/plans/2026-10-22-gnss-acquisition-loss-accounting.md`.
+Research contract: `docs/research/GNSS_INTERFERENCE_DETECTION_AND_RESILIENT_PNT_ROADMAP_2026-10-22.md`.
+
 ## Current verdict
 
 **GNSS evidence foundation: VERIFIED / CLOSED.**  

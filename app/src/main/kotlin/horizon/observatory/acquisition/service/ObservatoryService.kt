@@ -139,6 +139,7 @@ class ObservatoryService : Service() {
             currentSessionId = sessionId
             sequencer = SessionSequencer()
             resilienceRuntime = ResilienceRuntime()
+            gnssRawSource.beginSession(sessionId)
 
             val report = capabilityScanner.buildReport()
             val device = report.json.optJSONObject("device")?.toString() ?: "{}"
@@ -233,7 +234,14 @@ class ObservatoryService : Service() {
                 sourceJobs.clear()
 
                 repository.beginStopping(sessionId)
-                persistSystemEvent(sessionId, "SESSION_STOPPING", JSONObject())
+                persistSystemEvent(
+                    sessionId,
+                    "SESSION_STOPPING",
+                    JSONObject().put(
+                        "gnssAcquisitionDiagnostics",
+                        gnssRawSource.diagnosticsSnapshot().toJsonObject()
+                    )
+                )
 
                 val drained = withTimeoutOrNull(DRAIN_TIMEOUT_MS) {
                 while (observationQueue.pendingCount(sessionId) > 0) observationQueue.drain(sessionId)

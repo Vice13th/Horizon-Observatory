@@ -14,6 +14,8 @@ import android.os.Handler
 import android.os.Looper
 import androidx.core.location.LocationManagerCompat
 import androidx.core.content.ContextCompat
+import horizon.observatory.acquisition.base.AcquisitionDiagnostics
+import horizon.observatory.acquisition.base.AcquisitionDiagnosticsSnapshot
 import horizon.observatory.acquisition.base.ObservationSource
 import horizon.observatory.core.time.TimestampEngine
 import horizon.observatory.domain.model.CapabilityState
@@ -32,6 +34,20 @@ import java.util.Base64
 import java.util.concurrent.Executor
 
 class GnssObservationSource(private val context: Context) : ObservationSource {
+    @Volatile private var diagnostics = AcquisitionDiagnostics("gnss")
+    @Volatile private var latestDiagnosticsSnapshot: AcquisitionDiagnosticsSnapshot? = null
+
+    /** Start a fresh accounting window before the service collects this source for a session. */
+    internal fun beginSession(sessionId: String) {
+        require(sessionId.isNotBlank()) { "sessionId must not be blank" }
+        diagnostics = AcquisitionDiagnostics("gnss", sessionId = sessionId)
+        latestDiagnosticsSnapshot = null
+    }
+
+    /** Latest session-local admission accounting; this is not a persistence acknowledgement. */
+    internal fun diagnosticsSnapshot(): AcquisitionDiagnosticsSnapshot =
+        latestDiagnosticsSnapshot ?: diagnostics.snapshot()
+
     private val locationManager = context.getSystemService(LocationManager::class.java)
     private val executor: Executor = Executor { it.run() }
 
@@ -44,57 +60,72 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
         }
 
     override val observationFlow: Flow<RawObservation> = callbackFlow {
+        // Capture one immutable diagnostics instance for this flow collection. A later session
+        // cannot reset counters that callbacks from this collection are still using.
+        val diagnostics = this@GnssObservationSource.diagnostics
         val manager = locationManager ?: run { close(); return@callbackFlow }
         if (status != SourceStatus.AVAILABLE) { close(); return@callbackFlow }
 
         val measurementCallback = object : GnssMeasurementsEvent.Callback() {
             override fun onGnssMeasurementsReceived(eventArgs: GnssMeasurementsEvent) {
-                eventArgs.measurements.forEach { measurement ->
-                    trySend(measurement.toRawObservation(eventArgs.clock.elapsedRealtimeNanos))
+                val started = diagnostics.callbackStarted(expectedObservations = eventArgs.measurements.size)
+                try {
+                    eventArgs.measurements.forEach { measurement ->
+                        diagnostics.offer(channel) { measurement.toRawObservation(eventArgs.clock.elapsedRealtimeNanos) }
+                    }
+                } finally {
+                    diagnostics.callbackFinished(started)
                 }
             }
         }
         val statusCallback = object : GnssStatus.Callback() {
             override fun onSatelliteStatusChanged(status: GnssStatus) {
                 val elapsed = android.os.SystemClock.elapsedRealtimeNanos()
-                val satellites = JSONArray()
-                for (i in 0 until status.satelliteCount) {
-                    val row = JSONObject()
-                        .put("svid", status.getSvid(i))
-                        .put("constellationType", status.getConstellationType(i))
-                        .put("azimuthDegrees", status.getAzimuthDegrees(i).toDouble())
-                        .put("elevationDegrees", status.getElevationDegrees(i).toDouble())
-                        .put("cn0DbHz", status.getCn0DbHz(i).toDouble())
-                        .put("usedInFix", status.usedInFix(i))
-                        .put("hasAlmanacData", status.hasAlmanacData(i))
-                        .put("hasEphemerisData", status.hasEphemerisData(i))
-                    if (Build.VERSION.SDK_INT >= 26 && status.hasCarrierFrequencyHz(i)) {
-                        row.put("carrierFrequencyHz", status.getCarrierFrequencyHz(i).toDouble())
-                    } else {
-                        row.put("carrierFrequencyHz", JSONObject.NULL)
+                diagnostics.recordSingleCallback(
+                    channel = channel,
+                    block = {
+                        // Keep the entire callback-to-observation conversion inside the diagnostics
+                        // boundary so serialization/accessor failures count as construction failures.
+                        val satellites = JSONArray()
+                        for (i in 0 until status.satelliteCount) {
+                            val row = JSONObject()
+                                .put("svid", status.getSvid(i))
+                                .put("constellationType", status.getConstellationType(i))
+                                .put("azimuthDegrees", status.getAzimuthDegrees(i).toDouble())
+                                .put("elevationDegrees", status.getElevationDegrees(i).toDouble())
+                                .put("cn0DbHz", status.getCn0DbHz(i).toDouble())
+                                .put("usedInFix", status.usedInFix(i))
+                                .put("hasAlmanacData", status.hasAlmanacData(i))
+                                .put("hasEphemerisData", status.hasEphemerisData(i))
+                            if (Build.VERSION.SDK_INT >= 26 && status.hasCarrierFrequencyHz(i)) {
+                                row.put("carrierFrequencyHz", status.getCarrierFrequencyHz(i).toDouble())
+                            } else {
+                                row.put("carrierFrequencyHz", JSONObject.NULL)
+                            }
+                            if (Build.VERSION.SDK_INT >= 30 && status.hasBasebandCn0DbHz(i)) {
+                                row.put("basebandCn0DbHz", status.getBasebandCn0DbHz(i).toDouble())
+                            } else {
+                                row.put("basebandCn0DbHz", JSONObject.NULL)
+                            }
+                            satellites.put(row)
+                        }
+                        val payload = JSONObject()
+                            .put("satelliteCount", status.satelliteCount)
+                            .put("satellites", satellites)
+                        RawObservation(
+                            type = ObservationType.GNSS_STATUS,
+                            utcTimestampMs = TimestampEngine.elapsedNanosToUtcMillis(elapsed),
+                            monotonicTimestampNs = elapsed,
+                            provider = "GnssStatus",
+                            payloadJson = payload.toString(),
+                            technology = "GNSS",
+                            capabilityState = CapabilityState.AVAILABLE_NOW,
+                            evidenceStatus = EvidenceStatus.MEASURED,
+                            provenance = ObservationProvenance.RAW_ACQUISITION,
+                            timestampDomain = TimestampDomain.ANDROID_ELAPSED_REALTIME_NANOS
+                        )
                     }
-                    if (Build.VERSION.SDK_INT >= 30 && status.hasBasebandCn0DbHz(i)) {
-                        row.put("basebandCn0DbHz", status.getBasebandCn0DbHz(i).toDouble())
-                    } else {
-                        row.put("basebandCn0DbHz", JSONObject.NULL)
-                    }
-                    satellites.put(row)
-                }
-                val payload = JSONObject()
-                    .put("satelliteCount", status.satelliteCount)
-                    .put("satellites", satellites)
-                trySend(RawObservation(
-                    type = ObservationType.GNSS_STATUS,
-                    utcTimestampMs = TimestampEngine.elapsedNanosToUtcMillis(elapsed),
-                    monotonicTimestampNs = elapsed,
-                    provider = "GnssStatus",
-                    payloadJson = payload.toString(),
-                    technology = "GNSS",
-                    capabilityState = CapabilityState.AVAILABLE_NOW,
-                    evidenceStatus = EvidenceStatus.MEASURED,
-                    provenance = ObservationProvenance.RAW_ACQUISITION,
-                    timestampDomain = TimestampDomain.ANDROID_ELAPSED_REALTIME_NANOS
-                ))
+                )
             }
         }
         fun antennaObservation(info: GnssAntennaInfo): RawObservation {
@@ -121,33 +152,44 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
 
         val antennaListener = if (Build.VERSION.SDK_INT >= 30) object : GnssAntennaInfo.Listener {
             override fun onGnssAntennaInfoReceived(antennaInfos: MutableList<GnssAntennaInfo>) {
-                antennaInfos.forEach { trySend(antennaObservation(it)) }
+                val started = diagnostics.callbackStarted(expectedObservations = antennaInfos.size)
+                try {
+                    antennaInfos.forEach { info -> diagnostics.offer(channel) { antennaObservation(info) } }
+                } finally {
+                    diagnostics.callbackFinished(started)
+                }
             }
         } else null
 
         val navCallback = object : GnssNavigationMessage.Callback() {
             override fun onGnssNavigationMessageReceived(event: GnssNavigationMessage) {
                 val elapsed = android.os.SystemClock.elapsedRealtimeNanos()
-                val payload = JSONObject()
-                    .put("type", event.type)
-                    .put("svid", event.svid)
-                    .put("messageId", event.messageId)
-                    .put("submessageId", event.submessageId)
-                    .put("status", event.status)
-                    .put("dataLength", event.data.size)
-                    .put("dataBase64", Base64.getEncoder().encodeToString(event.data))
-                trySend(RawObservation(
-                    type = ObservationType.GNSS_NAVIGATION_MESSAGE,
-                    utcTimestampMs = TimestampEngine.elapsedNanosToUtcMillis(elapsed),
-                    monotonicTimestampNs = elapsed,
-                    provider = "GnssNavigationMessage",
-                    payloadJson = payload.toString(),
-                    technology = "GNSS",
-                    capabilityState = CapabilityState.AVAILABLE_NOW,
-                    evidenceStatus = EvidenceStatus.MEASURED,
-                    provenance = ObservationProvenance.RAW_ACQUISITION,
-                    timestampDomain = TimestampDomain.ANDROID_ELAPSED_REALTIME_NANOS
-                ))
+                diagnostics.recordSingleCallback(
+                    channel = channel,
+                    block = {
+                        // Include payload serialization and byte encoding in callback diagnostics.
+                        val payload = JSONObject()
+                            .put("type", event.type)
+                            .put("svid", event.svid)
+                            .put("messageId", event.messageId)
+                            .put("submessageId", event.submessageId)
+                            .put("status", event.status)
+                            .put("dataLength", event.data.size)
+                            .put("dataBase64", Base64.getEncoder().encodeToString(event.data))
+                        RawObservation(
+                            type = ObservationType.GNSS_NAVIGATION_MESSAGE,
+                            utcTimestampMs = TimestampEngine.elapsedNanosToUtcMillis(elapsed),
+                            monotonicTimestampNs = elapsed,
+                            provider = "GnssNavigationMessage",
+                            payloadJson = payload.toString(),
+                            technology = "GNSS",
+                            capabilityState = CapabilityState.AVAILABLE_NOW,
+                            evidenceStatus = EvidenceStatus.MEASURED,
+                            provenance = ObservationProvenance.RAW_ACQUISITION,
+                            timestampDomain = TimestampDomain.ANDROID_ELAPSED_REALTIME_NANOS
+                        )
+                    }
+                )
             }
         }
 
@@ -169,7 +211,13 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
         if (Build.VERSION.SDK_INT >= 30 && antennaListener != null) {
             antennaRegistered = runCatching { manager.registerAntennaInfoListener(executor, antennaListener) }.getOrDefault(false)
             if (Build.VERSION.SDK_INT >= 31) {
-                runCatching { manager.getGnssAntennaInfos() }.getOrNull().orEmpty().forEach { trySend(antennaObservation(it)) }
+                val antennaInfos = runCatching { manager.getGnssAntennaInfos() }.getOrNull().orEmpty()
+                val started = diagnostics.callbackStarted(expectedObservations = antennaInfos.size)
+                try {
+                    antennaInfos.forEach { info -> diagnostics.offer(channel) { antennaObservation(info) } }
+                } finally {
+                    diagnostics.callbackFinished(started)
+                }
             }
         }
 
@@ -191,6 +239,10 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
             }
             if (Build.VERSION.SDK_INT >= 30 && antennaRegistered && antennaListener != null) {
                 runCatching { manager.unregisterAntennaInfoListener(antennaListener) }
+            }
+            // Do not let a delayed cleanup from an older collection overwrite a newer session.
+            if (this@GnssObservationSource.diagnostics === diagnostics) {
+                latestDiagnosticsSnapshot = diagnostics.snapshot()
             }
         }
     }

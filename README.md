@@ -79,6 +79,12 @@ See:
 - `docs/LATEST_RUNTIME_EVIDENCE_C40.md`
 - `docs/receipts/POST_MIGRATION_REGRESSION_2026-10-06.md`
 
+## GNSS acquisition diagnostics — implementation branch (2026-10-22)
+
+A test-first P0 implementation now adds source-local, thread-safe accounting of callbacks Horizon receives and output-row admission through `trySend`. It distinguishes successful admission, bounded-channel capacity rejection, channel-closed rejection, and observation-construction failures; collection callbacks record expected fan-out. A session-scoped final snapshot is included in the existing SESSION_STOPPING system-event details and therefore the normal session export. This does **not** measure events never delivered by Android/the receiver or reconcile accepted sends with queue/persistence outcomes, so it does not claim end-to-end persistence completeness. Session integrity remains fail-closed.
+
+Current branch: `feat/gnss-acquisition-loss-accounting-2026-10-22`. Not merged. Latest P0 verification after callback payload-boundary hardening and session-scoped stop receipt: `:app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug --rerun-tasks` passed; 170 tests, 0 failures/errors, 3 existing skips. The rebuilt debug APK was not installed or device-tested and is not a release artifact. Additional local gates passed: `:app:testT1DebugUnitTest :propagation-contract:test :orbitcore-bridge:testDebugUnitTest :app:assembleT1Debug --rerun-tasks` and `:app:assembleTsDebug`; the propagation-contract test task has no test sources in this checkout. Event-level API-33 AGC capture, the jamming/spoofing state machine, fallback PNT, and RF/device validation remain future work. See [GNSS research roadmap](docs/research/GNSS_INTERFERENCE_DETECTION_AND_RESILIENT_PNT_ROADMAP_2026-10-22.md).
+
 ## Satellite & Orbital Observation
 
 Horizon is designed to connect what a device **measures in the sky** with what an orbital model can **predict about objects in orbit**.

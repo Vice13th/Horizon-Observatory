@@ -4,19 +4,24 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.util.Log
-import horizon.observatory.domain.model.IntegrityAudit
+import horizon.observatory.domain.model.IncrementalIntegrityAudit
 import horizon.observatory.domain.model.RawObservationView
 import horizon.observatory.analysis.gnss.GnssCorrelationEngine
-import horizon.observatory.domain.gnss.GnssDomainSnapshot
 import horizon.observatory.export.model.DatasetManifest
 import horizon.observatory.storage.entity.ObservationEntity
 import horizon.observatory.storage.entity.SessionEntity
 import horizon.observatory.storage.repository.SessionRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import org.json.JSONObject
+import java.io.BufferedWriter
 import java.io.File
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -40,33 +45,82 @@ class ExportEngine(
         val session = repository.getSession(sessionId)
             ?: return@withContext ExportResult.Failed("lookup", "No session found for id=$sessionId")
 
-        val tempDir = File(context.cacheDir, "export_tmp_$sessionId").apply {
-            deleteRecursively()
-            check(mkdirs()) { "Unable to create export temp directory: $this" }
-        }
+        val safeSessionToken = safeFileToken(sessionId)
+        val tempDir = File(context.cacheDir, "export_tmp_" + safeSessionToken + "_" + System.nanoTime())
+        var temporaryZip: File? = null
 
         try {
-            val observations = repository.getObservationsSnapshot(sessionId)
+            check(tempDir.mkdirs()) { "Unable to create export temp directory: $tempDir" }
             val roomCount = repository.countObservations(sessionId)
-            if (observations.size != roomCount) {
-                return@withContext ExportResult.Failed(
-                    "pre-write verification",
-                    "Snapshot size (${observations.size}) != Room COUNT(*) ($roomCount)"
-                )
+            val auditBuilder = IncrementalIntegrityAudit()
+            val gnssObservations = ArrayList<ObservationEntity>()
+            var preflightCount = 0
+            var systemEventCount = 0
+            var errorEventCount = 0
+            var gnssPayloadChars = 0L
+            var gnssStatusSatelliteCount = 0
+            var afterSequence = Long.MIN_VALUE
+
+            // Pass 1: ordered keyset pages. Only scalar audit state and the bounded GNSS
+            // correlation subset are retained; the session-wide observation list is never built.
+            while (true) {
+                currentCoroutineContext().ensureActive()
+                val page = repository.getObservationPage(sessionId, afterSequence, PAGE_SIZE)
+                if (page.isEmpty()) break
+                for (row in page) {
+                    preflightCount += 1
+                    auditBuilder.append(
+                        RawObservationView(
+                            sequenceNumber = row.sequenceNumber,
+                            sourceMonotonicTimestampNs = row.monotonicTimestampNs,
+                            ingestionMonotonicTimestampNs = row.ingestionMonotonicTimestampNs,
+                            provider = row.provider
+                        )
+                    )
+                    when (row.type) {
+                        "SYSTEM_EVENT" -> systemEventCount += 1
+                        "ERROR_EVENT" -> errorEventCount += 1
+                    }
+
+                    if (row.type in GNSS_CORRELATION_TYPES) {
+                        // Correlation reads rawPayloadJson only. Drop the duplicated normalized JSON
+                        // from this bounded working set to keep large-session export below the heap ceiling.
+                        gnssObservations += row.copy(normalizedPayloadJson = "{}")
+                        gnssPayloadChars += row.rawPayloadJson.length.toLong()
+                        if (gnssObservations.size > MAX_GNSS_CORRELATION_SOURCE_ROWS ||
+                            gnssPayloadChars > MAX_GNSS_CORRELATION_PAYLOAD_CHARS
+                        ) {
+                            return@withContext ExportResult.Failed(
+                                "GNSS correlation safety limit",
+                                "Correlation input exceeded its explicit row/payload budget; no observations were truncated or exported."
+                            )
+                        }
+                        if (row.type == "GNSS_STATUS") {
+                            val satellites = runCatching {
+                                JSONObject(row.rawPayloadJson).optJSONArray("satellites")?.length() ?: 0
+                            }.getOrDefault(0)
+                            gnssStatusSatelliteCount += satellites
+                            if (satellites > MAX_SATELLITES_PER_STATUS_ROW ||
+                                gnssStatusSatelliteCount > MAX_GNSS_STATUS_SATELLITES
+                            ) {
+                                return@withContext ExportResult.Failed(
+                                    "GNSS correlation safety limit",
+                                    "GNSS status satellite-row budget exceeded; export aborted without altering source evidence."
+                                )
+                            }
+                        }
+                    }
+                }
+                afterSequence = page.last().sequenceNumber
             }
 
-            val audit = IntegrityAudit.audit(
-                observations.map {
-                    RawObservationView(
-                        sequenceNumber = it.sequenceNumber,
-                        sourceMonotonicTimestampNs = it.monotonicTimestampNs,
-                        ingestionMonotonicTimestampNs = it.ingestionMonotonicTimestampNs,
-                        provider = it.provider
-                    )
-                }
-            )
-            val systemEvents = observations.filter { it.type == "SYSTEM_EVENT" }
-            val errorEvents = observations.filter { it.type == "ERROR_EVENT" }
+            if (preflightCount != roomCount) {
+                return@withContext ExportResult.Failed(
+                    "pre-write verification",
+                    "Paged preflight count ($preflightCount) != Room COUNT(*) ($roomCount)"
+                )
+            }
+            val audit = auditBuilder.finish()
 
             val manifest = DatasetManifest(
                 exportTimestampUtcMs = System.currentTimeMillis(),
@@ -74,50 +128,91 @@ class ExportEngine(
                 sessionId = sessionId,
                 deviceManufacturer = session.deviceManufacturer,
                 deviceModel = session.deviceModel,
-                totalObservations = observations.size,
-                totalSystemEvents = systemEvents.size,
-                totalErrorEvents = errorEvents.size,
+                totalObservations = roomCount,
+                totalSystemEvents = systemEventCount,
+                totalErrorEvents = errorEventCount,
                 startTimeUtcMs = session.startTimeMs,
                 endTimeUtcMs = session.endTimeMs,
                 capabilityReportJson = session.capabilityReportJson,
                 permissionStateJson = session.permissionStateJson,
-                sequenceMin = repository.minSequence(sessionId),
-                sequenceMax = repository.maxSequence(sessionId),
+                sequenceMin = audit.firstSequence,
+                sequenceMax = audit.lastSequence,
                 integrityClean = audit.isClean,
                 sequenceContiguous = audit.sequenceContiguous,
                 ingestionTimestampsNonDecreasing = audit.ingestionTimestampsNonDecreasing,
                 ingestionTimestampedObservationCount = audit.ingestionTimestampedObservationCount,
                 sourceTimestampRegressions = audit.sourceTimestampRegressions,
-                sourceTimestampedObservationCount = audit.sourceTimestampedObservationCount
+                sourceTimestampedObservationCount = audit.sourceTimestampedObservationCount,
+                gnssDeliveryDiagnosticsJson = runCatching {
+                    JSONObject(session.deviceMetadataJson).optJSONObject("gnssDeliveryDiagnostics")?.toString() ?: "{}"
+                }.getOrDefault("{}")
             )
 
             val manifestFile = File(tempDir, "dataset_manifest.json")
             manifestFile.writeText(manifest.toJson().toString(2))
 
             val jsonFile = File(tempDir, "observations.json")
-            val jsonArray = JSONArray()
-            observations.forEach { jsonArray.put(it.toJson()) }
-            jsonFile.writeText(jsonArray.toString(2))
-
             val csvFile = File(tempDir, "observations.csv")
-            csvFile.bufferedWriter().use { writer ->
-                writer.appendLine(CSV_HEADER)
-                observations.forEach { writer.appendLine(it.toCsvRow()) }
-            }
-
             val eventsJsonFile = File(tempDir, "session_events.json")
-            val eventsJson = JSONArray()
-            (systemEvents + errorEvents).sortedBy { it.sequenceNumber }.forEach { eventsJson.put(it.toJson()) }
-            eventsJsonFile.writeText(eventsJson.toString(2))
-
             val eventsCsvFile = File(tempDir, "session_events.csv")
-            eventsCsvFile.bufferedWriter().use { writer ->
-                writer.appendLine(EVENT_CSV_HEADER)
-                (systemEvents + errorEvents).sortedBy { it.sequenceNumber }.forEach { writer.appendLine(it.toEventCsvRow()) }
+            val sessionLogFile = File(tempDir, "session_log.txt")
+            var jsonCount = 0
+            var eventJsonCount = 0
+            var outputCount = 0
+            var outputEventCount = 0
+
+            // Pass 2: stream all primary exports from bounded keyset pages in sequence order.
+            val jsonArray = StreamingJsonArrayWriter.open(jsonFile)
+            val eventJsonArray = StreamingJsonArrayWriter.open(eventsJsonFile)
+            try {
+                jsonArray.use { json ->
+                    eventJsonArray.use { events ->
+                        csvFile.bufferedWriter().use { csvWriter ->
+                            eventsCsvFile.bufferedWriter().use { eventCsvWriter ->
+                                sessionLogFile.bufferedWriter().use { logWriter ->
+                                    csvWriter.appendLine(CSV_HEADER)
+                                    eventCsvWriter.appendLine(EVENT_CSV_HEADER)
+                                    writeSessionLogHeader(session, roomCount, audit, logWriter)
+                                    var outputAfterSequence = Long.MIN_VALUE
+                                    while (true) {
+                                        currentCoroutineContext().ensureActive()
+                                        val page = repository.getObservationPage(sessionId, outputAfterSequence, PAGE_SIZE)
+                                        if (page.isEmpty()) break
+                                        for (row in page) {
+                                            json.append(row.toJson())
+                                            csvWriter.appendLine(row.toCsvRow())
+                                            if (row.type == "SYSTEM_EVENT" || row.type == "ERROR_EVENT") {
+                                                events.append(row.toJson())
+                                                eventCsvWriter.appendLine(row.toEventCsvRow())
+                                                logWriter.appendLine("[seq=" + row.sequenceNumber + "] [" + row.timestampUtcMs + "] [" + row.type + "] [" + row.provider + "] " + row.rawPayloadJson)
+                                                outputEventCount += 1
+                                            }
+                                            outputCount += 1
+                                        }
+                                        outputAfterSequence = page.last().sequenceNumber
+                                    }
+                                    json.finish()
+                                    events.finish()
+                                    jsonCount = json.count
+                                    eventJsonCount = events.count
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             }
 
-            val sessionLogFile = File(tempDir, "session_log.txt")
-            sessionLogFile.writeText(buildSessionLog(session, observations, audit))
+            if (outputCount != roomCount || jsonCount != roomCount ||
+                outputEventCount != systemEventCount + errorEventCount ||
+                eventJsonCount != outputEventCount
+            ) {
+                return@withContext ExportResult.Failed(
+                    "stream verification",
+                    "Pass count mismatch: room=$roomCount output=$outputCount json=$jsonCount events=$outputEventCount/$eventJsonCount"
+                )
+            }
 
             val capabilityFile = File(tempDir, "capabilities.json")
             capabilityFile.writeText(JSONObject(session.capabilityReportJson).toString(2))
@@ -128,9 +223,9 @@ class ExportEngine(
             val auditFile = File(tempDir, "integrity_audit.json")
             auditFile.writeText(audit.toJson().toString(2))
 
-            val gnssDomain = GnssCorrelationEngine().buildSnapshot(observations)
+            val gnssDomain = GnssCorrelationEngine().buildSnapshotAndRelease(gnssObservations)
             val gnssDomainFile = File(tempDir, "gnss_domain_snapshot.json")
-            gnssDomainFile.writeText(gnssDomain.toJson().toString(2))
+            GnssDomainSnapshotJsonWriter.write(gnssDomainFile, gnssDomain)
 
             val satelliteEvidenceCsvFile = File(tempDir, "satellite_evidence.csv")
             satelliteEvidenceCsvFile.bufferedWriter().use { writer ->
@@ -139,12 +234,14 @@ class ExportEngine(
             }
 
             val antennaEvidenceFile = File(tempDir, "gnss_antenna_evidence.json")
-            antennaEvidenceFile.writeText(JSONArray().apply { gnssDomain.antennaEvidence.forEach { put(it.toJson()) } }.toString(2))
+            val antennaJsonCount = GnssDomainSnapshotJsonWriter.writeAntennaEvidence(antennaEvidenceFile, gnssDomain.antennaEvidence)
+            check(antennaJsonCount == gnssDomain.antennaEvidence.size) {
+                "Antenna evidence JSON count mismatch: expected=${gnssDomain.antennaEvidence.size} actual=$antennaJsonCount"
+            }
 
             val sqliteFile = File(tempDir, "horizon_session.sqlite")
-            writeSessionSqlite(sqliteFile, session, observations, audit)
+            writeSessionSqlite(sqliteFile, session, sessionId, audit, roomCount)
 
-            val jsonCount = jsonArray.length()
             val csvRowCount = csvFile.useLines { it.drop(1).count { row -> row.isNotBlank() } }
             val sqliteCount = verifySqlite(sqliteFile, sessionId)
             if (jsonCount != roomCount || csvRowCount != roomCount || sqliteCount != roomCount) {
@@ -161,10 +258,10 @@ class ExportEngine(
                 }
                 check(isDirectory) { "Exports path is not a directory: $this" }
             }
-            val finalFile = File(exportsDir, "horizon_session_$sessionId.zip")
-            val tempZip = File(exportsDir, "$sessionId.zip.tmp")
-            if (tempZip.exists()) tempZip.delete()
-            if (finalFile.exists()) finalFile.delete()
+            val finalFile = File(exportsDir, "horizon_session_$safeSessionToken.zip")
+            val tempZipFile = File(exportsDir, ".$safeSessionToken." + System.nanoTime() + ".zip.tmp")
+            check(!tempZipFile.exists()) { "Temporary ZIP path collision: $tempZipFile" }
+            temporaryZip = tempZipFile
 
             val archiveFilesWithoutChecksums = listOf(
                 manifestFile, jsonFile, csvFile, eventsJsonFile, eventsCsvFile, sessionLogFile,
@@ -177,7 +274,7 @@ class ExportEngine(
                 }
             }
             val archiveFiles = archiveFilesWithoutChecksums + checksumsFile
-            ZipOutputStream(tempZip.outputStream().buffered()).use { zip ->
+            ZipOutputStream(tempZipFile.outputStream().buffered()).use { zip ->
                 archiveFiles.forEach { file ->
                     zip.putNextEntry(ZipEntry(file.name))
                     file.inputStream().use { input -> input.copyTo(zip) }
@@ -185,35 +282,55 @@ class ExportEngine(
                 }
             }
 
-            if (!tempZip.renameTo(finalFile)) {
-                return@withContext ExportResult.Failed(
-                    "finalize",
-                    "renameTo failed for $finalFile; temporary ZIP was created at $tempZip"
-                )
-            }
-
-            val readback = verifyFinalArchive(finalFile, sessionId, roomCount)
+            // Verify the complete candidate before touching an existing export. Prefer an atomic
+            // same-directory replacement; leave the previous final file intact if verification fails.
+            val readback = verifyFinalArchive(tempZipFile, sessionId, roomCount)
             if (readback != null) {
-                finalFile.delete()
                 return@withContext ExportResult.Failed("readback", readback)
             }
+            replaceAtomically(tempZipFile, finalFile)
+            temporaryZip = null
 
             Log.i(TAG, "Export SUCCESS session=$sessionId observations=$roomCount file=$finalFile")
             ExportResult.Success(finalFile, roomCount)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
             Log.e(TAG, "Export failed for session=$sessionId", e)
             ExportResult.Failed("exception", e.message ?: e.toString())
         } finally {
             tempDir.deleteRecursively()
+            temporaryZip?.delete()
         }
     }
 
-    private fun writeSessionSqlite(
+    /**
+     * Writes a JSON array incrementally. Avoids retaining every JSONObject and one giant
+     * pretty-printed String at once when exporting long measurement sessions.
+     */
+    private fun writeJsonArray(file: File, objects: Sequence<JSONObject>): Int {
+        var count = 0
+        file.bufferedWriter().use { writer ->
+            writer.append("[\n")
+            objects.forEach { item ->
+                if (count > 0) writer.append(",\n")
+                writer.append("  ")
+                writer.append(item.toString())
+                count += 1
+            }
+            writer.append("\n]\n")
+        }
+        return count
+    }
+
+    private suspend fun writeSessionSqlite(
         file: File,
         session: SessionEntity,
-        observations: List<ObservationEntity>,
-        audit: horizon.observatory.domain.model.IntegrityAuditResult
-    ) {
+        sessionId: String,
+        audit: horizon.observatory.domain.model.IntegrityAuditResult,
+        expectedCount: Int
+    ): Int {
+        var writtenCount = 0
         val db = SQLiteDatabase.openOrCreateDatabase(file, null)
         try {
             db.execSQL("PRAGMA foreign_keys=ON")
@@ -233,17 +350,28 @@ class ExportEngine(
                 }
                 db.insertOrThrow("sessions", null, sessionValues)
 
-                observations.forEach { row ->
-                    val values = ContentValues().apply {
-                        put("observationId", row.observationId); put("sessionId", row.sessionId); put("sequenceNumber", row.sequenceNumber)
-                        put("timestampUtcMs", row.timestampUtcMs); row.monotonicTimestampNs?.let { put("monotonicTimestampNs", it) }
-                        row.ingestionMonotonicTimestampNs?.let { put("ingestionMonotonicTimestampNs", it) }
-                        put("timestampDomain", row.timestampDomain); row.timestampUncertaintyNs?.let { put("timestampUncertaintyNs", it) }
-                        put("source", row.source); put("technology", row.technology); put("type", row.type); put("provider", row.provider)
-                        put("rawPayloadJson", row.rawPayloadJson); put("normalizedPayloadJson", row.normalizedPayloadJson)
-                        put("capabilityState", row.capabilityState); put("evidenceStatus", row.evidenceStatus); put("provenance", row.provenance)
+                var afterSequence = Long.MIN_VALUE
+                while (true) {
+                    currentCoroutineContext().ensureActive()
+                    val page = repository.getObservationPage(sessionId, afterSequence, PAGE_SIZE)
+                    if (page.isEmpty()) break
+                    for (row in page) {
+                        val values = ContentValues().apply {
+                            put("observationId", row.observationId); put("sessionId", row.sessionId); put("sequenceNumber", row.sequenceNumber)
+                            put("timestampUtcMs", row.timestampUtcMs); row.monotonicTimestampNs?.let { put("monotonicTimestampNs", it) }
+                            row.ingestionMonotonicTimestampNs?.let { put("ingestionMonotonicTimestampNs", it) }
+                            put("timestampDomain", row.timestampDomain); row.timestampUncertaintyNs?.let { put("timestampUncertaintyNs", it) }
+                            put("source", row.source); put("technology", row.technology); put("type", row.type); put("provider", row.provider)
+                            put("rawPayloadJson", row.rawPayloadJson); put("normalizedPayloadJson", row.normalizedPayloadJson)
+                            put("capabilityState", row.capabilityState); put("evidenceStatus", row.evidenceStatus); put("provenance", row.provenance)
+                        }
+                        db.insertOrThrow("observations", null, values)
                     }
-                    db.insertOrThrow("observations", null, values)
+                    writtenCount += page.size
+                    afterSequence = page.last().sequenceNumber
+                }
+                check(writtenCount == expectedCount) {
+                    "SQLite export row count changed during export: expected=$expectedCount actual=$writtenCount"
                 }
 
                 val auditValues = ContentValues().apply {
@@ -261,6 +389,35 @@ class ExportEngine(
             } finally {
                 db.endTransaction()
             }
+        } finally {
+            db.close()
+        }
+        return writtenCount
+    }
+
+    private fun verifySqliteDeviceMetadata(file: File, sessionId: String): String {
+        val db = SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY)
+        try {
+            db.rawQuery("SELECT deviceMetadataJson FROM sessions WHERE sessionId = ?", arrayOf(sessionId)).use { cursor ->
+                check(cursor.moveToFirst()) { "SQLite session metadata row missing" }
+                return cursor.getString(0)
+            }
+        } finally {
+            db.close()
+        }
+    }
+
+    private fun verifySqliteObservationTypeCounts(file: File, sessionId: String): Map<String, Int> {
+        val db = SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY)
+        try {
+            val counts = linkedMapOf<String, Int>()
+            db.rawQuery(
+                "SELECT type, COUNT(*) FROM observations WHERE sessionId = ? GROUP BY type",
+                arrayOf(sessionId)
+            ).use { cursor ->
+                while (cursor.moveToNext()) counts[cursor.getString(0)] = cursor.getInt(1)
+            }
+            return counts
         } finally {
             db.close()
         }
@@ -282,49 +439,40 @@ class ExportEngine(
     }
 
     private fun verifyFinalArchive(file: File, sessionId: String, expectedCount: Int): String? {
-        val extracted = File(file.parentFile, "readback_${sessionId}_${System.nanoTime()}.sqlite")
+        // Verify the archive using disk-backed entries. readBytes() plus retained JSON/CSV strings
+        // duplicated the largest export payloads in the 256 MiB app heap and caused OOM on long sessions.
+        val verifyDir = File(file.parentFile, "readback_" + safeFileToken(sessionId) + "_" + System.nanoTime())
         try {
-            var manifestJson: String? = null
-            var jsonText: String? = null
-            var csvText: String? = null
-            var eventsJsonText: String? = null
-            var eventsCsvText: String? = null
-            var sessionLogText: String? = null
-            var auditJson: String? = null
-            var capabilitiesJson: String? = null
-            var permissionsJson: String? = null
-            var gnssDomainJson: String? = null
-            var satelliteEvidenceCsv: String? = null
-            var antennaEvidenceJson: String? = null
-            var checksumsText: String? = null
+            check(verifyDir.mkdirs()) { "Unable to create archive readback directory" }
+            val entryFiles = linkedMapOf<String, File>()
             val entryHashes = linkedMapOf<String, String>()
             ZipInputStream(file.inputStream().buffered()).use { zipInput ->
                 while (true) {
                     val entry = zipInput.nextEntry ?: break
-                    val bytes = zipInput.readBytes()
-                    entryHashes[entry.name] = sha256Bytes(bytes)
-                    when (entry.name) {
-                        "dataset_manifest.json" -> manifestJson = bytes.toString(Charsets.UTF_8)
-                        "observations.json" -> jsonText = bytes.toString(Charsets.UTF_8)
-                        "observations.csv" -> csvText = bytes.toString(Charsets.UTF_8)
-                        "session_events.json" -> eventsJsonText = bytes.toString(Charsets.UTF_8)
-                        "session_events.csv" -> eventsCsvText = bytes.toString(Charsets.UTF_8)
-                        "session_log.txt" -> sessionLogText = bytes.toString(Charsets.UTF_8)
-                        "integrity_audit.json" -> auditJson = bytes.toString(Charsets.UTF_8)
-                        "capabilities.json" -> capabilitiesJson = bytes.toString(Charsets.UTF_8)
-                        "permissions.json" -> permissionsJson = bytes.toString(Charsets.UTF_8)
-                        "gnss_domain_snapshot.json" -> gnssDomainJson = bytes.toString(Charsets.UTF_8)
-                        "satellite_evidence.csv" -> satelliteEvidenceCsv = bytes.toString(Charsets.UTF_8)
-                        "gnss_antenna_evidence.json" -> antennaEvidenceJson = bytes.toString(Charsets.UTF_8)
-                        "checksums.sha256" -> checksumsText = bytes.toString(Charsets.UTF_8)
-                        "horizon_session.sqlite" -> extracted.writeBytes(bytes)
+                    check(!entry.isDirectory && entry.name == File(entry.name).name) {
+                        "Unexpected archive path: ${entry.name}"
                     }
+                    val entryFile = File(verifyDir, entry.name)
+                    entryFile.outputStream().buffered().use { output -> zipInput.copyTo(output) }
+                    entryFiles[entry.name] = entryFile
+                    entryHashes[entry.name] = sha256File(entryFile)
+                    zipInput.closeEntry()
                 }
             }
-            if (listOf(manifestJson, jsonText, csvText, eventsJsonText, eventsCsvText, sessionLogText, auditJson, capabilitiesJson, permissionsJson, gnssDomainJson, satelliteEvidenceCsv, antennaEvidenceJson, checksumsText).any { it == null } || !extracted.exists()) {
-                return "Required archive entry missing"
-            }
-            checksumsText!!.lineSequence().filter { it.isNotBlank() }.forEach { line ->
+
+            val required = listOf(
+                "dataset_manifest.json", "observations.json", "observations.csv",
+                "session_events.json", "session_events.csv", "session_log.txt",
+                "integrity_audit.json", "capabilities.json", "permissions.json",
+                "gnss_domain_snapshot.json", "satellite_evidence.csv",
+                "gnss_antenna_evidence.json", "checksums.sha256", "horizon_session.sqlite"
+            )
+            val missing = required.filter { entryFiles[it] == null }
+            check(missing.isEmpty()) { "Required archive entries missing: ${missing.joinToString()}" }
+
+            val checksumsFile = entryFiles.getValue("checksums.sha256")
+            val checksumLines = checksumsFile.readLines().filter { it.isNotBlank() }
+            checksumLines.forEach { line ->
                 val parts = line.trim().split(Regex("\\s+"), limit = 2)
                 check(parts.size == 2) { "Invalid checksum line: $line" }
                 val expectedHash = parts[0]
@@ -332,114 +480,87 @@ class ExportEngine(
                 check(entryName != "checksums.sha256") { "Checksum file must not checksum itself" }
                 check(entryHashes[entryName] == expectedHash) { "Checksum mismatch for $entryName" }
             }
-            val manifest = JSONObject(manifestJson!!)
+            check(checksumLines.size == entryFiles.size - 1) { "Unexpected checksum entry count" }
+
+            val manifest = JSONObject(entryFiles.getValue("dataset_manifest.json").readText())
             check(manifest.optString("sessionId") == sessionId) { "Manifest sessionId mismatch" }
             check(manifest.optInt("totalObservations", -1) == expectedCount) { "Manifest count mismatch" }
-            val jsonCount = JSONArray(jsonText!!).length()
-            val csvCount = csvText!!.lineSequence().drop(1).count { it.isNotBlank() }
-            val sqliteCount = verifySqlite(extracted, sessionId)
+            val diagnostics = manifest.optJSONObject("gnssDeliveryDiagnostics")
+                ?: error("GNSS delivery diagnostics missing from manifest")
+            if (diagnostics.length() > 0) {
+                check(diagnostics.optInt("schemaVersion", -1) == 1) { "Unsupported GNSS diagnostics schema" }
+                if (diagnostics.optString("state") == "FINALIZED") {
+                    check(diagnostics.optBoolean("invariantsHold", false)) { "GNSS delivery diagnostics invariant failed" }
+                }
+                if (diagnostics.optString("state") == "FINALIZATION_INCOMPLETE" ||
+                    diagnostics.optString("state") == "UNAVAILABLE_PROCESS_LOSS") {
+                    check(!diagnostics.optBoolean("countsComplete", true)) { "Incomplete GNSS diagnostics incorrectly marked complete" }
+                }
+            }
+
+            val jsonCount = StreamingJsonArrayWriter.countObjects(entryFiles.getValue("observations.json"))
+            val csvCount = entryFiles.getValue("observations.csv").useLines { lines ->
+                lines.drop(1).count { it.isNotBlank() }
+            }
+            val sqliteCount = verifySqlite(entryFiles.getValue("horizon_session.sqlite"), sessionId)
+            val sqliteTypeCounts = verifySqliteObservationTypeCounts(entryFiles.getValue("horizon_session.sqlite"), sessionId)
+            val sqliteMetadata = verifySqliteDeviceMetadata(entryFiles.getValue("horizon_session.sqlite"), sessionId)
+            val sqliteDiagnostics = runCatching { JSONObject(sqliteMetadata).optJSONObject("gnssDeliveryDiagnostics") }.getOrNull()
+            check((diagnostics.length() == 0 && sqliteDiagnostics == null) ||
+                (sqliteDiagnostics != null && sqliteDiagnostics.toString() == diagnostics.toString())) {
+                "GNSS delivery diagnostics mismatch between manifest and SQLite session metadata"
+            }
+            if (diagnostics.optString("state") == "FINALIZED") {
+                val mismatches = horizon.observatory.acquisition.gnss.reconcileAcceptedDeliveriesWithPersistedRows(
+                    diagnostics,
+                    sqliteTypeCounts
+                )
+                check(mismatches.isEmpty()) {
+                    "GNSS accepted-to-persisted row mismatch: ${mismatches.joinToString(separator = "; ")}"
+                }
+            }
+            val sessionLog = entryFiles.getValue("session_log.txt").readText()
+            if (diagnostics.length() > 0) {
+                check(sessionLog.contains("gnssDeliveryDiagnosticsState=${diagnostics.optString("state")}")) {
+                    "GNSS delivery diagnostics state mismatch in session log"
+                }
+                check(sessionLog.contains("gnssDeliveryDiagnostics=${diagnostics.toString()}")) {
+                    "GNSS delivery diagnostics payload mismatch in session log"
+                }
+            }
             check(jsonCount == expectedCount && csvCount == expectedCount && sqliteCount == expectedCount) {
                 "Readback count mismatch: expected=$expectedCount json=$jsonCount csv=$csvCount sqlite=$sqliteCount"
             }
-            check(auditJson!!.isNotBlank()) { "Integrity audit readback empty" }
-            check(eventsJsonText!!.isNotBlank()) { "Session event log JSON readback empty" }
-            check(eventsCsvText!!.isNotBlank()) { "Session event log CSV readback empty" }
-            check(sessionLogText!!.isNotBlank()) { "Session log text readback empty" }
-            check(capabilitiesJson!!.isNotBlank()) { "Capability export readback empty" }
-            check(permissionsJson!!.isNotBlank()) { "Permission export readback empty" }
-            val domainJson = JSONObject(gnssDomainJson!!)
-            check(domainJson.has("satelliteEvidence") && domainJson.has("constellationSummaries")) { "GNSS domain snapshot readback invalid" }
-            check(satelliteEvidenceCsv!!.lineSequence().count() >= 1) { "Satellite evidence CSV readback empty" }
-            check(JSONArray(antennaEvidenceJson!!).length() >= 0) { "Antenna evidence JSON unreadable" }
-            check(checksumsText!!.lineSequence().count { it.isNotBlank() } == entryHashes.size - 1) { "Unexpected checksum entry count" }
+
+            check(entryFiles.getValue("integrity_audit.json").length() > 0L) { "Integrity audit readback empty" }
+            check(entryFiles.getValue("session_events.json").length() > 0L) { "Session event log JSON readback empty" }
+            check(entryFiles.getValue("session_events.csv").length() > 0L) { "Session event log CSV readback empty" }
+            check(entryFiles.getValue("session_log.txt").length() > 0L) { "Session log text readback empty" }
+            check(entryFiles.getValue("capabilities.json").length() > 0L) { "Capability export readback empty" }
+            check(entryFiles.getValue("permissions.json").length() > 0L) { "Permission export readback empty" }
+            val domainFile = entryFiles.getValue("gnss_domain_snapshot.json")
+            check(domainFile.length() > 0L) { "GNSS domain snapshot readback empty" }
+            check(domainFile.useLines { lines ->
+                var hasSatelliteEvidence = false
+                var hasConstellationSummaries = false
+                lines.forEach { line ->
+                    if (line.contains("satelliteEvidence")) hasSatelliteEvidence = true
+                    if (line.contains("constellationSummaries")) hasConstellationSummaries = true
+                }
+                hasSatelliteEvidence && hasConstellationSummaries
+            }) { "GNSS domain snapshot readback invalid" }
+            check(entryFiles.getValue("satellite_evidence.csv").length() > 0L) { "Satellite evidence CSV readback empty" }
+            check(entryFiles.getValue("gnss_antenna_evidence.json").length() > 0L) { "Antenna evidence JSON readback empty" }
             return null
         } catch (e: Exception) {
             return e.message ?: e.toString()
         } finally {
-            extracted.delete()
+            verifyDir.deleteRecursively()
         }
     }
 
-    private fun GnssDomainSnapshot.toJson(): JSONObject = JSONObject().apply {
-        put("sampleCount", signalStatistics.sampleCount)
-        put("averageCn0DbHz", signalStatistics.averageCn0DbHz ?: JSONObject.NULL)
-        put("minCn0DbHz", signalStatistics.minCn0DbHz ?: JSONObject.NULL)
-        put("maxCn0DbHz", signalStatistics.maxCn0DbHz ?: JSONObject.NULL)
-        put("averageElevationDegrees", signalStatistics.averageElevationDegrees ?: JSONObject.NULL)
-        put("minElevationDegrees", signalStatistics.minElevationDegrees ?: JSONObject.NULL)
-        put("maxElevationDegrees", signalStatistics.maxElevationDegrees ?: JSONObject.NULL)
-        put("averageAgcDb", signalStatistics.averageAgcDb ?: JSONObject.NULL)
-        put("minAgcDb", signalStatistics.minAgcDb ?: JSONObject.NULL)
-        put("maxAgcDb", signalStatistics.maxAgcDb ?: JSONObject.NULL)
-        put("distinctFrequenciesHz", JSONArray().apply { signalStatistics.distinctFrequenciesHz.forEach { put(it) } })
-        put("navigationMessageCount", navigationMessageCount)
-        put("correlatedMeasurementCount", correlatedMeasurementCount)
-        put("statusOnlySatelliteCount", statusOnlySatelliteCount)
-        put("rawOnlySatelliteCount", rawOnlySatelliteCount)
-        put("satelliteEvidence", JSONArray().apply { satelliteEvidence.forEach { put(it.toJson()) } })
-        put("latestSatelliteEvidence", JSONArray().apply { latestSatelliteEvidence.forEach { put(it.toJson()) } })
-        put("historyPoints", JSONArray().apply {
-            historyPoints.forEach { point ->
-                put(JSONObject().apply {
-                    put("sequenceNumber", point.sequenceNumber ?: JSONObject.NULL)
-                    put("constellationType", point.constellationType)
-                    put("svid", point.svid)
-                    put("carrierFrequencyHz", point.carrierFrequencyHz ?: JSONObject.NULL)
-                    put("cn0DbHz", point.cn0DbHz ?: JSONObject.NULL)
-                    put("basebandCn0DbHz", point.basebandCn0DbHz ?: JSONObject.NULL)
-                    put("elevationDegrees", point.elevationDegrees ?: JSONObject.NULL)
-                    put("azimuthDegrees", point.azimuthDegrees ?: JSONObject.NULL)
-                    put("usedInFix", point.usedInFix ?: JSONObject.NULL)
-                    put("agcDb", point.agcDb ?: JSONObject.NULL)
-                    put("navigationMessageCount", point.navigationMessageCount)
-                    put("match", point.match.name)
-                    put("monotonicTimestampNs", point.monotonicTimestampNs ?: JSONObject.NULL)
-                })
-            }
-        })
-        put("constellationSummaries", JSONArray().apply {
-            constellationSummaries.forEach { s ->
-                put(JSONObject().apply {
-                    put("constellationType", s.constellationType)
-                    put("evidenceCount", s.evidenceCount)
-                    put("distinctSatelliteCount", s.distinctSatelliteCount)
-                    put("matchedCount", s.matchedCount)
-                    put("statusOnlyCount", s.statusOnlyCount)
-                    put("rawOnlyCount", s.rawOnlyCount)
-                    put("navigationMessageCount", s.navigationMessageCount)
-                    put("averageCn0DbHz", s.averageCn0DbHz ?: JSONObject.NULL)
-                    put("averageElevationDegrees", s.averageElevationDegrees ?: JSONObject.NULL)
-                    put("averageAgcDb", s.averageAgcDb ?: JSONObject.NULL)
-                })
-            }
-        })
-        put("antennaEvidence", JSONArray().apply { antennaEvidence.forEach { put(it.toJson()) } })
-        put("provenance", "DERIVED_FROM_PERSISTED_GNSS_OBSERVATIONS")
-    }
-
-    private fun horizon.observatory.domain.gnss.SatelliteEvidence.toJson(): JSONObject = JSONObject().apply {
-        put("constellationType", constellationType)
-        put("svid", svid)
-        put("carrierFrequencyHz", carrierFrequencyHz ?: JSONObject.NULL)
-        put("cn0DbHz", cn0DbHz ?: JSONObject.NULL)
-        put("basebandCn0DbHz", basebandCn0DbHz ?: JSONObject.NULL)
-        put("elevationDegrees", elevationDegrees ?: JSONObject.NULL)
-        put("azimuthDegrees", azimuthDegrees ?: JSONObject.NULL)
-        put("usedInFix", usedInFix ?: JSONObject.NULL)
-        put("measurementState", measurementState ?: JSONObject.NULL)
-        put("multipathIndicator", multipathIndicator ?: JSONObject.NULL)
-        put("accumulatedDeltaRangeMeters", accumulatedDeltaRangeMeters ?: JSONObject.NULL)
-        put("accumulatedDeltaRangeState", accumulatedDeltaRangeState ?: JSONObject.NULL)
-        put("automaticGainControlLevelDb", automaticGainControlLevelDb ?: JSONObject.NULL)
-        put("navigationMessageCount", navigationMessageCount)
-        put("navigationAssociation", navigationAssociation.name)
-        put("observationMonotonicTimestampNs", observationMonotonicTimestampNs ?: JSONObject.NULL)
-        put("statusMonotonicTimestampNs", statusMonotonicTimestampNs ?: JSONObject.NULL)
-        put("rawSequenceNumber", rawSequenceNumber ?: JSONObject.NULL)
-        put("statusSequenceNumber", statusSequenceNumber ?: JSONObject.NULL)
-        put("match", match.name)
-        put("provenance", provenance)
-    }
+    /** Same JSON the session package uses for antenna evidence (single source of truth for reports). */
+    fun antennaEvidenceJson(e: horizon.observatory.domain.gnss.GnssAntennaEvidence): String = e.toJson().toString(2)
 
     private fun horizon.observatory.domain.gnss.GnssAntennaEvidence.toJson(): JSONObject = JSONObject().apply {
         put("carrierFrequencyMHz", carrierFrequencyMHz ?: JSONObject.NULL)
@@ -459,31 +580,32 @@ class ExportEngine(
         s.statusMonotonicTimestampNs
     ).joinToString(",") { csvEscape(it.toString()) }
 
-    private fun buildSessionLog(
+    private fun writeSessionLogHeader(
         session: SessionEntity,
-        observations: List<ObservationEntity>,
-        audit: horizon.observatory.domain.model.IntegrityAuditResult
-    ): String = buildString {
-        appendLine("HORIZON SESSION LOG")
-        appendLine("sessionId=${session.sessionId}")
-        appendLine("lifecycle=${session.lifecycleState}")
-        appendLine("device=${session.deviceManufacturer} ${session.deviceModel}")
-        appendLine("android=${session.androidVersion} api=${session.sdkVersion}")
-        appendLine("startUtcMs=${session.startTimeMs}")
-        appendLine("endUtcMs=${session.endTimeMs ?: "UNSET"}")
-        appendLine("observationCount=${observations.size}")
-        appendLine("integrityClean=${audit.isClean}")
-        appendLine("sequenceContiguous=${audit.sequenceContiguous}")
-        appendLine("ingestionTimestampsNonDecreasing=${audit.ingestionTimestampsNonDecreasing}")
-        appendLine("ingestionTimestampedObservationCount=${audit.ingestionTimestampedObservationCount}")
-        appendLine("sourceTimestampRegressions=${audit.sourceTimestampRegressions}")
-        appendLine("sourceTimestampedObservationCount=${audit.sourceTimestampedObservationCount}")
-        appendLine()
-        observations.filter { it.type == "SYSTEM_EVENT" || it.type == "ERROR_EVENT" }
-            .sortedBy { it.sequenceNumber }
-            .forEach { row ->
-                appendLine("[seq=${row.sequenceNumber}] [${row.timestampUtcMs}] [${row.type}] [${row.provider}] ${row.rawPayloadJson}")
-            }
+        observationCount: Int,
+        audit: horizon.observatory.domain.model.IntegrityAuditResult,
+        writer: BufferedWriter
+    ) {
+        writer.appendLine("HORIZON SESSION LOG")
+        writer.appendLine("sessionId=${session.sessionId}")
+        writer.appendLine("lifecycle=${session.lifecycleState}")
+        writer.appendLine("device=${session.deviceManufacturer} ${session.deviceModel}")
+        writer.appendLine("android=${session.androidVersion} api=${session.sdkVersion}")
+        writer.appendLine("startUtcMs=${session.startTimeMs}")
+        writer.appendLine("endUtcMs=${session.endTimeMs ?: "UNSET"}")
+        writer.appendLine("observationCount=$observationCount")
+        writer.appendLine("integrityClean=${audit.isClean}")
+        writer.appendLine("sequenceContiguous=${audit.sequenceContiguous}")
+        writer.appendLine("ingestionTimestampsNonDecreasing=${audit.ingestionTimestampsNonDecreasing}")
+        writer.appendLine("ingestionTimestampedObservationCount=${audit.ingestionTimestampedObservationCount}")
+        writer.appendLine("sourceTimestampRegressions=${audit.sourceTimestampRegressions}")
+        writer.appendLine("sourceTimestampedObservationCount=${audit.sourceTimestampedObservationCount}")
+        val diagnostics = runCatching { JSONObject(session.deviceMetadataJson).optJSONObject("gnssDeliveryDiagnostics") }
+            .getOrNull()
+        writer.appendLine("gnssDeliveryDiagnosticsState=${diagnostics?.optString("state", "UNAVAILABLE") ?: "UNAVAILABLE"}")
+        writer.appendLine("gnssDeliveryDiagnosticsInvariantsHold=${diagnostics?.optBoolean("invariantsHold", false) ?: false}")
+        writer.appendLine("gnssDeliveryDiagnostics=${diagnostics?.toString() ?: "{}"}")
+        writer.appendLine()
     }
 
     private fun DatasetManifest.toJson(): JSONObject = JSONObject().apply {
@@ -508,6 +630,7 @@ class ExportEngine(
         put("sourceTimestampRegressions", sourceTimestampRegressions)
         put("sourceTimestampedObservationCount", sourceTimestampedObservationCount)
         put("provenanceNote", provenanceNote)
+        put("gnssDeliveryDiagnostics", JSONObject(gnssDeliveryDiagnosticsJson))
     }
 
     private fun horizon.observatory.domain.model.IntegrityAuditResult.toJson(): JSONObject = JSONObject().apply {
@@ -557,6 +680,24 @@ class ExportEngine(
             "\"${value.replace("\"", "\"\"")}\""
         } else value
 
+    private fun safeFileToken(value: String): String =
+        value.replace(Regex("[^A-Za-z0-9._-]"), "_").take(96).trim('.').ifBlank { "session" }
+
+    private fun replaceAtomically(source: File, destination: File) {
+        try {
+            Files.move(
+                source.toPath(),
+                destination.toPath(),
+                StandardCopyOption.ATOMIC_MOVE,
+                StandardCopyOption.REPLACE_EXISTING
+            )
+        } catch (unsupported: AtomicMoveNotSupportedException) {
+            // Some filesystems do not implement atomic replacement; do the safest same-directory
+            // replacement supported by that filesystem, without deleting the old file first.
+            Files.move(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        }
+    }
+
     private fun sha256File(file: File): String =
         file.inputStream().use { input ->
             val digest = MessageDigest.getInstance("SHA-256")
@@ -574,6 +715,20 @@ class ExportEngine(
 
     companion object {
         private const val TAG = "HorizonExport"
+        private const val PAGE_SIZE = 256
+        // The 2026-10-18 verified 93,754-row field session contains 43,345 GNSS correlation
+        // source rows and 42,981,919 raw-payload characters. These caps cover that observed load
+        // with headroom while still failing closed on unbounded future input.
+        private const val MAX_GNSS_CORRELATION_SOURCE_ROWS = 50_000
+        private const val MAX_GNSS_CORRELATION_PAYLOAD_CHARS = 64L * 1024L * 1024L
+        private const val MAX_SATELLITES_PER_STATUS_ROW = 2_000
+        private const val MAX_GNSS_STATUS_SATELLITES = 100_000
+        private val GNSS_CORRELATION_TYPES = setOf(
+            "GNSS_STATUS",
+            "GNSS_RAW_MEASUREMENT",
+            "GNSS_NAVIGATION_MESSAGE",
+            "GNSS_ANTENNA_INFO"
+        )
         private const val CSV_HEADER =
             "observationId,sessionId,sequenceNumber,timestampUtcMs,sourceMonotonicTimestampNs,ingestionMonotonicTimestampNs,source,technology,type,provider,timestampDomain,timestampUncertaintyNs,capabilityState,evidenceStatus,provenance"
         private const val SATELLITE_CSV_HEADER = "constellationType,svid,carrierFrequencyHz,cn0DbHz,basebandCn0DbHz,elevationDegrees,azimuthDegrees,usedInFix,automaticGainControlLevelDb,navigationMessageCount,navigationAssociation,rawSequenceNumber,statusSequenceNumber,match,observationMonotonicTimestampNs,statusMonotonicTimestampNs"

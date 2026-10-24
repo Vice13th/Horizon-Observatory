@@ -1,0 +1,81 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+.\gradlew.bat : Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of
+version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were
+released at different times.
+At line:1 char:33
++ ... zon_stage2; .\gradlew.bat :app:testPrimaryDebugUnitTest --no-daemon - ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: SDK pr...ifferent times.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+> Task :propagation-contract:checkKotlinGradlePluginConfigurationErrors
+> Task :propagation-contract:compileKotlin UP-TO-DATE
+> Task :propagation-contract:compileJava NO-SOURCE
+> Task :propagation-contract:processResources NO-SOURCE
+> Task :propagation-contract:classes UP-TO-DATE
+> Task :propagation-contract:jar UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+> Task :app:preBuild UP-TO-DATE
+> Task :app:prePrimaryDebugBuild UP-TO-DATE
+> Task :app:generatePrimaryDebugBuildConfig UP-TO-DATE
+> Task :app:checkPrimaryDebugAarMetadata UP-TO-DATE
+> Task :app:generatePrimaryDebugResValues UP-TO-DATE
+> Task :app:mapPrimaryDebugSourceSetPaths UP-TO-DATE
+> Task :app:generatePrimaryDebugResources UP-TO-DATE
+> Task :app:mergePrimaryDebugResources UP-TO-DATE
+> Task :app:packagePrimaryDebugResources UP-TO-DATE
+> Task :app:parsePrimaryDebugLocalResources UP-TO-DATE
+> Task :app:createPrimaryDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksPrimaryDebug UP-TO-DATE
+> Task :app:processPrimaryDebugMainManifest UP-TO-DATE
+> Task :app:processPrimaryDebugManifest UP-TO-DATE
+> Task :app:processPrimaryDebugManifestForPackage UP-TO-DATE
+> Task :app:processPrimaryDebugResources UP-TO-DATE
+> Task :app:kaptGenerateStubsPrimaryDebugKotlin UP-TO-DATE
+> Task :app:kaptPrimaryDebugKotlin UP-TO-DATE
+> Task :app:compilePrimaryDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompilePrimaryDebug UP-TO-DATE
+> Task :app:compilePrimaryDebugJavaWithJavac UP-TO-DATE
+> Task :app:prePrimaryDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompilePrimaryDebugUnitTest UP-TO-DATE
+> Task :app:processPrimaryDebugJavaRes
+> Task :app:bundlePrimaryDebugClassesToRuntimeJar
+> Task :app:bundlePrimaryDebugClassesToCompileJar
+> Task :app:kaptGenerateStubsPrimaryDebugUnitTestKotlin
+
+> Task :app:kaptPrimaryDebugUnitTestKotlin
+warning: The following options were not recognized by any processor: '[room.schemaLocation, kapt.kotlin.generated, room.incremental]'
+
+> Task :app:compilePrimaryDebugUnitTestKotlin
+> Task :app:compilePrimaryDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processPrimaryDebugUnitTestJavaRes
+
+> Task :app:testPrimaryDebugUnitTest
+
+AstronomyMathTest > overhead satellite has elevation near 90 degrees FAILED
+    java.lang.AssertionError at AstronomyMathTest.kt:62
+
+143 tests completed, 1 failed, 3 skipped
+
+> Task :app:testPrimaryDebugUnitTest FAILED
+[Incubating] Problems report is available at: [historical local build path omitted]
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:testPrimaryDebugUnitTest'.
+> There were failing tests. See the report at:
+[historical local build path omitted]
+
+* Try:
+> Run with --scan to get full insights.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+32 actionable tasks: 10 executed, 22 up-to-date
+
+BUILD FAILED in 27s

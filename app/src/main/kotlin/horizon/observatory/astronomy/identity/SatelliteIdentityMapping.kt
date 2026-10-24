@@ -20,7 +20,13 @@ enum class MappingMethod {
     OPERATOR_SUPPLIED_TABLE,
 
     /** Candidate inferred from a name or pattern (for example "PRN 13" in an object name). */
-    NAME_PATTERN_INFERRED
+    NAME_PATTERN_INFERRED,
+
+    /**
+     * Suggested by comparing receiver az/el with SGP4/SDP4 predictions (GeometricIdentityMatcher).
+     * A hint for the operator only: never VERIFIED, never used for prediction by itself.
+     */
+    GEOMETRIC_CONSISTENCY_HINT
 }
 
 /** Confidence is categorical on purpose: no numeric score is invented. */

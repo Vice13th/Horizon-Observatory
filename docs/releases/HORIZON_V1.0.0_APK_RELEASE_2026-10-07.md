@@ -1,4 +1,4 @@
-# HORIZON Observatory — v1.0.0 APK Release Receipt — 2026-10-07
+﻿# HORIZON Observatory â€” v1.0.0 APK Release Receipt â€” 2026-10-07
 
 ## Release identity
 - Repository: Vice13th/Horizon-Observatory
@@ -29,7 +29,7 @@ The underlying device evidence verifies the GNSS observation path, persisted obs
 This artifact is device-verified and evidence-backed. It is not a claim of production release status or final scientific validation.
 
 Still open:
-- authoritative SVID→NORAD identity mapping
+- authoritative SVIDâ†’NORAD identity mapping
 - UTC/device edge cases
 - OrbitCore reference-vector accuracy
 - physical orientation / heading validation

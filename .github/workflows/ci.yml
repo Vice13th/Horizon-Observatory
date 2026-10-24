@@ -1,0 +1,22 @@
+﻿name: Android CI
+on:
+  push:
+  pull_request:
+jobs:
+  primary-and-parallel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Test primary and parallel variants and core modules
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:testPrimaryDebugUnitTest :app:testParallelDebugUnitTest :propagation-contract:test :orbitcore-bridge:testDebugUnitTest --no-daemon
+      - name: Assemble primary and parallel debug APKs
+        run: ./gradlew :app:assemblePrimaryDebug :app:assembleParallelDebug --no-daemon
+      - name: Compile retained TS and T1 variants
+        run: ./gradlew :app:compileTsDebugKotlin :app:compileT1DebugKotlin --no-daemon

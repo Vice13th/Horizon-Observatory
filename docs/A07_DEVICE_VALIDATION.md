@@ -1,4 +1,4 @@
-# Samsung Galaxy A07 / SM-A075F — Physical Device Validation Protocol
+﻿# Samsung Galaxy A07 / SM-A075F â€” Physical Device Validation Protocol
 
 ## Purpose
 

@@ -18,6 +18,10 @@ interface ObservationDao {
     @Query("SELECT * FROM observations WHERE sessionId = :sessionId ORDER BY sequenceNumber ASC")
     suspend fun getObservationsSnapshot(sessionId: String): List<ObservationEntity>
 
+    /** Ordered keyset paging keeps long-session exports independent of total observation count. */
+    @Query("SELECT * FROM observations WHERE sessionId = :sessionId AND sequenceNumber > :afterSequence ORDER BY sequenceNumber ASC LIMIT :limit")
+    suspend fun getObservationPage(sessionId: String, afterSequence: Long, limit: Int): List<ObservationEntity>
+
     @Query("SELECT * FROM observations WHERE sessionId = :sessionId ORDER BY sequenceNumber DESC LIMIT :limit")
     suspend fun getRecentObservationsSnapshot(sessionId: String, limit: Int): List<ObservationEntity>
 

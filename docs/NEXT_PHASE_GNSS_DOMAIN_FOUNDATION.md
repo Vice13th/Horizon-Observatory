@@ -1,4 +1,4 @@
-# HORIZON — Next Phase: GNSS Domain Foundation
+﻿# HORIZON â€” Next Phase: GNSS Domain Foundation
 
 Date: 2026-09-24
 

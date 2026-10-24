@@ -41,26 +41,49 @@ android {
         }
     }
 
-    // Installation-identity flavors ONLY -- both flavors compile the exact same source set,
-    // same Kotlin code, same Compose UI, same dependencies, same behavior. The sole purpose is
-    // producing a second Android Package Manager identity so the same app can be installed
-    // twice on one device. "primary" is the existing, unchanged app: no applicationIdSuffix, so
-    // its release build keeps applicationId exactly "horizon.observatory" as before this change.
+    // Installation-identity flavors compile the same scientific/application source while using
+    // distinct Android package, launcher, and ContentProvider identities. "primary" preserves the
+    // legacy release applicationId; variants can be installed side-by-side without authority clashes.
     flavorDimensions += "installation"
     productFlavors {
         create("primary") {
             dimension = "installation"
             manifestPlaceholders["appLabel"] = "Horizon Observatory"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
+            manifestPlaceholders["appRoundIcon"] = "@mipmap/ic_launcher_round"
+            manifestPlaceholders["appTheme"] = "@style/Theme.Horizon.Starting"
+            manifestPlaceholders["resilientLocationAuthority"] = "horizon.observatory.resilient-location"
+            manifestPlaceholders["resilientLocationReadPermission"] = "horizon.observatory.permission.READ_RESILIENT_LOCATION"
         }
         create("ts") {
             dimension = "installation"
             applicationIdSuffix = ".ts"
             manifestPlaceholders["appLabel"] = "Horizon Observatory TS"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
+            manifestPlaceholders["appRoundIcon"] = "@mipmap/ic_launcher_round"
+            manifestPlaceholders["appTheme"] = "@style/Theme.Horizon.Starting"
+            manifestPlaceholders["resilientLocationAuthority"] = "horizon.observatory.ts.resilient-location"
+            manifestPlaceholders["resilientLocationReadPermission"] = "horizon.observatory.ts.permission.READ_RESILIENT_LOCATION"
         }
         create("t1") {
             dimension = "installation"
             applicationIdSuffix = ".t1"
-            manifestPlaceholders["appLabel"] = "HORIZON T1"
+            manifestPlaceholders["appLabel"] = "Horizon Observatory T1"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
+            manifestPlaceholders["appRoundIcon"] = "@mipmap/ic_launcher_round"
+            manifestPlaceholders["appTheme"] = "@style/Theme.Horizon.Starting"
+            manifestPlaceholders["resilientLocationAuthority"] = "horizon.observatory.t1.resilient-location"
+            manifestPlaceholders["resilientLocationReadPermission"] = "horizon.observatory.t1.permission.READ_RESILIENT_LOCATION"
+        }
+        create("parallel") {
+            dimension = "installation"
+            applicationIdSuffix = ".parallel"
+            manifestPlaceholders["appLabel"] = "Horizon Parallel"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_parallel"
+            manifestPlaceholders["appRoundIcon"] = "@mipmap/ic_launcher_parallel_round"
+            manifestPlaceholders["appTheme"] = "@style/Theme.Horizon.ParallelStarting"
+            manifestPlaceholders["resilientLocationAuthority"] = "horizon.observatory.parallel.resilient-location"
+            manifestPlaceholders["resilientLocationReadPermission"] = "horizon.observatory.parallel.permission.READ_RESILIENT_LOCATION"
         }
     }
 

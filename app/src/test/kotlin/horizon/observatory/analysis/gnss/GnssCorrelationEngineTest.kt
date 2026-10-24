@@ -146,4 +146,70 @@ class GnssCorrelationEngineTest {
         assertEquals(1, snapshot.signalStatistics.distinctFrequenciesHz.size)
     }
 
+    @Test
+    fun handlesRecoveredLongSessionScaleWithoutDroppingRawRows() {
+        val rows = ArrayList<ObservationEntity>(20_000 + 619 + 2_505)
+        var sequence = 1L
+        repeat(619) { epoch ->
+            val satelliteCount = if (epoch < 374) 51 else 50
+            val satellitesJson = (1..satelliteCount).joinToString(",") { svid ->
+                """{"constellationType":1,"svid":$svid,"carrierFrequencyHz":1575420000,"cn0DbHz":30.0,"elevationDegrees":45.0,"azimuthDegrees":0.0,"usedInFix":true}"""
+            }
+            val timestampNs = (epoch + 1L) * 1_000_000_000L
+            rows += row(
+                sequence++,
+                "GNSS_STATUS",
+                timestampNs,
+                """{"satelliteCount":$satelliteCount,"satellites":[$satellitesJson]}"""
+            )
+        }
+
+        repeat(2_505) { index ->
+            val epoch = (index.toLong() * 619L / 2_505L).toInt()
+            val timestampNs = (epoch + 1L) * 1_000_000_000L + 200_000_000L
+            val svid = index % 50 + 1
+            val messageId = index % 5
+            rows += row(
+                sequence++,
+                "GNSS_NAVIGATION_MESSAGE",
+                timestampNs,
+                """{"svid":$svid,"messageId":$messageId}"""
+            )
+        }
+
+        repeat(19_986) { index ->
+            val epoch = (index.toLong() * 619L / 19_986L).toInt()
+            val timestampNs = (epoch + 1L) * 1_000_000_000L + 100_000_000L
+            val svid = index % 50 + 1
+            rows += row(
+                sequence++,
+                "GNSS_RAW_MEASUREMENT",
+                timestampNs,
+                """{"constellationType":1,"svid":$svid,"carrierFrequencyHz":1575420000,"cn0DbHz":30.0,"state":8}"""
+            )
+        }
+
+        val snapshot = GnssCorrelationEngine().buildSnapshot(rows)
+        val rawEvidence = snapshot.satelliteEvidence.filter { it.rawSequenceNumber != null }
+        assertEquals(19_986, rawEvidence.size)
+        assertEquals(19_986, rawEvidence.count { it.match == SatelliteEvidenceMatch.STATUS_AND_RAW_MATCH })
+        assertEquals(51, snapshot.latestSatelliteEvidence.size)
+        assertTrue(rawEvidence.any { it.navigationAssociation == NavigationAssociation.ASSOCIATED })
+    }
+
+    @Test
+    fun exportSnapshotReleaseMatchesNormalSnapshotAndClearsPayloadHoldingRows() {
+        val rows = arrayListOf(
+            row(1, "GNSS_STATUS", 1_000_000_000L, """{"satelliteCount":1,"satellites":[{"constellationType":1,"svid":18,"cn0DbHz":20.0,"elevationDegrees":32.0,"azimuthDegrees":121.0}]}"""),
+            row(2, "GNSS_RAW_MEASUREMENT", 1_200_000_000L, """{"constellationType":1,"svid":18,"cn0DbHz":22.5,"carrierFrequencyHz":1575420000}"""),
+            row(3, "GNSS_NAVIGATION_MESSAGE", 1_300_000_000L, """{"svid":18,"messageId":1}""")
+        )
+        val expected = GnssCorrelationEngine().buildSnapshot(rows.toList())
+
+        val actual = GnssCorrelationEngine().buildSnapshotAndRelease(rows)
+
+        assertEquals(expected, actual)
+        assertTrue("export correlation input must be released after parsing", rows.isEmpty())
+    }
+
 }

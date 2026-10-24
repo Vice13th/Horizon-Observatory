@@ -1,4 +1,4 @@
-# HORIZON OBSERVATORY — TEST BUILD (orbit prediction foundation)
+﻿# HORIZON OBSERVATORY â€” TEST BUILD (orbit prediction foundation)
 
 **LABEL: TEST / CANDIDATE. NOT A STABLE CHECKPOINT. NOT RELEASE-READY.**
 Base: `HorizonObservatory_FINAL_MERGED__4_.zip` + orbit-prediction foundation. Full source in this archive.

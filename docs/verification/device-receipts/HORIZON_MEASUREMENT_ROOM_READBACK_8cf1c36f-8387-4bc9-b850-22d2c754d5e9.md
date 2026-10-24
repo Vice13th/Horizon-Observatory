@@ -1,4 +1,4 @@
-# HORIZON — DEVICE RECEIPT / GNSS MEASUREMENT → ROOM READBACK → EXPORT
+﻿# HORIZON â€” DEVICE RECEIPT / GNSS MEASUREMENT â†’ ROOM READBACK â†’ EXPORT
 
 Date: 2026-10-06
 Target: Hive / Samsung SM-A075F / Android 16 / API 36
@@ -78,7 +78,7 @@ Full JVM suite:
 ### NORAD mapping
 UNKNOWN
 
-The resolver is currently an empty table. No constellation/SVID→NORAD mapping was inferred or guessed.
+The resolver is currently an empty table. No constellation/SVIDâ†’NORAD mapping was inferred or guessed.
 
 ### Device-specific UTC edge case
 UNVERIFIED

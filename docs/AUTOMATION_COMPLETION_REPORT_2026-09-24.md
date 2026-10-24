@@ -1,4 +1,4 @@
-# HORIZON — Automation Completion Report
+﻿# HORIZON â€” Automation Completion Report
 
 ## STATUS
 PARTIAL / READY FOR EXTERNAL BUILD GATE

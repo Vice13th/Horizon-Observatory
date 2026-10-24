@@ -1,4 +1,4 @@
-# HORIZON — Architecture State at Checkpoint
+﻿# HORIZON â€” Architecture State at Checkpoint
 
 ## Data path
 

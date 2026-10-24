@@ -1,0 +1,43 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+
+> Configure project :app
+.\gradlew.bat : e: [historical local build path omitted] Using 'jvmTarget: String' is an error. Please
+migrate to the compilerOptions DSL. More details are here: https://kotl.in/u1r8ln
+At line:1 char:1825
++ ... alCount 12; .\gradlew.bat :propagation-contract:compileKotlin :orbitc ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (e: [historical local path omitted]/kotl.in/u1r8ln:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+w: Deprecated Gradle Version
+The used Gradle version (Gradle 8.11.1) is deprecated and will not be supported in future Kotlin Gradle Plugin releases.
+The minimum supported Gradle version will become Gradle 8.14.4 in Kotlin 2.5.0.
+
+This warning can be suppressed in 'gradle.properties':
+    kotlin.suppressGradlePluginWarnings=DeprecatedGradleVersionWarning
+Solution: Please update the Gradle version to at least Gradle 8.14.4.
+
+[Incubating] Problems report is available at: [historical local build path omitted]
+
+FAILURE: Build failed with an exception.
+
+* Where:
+Build file '[historical local path omitted]\app\build.gradle.kts' line: 69
+
+* What went wrong:
+Script compilation error:
+
+  Line 69:     kotlinOptions { jvmTarget = "17" }
+                               ^ Using 'jvmTarget: String' is an error. Please migrate to the compilerOptions DSL.
+More details are here: https://kotl.in/u1r8ln
+
+1 error
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1m 3s

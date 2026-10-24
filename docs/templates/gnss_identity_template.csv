@@ -1,0 +1,7 @@
+# Horizon Observatory — GNSS satellite identity table (TEMPLATE, no data)
+# Fill ONLY from a source you can cite. constellation_type = Android GnssStatus constant:
+#   1 GPS, 2 SBAS, 3 GLONASS, 4 QZSS, 5 BEIDOU, 6 GALILEO, 7 IRNSS
+# method: OPERATOR_SUPPLIED_TABLE | NAME_PATTERN_INFERRED (inferred rows can only be UNVERIFIED)
+# confidence: VERIFIED | UNVERIFIED   evidence: where this mapping comes from (single line)
+# valid_from_utc_ms / valid_to_utc_ms: optional validity window (PRN/slot assignments change over time)
+constellation_type,svid,norad_cat_id,source,method,confidence,evidence,valid_from_utc_ms,valid_to_utc_ms

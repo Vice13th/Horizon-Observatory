@@ -1,4 +1,4 @@
-# HORIZON — Current Verification Matrix
+﻿# HORIZON â€” Current Verification Matrix
 
 > Current repository truth: main at the latest source checkpoint. Historical receipts remain preserved; this matrix records the strongest currently evidenced state.
 
@@ -11,7 +11,7 @@
 | Application launch | VERIFIED | Physical-device launch smoke check passed |
 | Live GNSS observation path | VERIFIED | Active-session UI freshness and persisted observation evidence |
 | Sequence continuity | VERIFIED | Exported session sequence 1..2341, contiguous |
-| Sequence advancement | VERIFIED | Direct persisted sequence evidence: 394 → 448 → 485 |
+| Sequence advancement | VERIFIED | Direct persisted sequence evidence: 394 â†’ 448 â†’ 485 |
 | SVID evidence | VERIFIED | Real constellationType=1, svid=10 observed at multiple sequences |
 | Constellation evidence | VERIFIED | Observed Android values include 1,2,3,5,6 across evidence layers |
 | Pseudorange-rate evidence | VERIFIED | Raw Android pseudorangeRateMetersPerSecond observed; no Doppler inference |
@@ -20,7 +20,7 @@
 | Published APK asset | VERIFIED | Exact real filename and GitHub asset digest match local APK SHA-256 |
 | Published APK filename | VERIFIED | Horizon-Observatory-v1.0.0-observatory.apk |
 | Release availability | VERIFIED | GitHub Release v1.0.0-observatory is published |
-| NORAD identity mapping | UNKNOWN | No authoritative time-valid SVID→NORAD resolver receipt |
+| NORAD identity mapping | UNKNOWN | No authoritative time-valid SVIDâ†’NORAD resolver receipt |
 | UTC/device edge cases | UNVERIFIED | Dedicated target-device receipt still required |
 | OrbitCore reference-vector accuracy | UNVERIFIED | Runtime/conformance evidence does not establish scientific numerical accuracy |
 | Physical orientation / heading | UNVERIFIED | Rotation-vector evidence unavailable on target device |

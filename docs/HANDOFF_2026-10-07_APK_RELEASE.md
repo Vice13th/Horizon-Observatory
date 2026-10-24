@@ -1,4 +1,4 @@
-# HORIZON Observatory — Release Handoff — 2026-10-07
+﻿# HORIZON Observatory â€” Release Handoff â€” 2026-10-07
 
 ## Goal
 Preserve the first public, device-verified APK milestone so the next session can continue from repository and release truth without confusing artifact publication with scientific closure.

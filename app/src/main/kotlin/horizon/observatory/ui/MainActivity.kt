@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -26,10 +27,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
@@ -60,7 +63,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -79,6 +85,9 @@ import horizon.observatory.HorizonApplication
 import horizon.observatory.acquisition.service.ObservatoryService
 import horizon.observatory.analysis.AnalysisSnapshot
 import horizon.observatory.analysis.SessionAnalysisEngine
+import horizon.observatory.analysis.integrity.AgcPlotPoint
+import horizon.observatory.analysis.integrity.GnssCarrierBand
+import horizon.observatory.analysis.integrity.agcPlotPoints
 import horizon.observatory.astronomy.orientation.ControllableOrientationSource
 import horizon.observatory.domain.gnss.GnssDomainSnapshot
 import horizon.observatory.domain.gnss.SatelliteEvidence
@@ -172,6 +181,25 @@ class MainActivity : ComponentActivity() {
         var pendingSavePath by rememberSaveable { mutableStateOf<String?>(null) }
         var exportSessionId by rememberSaveable { mutableStateOf<String?>(null) }
 
+        var identityStatus by rememberSaveable { mutableStateOf("") }
+        val importIdentityLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) uiScope.launch {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        val text = contentResolver.openInputStream(uri)?.use { horizon.observatory.astronomy.identity.IdentityTableCsv.readBounded(it) }
+                            ?: error("Unable to read the selected file")
+                        val parsed = horizon.observatory.astronomy.identity.IdentityTableCsv.parse(text)
+                        if (parsed.entries.isNotEmpty()) horizon.observatory.astronomy.identity.IdentityTableStore.save(applicationContext, text)
+                        parsed
+                    }
+                }.onSuccess { p ->
+                    if (p.entries.isNotEmpty()) container.satelliteIdentityResolver.replace(p.entries)
+                    identityStatus = "Identity table: ${p.entries.size} valid of ${p.dataRows} rows" +
+                        (p.issues.firstOrNull()?.let { " · ${p.issues.size} issue(s); first: line ${it.line}: ${it.message}" } ?: "") +
+                        (if (p.entries.isEmpty()) " · previous table kept" else "")
+                }.onFailure { identityStatus = "Identity import failed: ${it.message ?: it}" }
+            }
+        }
         val saveExportLauncher = rememberLauncherForActivityResult(
             ActivityResultContracts.OpenDocumentTree()
         ) { treeUri ->
@@ -271,7 +299,14 @@ class MainActivity : ComponentActivity() {
         }
 
         val exportSession = sessions.firstOrNull { it.sessionId == exportSessionId }
-        val currentSectionTitle = sectionTitle(section)
+        val isHorizonParallel = packageName.startsWith("horizon.observatory.parallel")
+        val productBrand = when {
+            isHorizonParallel -> "HORIZON // PARALLEL"
+            packageName.startsWith("horizon.observatory.ts") -> "HORIZON // OBSERVATORY TS"
+            packageName.startsWith("horizon.observatory.t1") -> "HORIZON // OBSERVATORY T1"
+            else -> "HORIZON // OBSERVATORY"
+        }
+        val currentSectionTitle = sectionTitle(section, productBrand)
         val selectedNav = when (section) {
             0 -> 0
             1 -> 1
@@ -284,6 +319,7 @@ class MainActivity : ComponentActivity() {
             containerColor = HorizonColors.background,
             topBar = {
                 InstrumentTopBar(
+                    brand = productBrand,
                     title = currentSectionTitle,
                     active = latestIsActive
                 )
@@ -299,13 +335,7 @@ class MainActivity : ComponentActivity() {
                         NavigationBarItem(
                             selected = selectedNav == index,
                             onClick = { section = index },
-                            icon = {
-                                Text(
-                                    label.take(2).uppercase(),
-                                    fontFamily = FontFamily.Monospace,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            },
+                            icon = { NavigationGlyph(index = index) },
                             label = {
                                 Text(
                                     label.uppercase(),
@@ -327,35 +357,9 @@ class MainActivity : ComponentActivity() {
         ) { padding ->
             Box(Modifier.fillMaxSize().padding(padding)) {
                 when (section) {
-                    0 -> Column(Modifier.fillMaxSize()) {
-                        SessionControls(
-                            session = currentSession,
-                            onPermissions = { permissionLauncher.launch(requestablePermissions()) },
-                            onStart = {
-                                if (!hasFineLocationPermission()) {
-                                    message = "Grant precise (fine) location permission to start GNSS/cellular observation."
-                                } else {
-                                    val intent = Intent(this@MainActivity, ObservatoryService::class.java).setAction(ObservatoryService.ACTION_START)
-                                    ContextCompat.startForegroundService(this@MainActivity, intent)
-                                    message = if (currentSession?.lifecycleState == "RECORDING" || currentSession?.lifecycleState == "STOPPING") {
-                                        "Observation recovery/start requested."
-                                    } else {
-                                        "Observation start requested."
-                                    }
-                                }
-                            },
-                            onStop = {
-                                if (currentSession?.lifecycleState == "RECORDING" || currentSession?.lifecycleState == "STOPPING") {
-                                    startService(Intent(this@MainActivity, ObservatoryService::class.java).setAction(ObservatoryService.ACTION_STOP))
-                                    message = "Observation stop requested."
-                                } else {
-                                    message = "No active observation session."
-                                }
-                            }
-                        )
-                        if (message != "Ready") {
-                            Text(message, Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium)
-                        }
+                    0 -> androidx.compose.runtime.CompositionLocalProvider(
+                        LocalPredictedViews provides container.predictedViews
+                    ) {
                         OverviewScreen(
                             session = currentSession,
                             analysis = analysis,
@@ -366,10 +370,45 @@ class MainActivity : ComponentActivity() {
                             observed = observedSky,
                             observerLat = observations.lastOrNull { it.type == "GNSS_FIX" }?.let { numericFieldLocal(it, "latitude") },
                             observerLon = observations.lastOrNull { it.type == "GNSS_FIX" }?.let { numericFieldLocal(it, "longitude") },
-                            observerAlt = observations.lastOrNull { it.type == "GNSS_FIX" }?.let { numericFieldLocal(it, "altitude") }
+                            observerAlt = observations.lastOrNull { it.type == "GNSS_FIX" }?.let { numericFieldLocal(it, "altitude") },
+                            message = message.takeUnless { it == "Ready" },
+                            sessionControls = {
+                                SessionControls(
+                                    session = currentSession,
+                                    onPermissions = { permissionLauncher.launch(requestablePermissions()) },
+                                    onStart = {
+                                        if (!hasFineLocationPermission()) {
+                                            message = "Grant precise (fine) location permission to start GNSS/cellular observation."
+                                        } else {
+                                            val intent = Intent(this@MainActivity, ObservatoryService::class.java)
+                                                .setAction(ObservatoryService.ACTION_START)
+                                            ContextCompat.startForegroundService(this@MainActivity, intent)
+                                            message = if (currentSession?.lifecycleState == "RECORDING" ||
+                                                currentSession?.lifecycleState == "STOPPING"
+                                            ) "Observation recovery/start requested."
+                                            else "Observation start requested."
+                                        }
+                                    },
+                                    onStop = {
+                                        if (currentSession?.lifecycleState == "RECORDING" ||
+                                            currentSession?.lifecycleState == "STOPPING"
+                                        ) {
+                                            startService(
+                                                Intent(this@MainActivity, ObservatoryService::class.java)
+                                                    .setAction(ObservatoryService.ACTION_STOP)
+                                            )
+                                            message = "Observation stop requested."
+                                        } else message = "No active observation session."
+                                    }
+                                )
+                            },
+                            locationContinuity = {
+                                LocationContinuityCard(
+                                    onRequestPermissions = { permissionLauncher.launch(requestablePermissions()) }
+                                )
+                            }
                         )
-                    }
-                    1 -> GnssScreen(
+                    }                    1 -> GnssScreen(
                         obs = observations,
                         analysis = analysis,
                         orientationSource = container.deviceOrientationSource,
@@ -396,6 +435,86 @@ class MainActivity : ComponentActivity() {
                         exportPath = exportPath,
                         exportStatus = exportStatus,
                         onGenerate = generateExport,
+                        identityEntries = container.satelliteIdentityResolver.entryCount,
+                        identityStatus = identityStatus,
+                        onImportIdentity = { importIdentityLauncher.launch(arrayOf("*/*")) },
+                        onReport = { sel ->
+                            uiScope.launch {
+                                exportStatus = "Building ${sel?.title ?: "all"} report …"
+                                runCatching {
+                                    // The on-screen list is only a recent window while a session is live (LIVE_OBSERVATION_WINDOW);
+                                    // reports must describe the full stored session.
+                                    val reportSession = currentSession ?: sessions.firstOrNull()
+                                    // Full reports materialize and analyze the complete session in memory.
+                                    // Bound this path to avoid repeating the device's observed 256 MiB heap crash.
+                                    val reportObservationCount = reportSession?.let {
+                                        withContext(Dispatchers.IO) { container.sessionRepository.countObservations(it.sessionId) }
+                                    } ?: observations.size
+                                    check(reportObservationCount <= MAX_IN_MEMORY_REPORT_OBSERVATIONS) {
+                                        "Full report generation requires $reportObservationCount observations, exceeding the safe in-memory limit of $MAX_IN_MEMORY_REPORT_OBSERVATIONS. The session is unchanged; use GENERATE PACKAGE for the streaming session ZIP."
+                                    }
+                                    val reportObs = if (reportSession != null) {
+                                        withContext(Dispatchers.IO) { container.sessionRepository.getObservationsSnapshot(reportSession.sessionId) }
+                                    } else observations
+                                    val reportAnalysis = withContext(Dispatchers.Default) { container.analysisEngine.analyze(reportObs) }
+                                    val nowMs = System.currentTimeMillis()
+                                    val predicted = if (sel == null || sel == horizon.observatory.export.ReportSection.PREDICTED) {
+                                        val fix = reportObs.lastOrNull { it.type == "GNSS_FIX" }
+                                        horizon.observatory.export.buildPredictedReportData(
+                                            container.satellitePredictionUseCase, reportAnalysis,
+                                            fix?.let { numericFieldLocal(it, "latitude") },
+                                            fix?.let { numericFieldLocal(it, "longitude") },
+                                            fix?.let { numericFieldLocal(it, "altitude") },
+                                            nowMs
+                                        )
+                                    } else null
+                                    val identityHints = if (sel == null || sel == horizon.observatory.export.ReportSection.IDENTITY_HINTS) {
+                                        val hintFix = reportObs.lastOrNull { it.type == "GNSS_FIX" }
+                                        horizon.observatory.export.buildIdentityHints(
+                                            container.orbitDataSource, container.orbitPropagationEngine, reportAnalysis,
+                                            reportObs.lastOrNull { it.type == "GNSS_STATUS" }?.timestampUtcMs,
+                                            hintFix?.let { numericFieldLocal(it, "latitude") },
+                                            hintFix?.let { numericFieldLocal(it, "longitude") },
+                                            hintFix?.let { numericFieldLocal(it, "altitude") }
+                                        )
+                                    } else null
+                                    val integrity = if (sel == null || sel == horizon.observatory.export.ReportSection.INTEGRITY) {
+                                        withContext(Dispatchers.Default) {
+                                            horizon.observatory.analysis.integrity.GnssIntegrityIndicators.evaluate(
+                                                horizon.observatory.analysis.integrity.IntegrityInputs.fromObservations(reportObs)
+                                            )
+                                        }
+                                    } else null
+                                    val input = horizon.observatory.export.ReportInput(
+                                        session = reportSession,
+                                        observations = reportObs,
+                                        analysis = reportAnalysis,
+                                        capabilityJson = container.capabilityScanner.buildReport().json.toString(2),
+                                        antennaRecords = reportAnalysis.gnssDomain.antennaEvidence.map { container.exportEngine.antennaEvidenceJson(it) },
+                                        generatedAtUtcMs = nowMs,
+                                        predicted = predicted,
+                                        identityHints = identityHints,
+                                        integrity = integrity
+                                    )
+                                    withContext(Dispatchers.IO) {
+                                        val dir = java.io.File(getExternalFilesDir(null) ?: filesDir, "reports").apply { mkdirs() }
+                                        val name = "horizon_report_${sel?.slug ?: "all"}_${input.generatedAtUtcMs}.zip"
+                                        horizon.observatory.export.ReportExporter.buildZip(
+                                            java.io.File(dir, name),
+                                            sel?.let { listOf(it) } ?: horizon.observatory.export.ReportSection.values().toList(),
+                                            input
+                                        ).also { horizon.observatory.export.ReportExporter.pruneOldReports(dir) }
+                                    }
+                                }.onSuccess {
+                                    exportPath = it.absolutePath
+                                    exportStatus = "Report ready: ${it.name} — use CHOOSE FOLDER & SAVE ZIP."
+                                    message = "Report ready."
+                                }.onFailure {
+                                    exportStatus = "Report failed: ${it.message ?: it}"
+                                    message = "Report export failed."
+                                }
+                            }
+                        },
                         onSave = {
                             val path = exportPath
                             if (path == null) {
@@ -446,7 +565,8 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         private const val DEFAULT_COPY_BUFFER = 64 * 1024
-private const val LIVE_OBSERVATION_WINDOW = 512
+        private const val LIVE_OBSERVATION_WINDOW = 512
+        const val MAX_IN_MEMORY_REPORT_OBSERVATIONS = 20000
     }
 
     private fun hasLocationPermission() =
@@ -468,8 +588,13 @@ private const val LIVE_OBSERVATION_WINDOW = 512
     }
 }
 
-private fun sectionTitle(section: Int): String = when (section) {
-    0 -> "HORIZON / OBSERVATORY"
+private fun sectionTitle(section: Int, brand: String = "HORIZON // OBSERVATORY"): String = when (section) {
+    0 -> when {
+        brand.contains("PARALLEL") -> "Horizon Parallel"
+        brand.contains(" T1") -> "Horizon Observatory T1"
+        brand.endsWith(" TS") -> "Horizon Observatory TS"
+        else -> "Horizon Observatory"
+    }
     1 -> "GNSS OBSERVATORY"
     2 -> "SESSION HISTORY"
     3 -> "SYSTEM & CAPABILITIES"
@@ -481,7 +606,72 @@ private fun sectionTitle(section: Int): String = when (section) {
     9 -> "EXPORT CENTER"
     10 -> "INTERNAL LOG"
     11 -> "ANTENNA OBSERVATORY"
-    else -> "HORIZON / OBSERVATORY"
+    else -> when {
+        brand.contains("PARALLEL") -> "Horizon Parallel"
+        brand.contains(" T1") -> "Horizon Observatory T1"
+        brand.endsWith(" TS") -> "Horizon Observatory TS"
+        else -> "Horizon Observatory"
+    }
+}
+
+/**
+ * Navigation glyphs are deliberately decorative: NavigationBarItem owns the
+ * accessible destination name through its visible label.
+ */
+@Composable
+private fun NavigationGlyph(index: Int) {
+
+    val color = androidx.compose.material3.LocalContentColor.current
+    Canvas(
+        Modifier.size(24.dp)
+    ) {
+        val line = 1.8.dp.toPx()
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val small = size.minDimension * 0.24f
+        val large = size.minDimension * 0.39f
+        when (index) {
+            0 -> {
+                drawCircle(color, large, center, style = Stroke(line))
+                val horizon = Path().apply {
+                    moveTo(center.x - large, center.y + large * 0.15f)
+                    lineTo(center.x - small, center.y + large * 0.15f)
+                    lineTo(center.x, center.y - small * 0.15f)
+                    lineTo(center.x + small, center.y + large * 0.15f)
+                    lineTo(center.x + large, center.y + large * 0.15f)
+                }
+                drawPath(horizon, color, style = Stroke(line))
+            }
+            1 -> {
+                drawCircle(color, small, center, style = Stroke(line))
+                drawCircle(color, large, center, style = Stroke(line))
+                drawLine(color, Offset(center.x - large, center.y), Offset(center.x + large, center.y), line)
+                drawLine(color, Offset(center.x, center.y - large), Offset(center.x, center.y + large), line)
+            }
+            2 -> {
+                drawCircle(color, large, center, style = Stroke(line))
+                drawLine(color, center, Offset(center.x, center.y - small), line)
+                drawLine(color, center, Offset(center.x + small * 0.8f, center.y + small * 0.5f), line)
+            }
+            3 -> {
+                val ys = listOf(center.y - large * 0.65f, center.y, center.y + large * 0.65f)
+                ys.forEachIndexed { i, y ->
+                    drawLine(color, Offset(center.x - large, y), Offset(center.x + large, y), line)
+                    val x = when (i) {
+                        0 -> center.x - small * 0.3f
+                        1 -> center.x + small * 0.6f
+                        else -> center.x - small * 0.7f
+                    }
+                    drawCircle(color, line * 1.5f, Offset(x, y))
+                }
+            }
+            else -> {
+                val radius = 2.dp.toPx()
+                listOf(-large * 0.65f, 0f, large * 0.65f).forEach { dx ->
+                    drawCircle(color, radius, Offset(center.x + dx, center.y))
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -492,26 +682,85 @@ private fun SessionControls(
     onStop: () -> Unit
 ) {
     val active = session?.lifecycleState == "RECORDING" || session?.lifecycleState == "STOPPING"
-    Card(
+    Card3D(
         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
         colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)
     ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("SESSION CONTROL", style = MaterialTheme.typography.labelSmall)
-                    Text(session?.lifecycleState ?: "NO SESSION", fontWeight = FontWeight.Bold)
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val fontScale = LocalDensity.current.fontScale
+            val inlineActions = maxWidth >= 320.dp && fontScale < 1.35f
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("SESSION CONTROL", style = MaterialTheme.typography.labelSmall)
+                        Text(session?.lifecycleState ?: "NO SESSION", fontWeight = FontWeight.Bold)
+                    }
+                    Text(
+                        if (active) "ACTIVE" else "IDLE",
+                        color = if (active) HorizonColors.observed else HorizonColors.muted,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-                Text(
-                    if (active) "ACTIVE" else "IDLE",
-                    color = if (active) HorizonColors.observed else HorizonColors.muted,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onStart, enabled = true, modifier = Modifier.weight(1f)) { Text("START") }
-                OutlinedButton(onClick = onStop, enabled = active, modifier = Modifier.weight(1f)) { Text("STOP") }
-                OutlinedButton(onClick = onPermissions, modifier = Modifier.weight(1.3f)) { Text("PERMISSIONS") }
+
+                if (inlineActions) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = onStart,
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                        ) {
+                            Text("START", maxLines = 1, softWrap = false)
+                        }
+                        OutlinedButton(
+                            onClick = onStop,
+                            enabled = active,
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                        ) {
+                            Text("STOP", maxLines = 1, softWrap = false)
+                        }
+                        OutlinedButton(
+                            onClick = onPermissions,
+                            modifier = Modifier.weight(1.2f).heightIn(min = 48.dp)
+                                .semantics { contentDescription = "Manage app permissions" }
+                        ) {
+                            Text("PERMS", maxLines = 1, softWrap = false)
+                        }
+                    }
+                } else {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = onStart,
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                        ) {
+                            Text("START", maxLines = 1, softWrap = false)
+                        }
+                        OutlinedButton(
+                            onClick = onStop,
+                            enabled = active,
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                        ) {
+                            Text("STOP", maxLines = 1, softWrap = false)
+                        }
+                    }
+                    OutlinedButton(
+                        onClick = onPermissions,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .semantics { contentDescription = "Manage app permissions" }
+                    ) {
+                        Text("PERMISSIONS", maxLines = 1, softWrap = false)
+                    }
+                }
             }
         }
     }
@@ -530,7 +779,7 @@ private fun MoreScreen(onNavigate: (Int) -> Unit, hasCompletedSession: Boolean) 
     )
     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+            Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("OBSERVATORY MODULES", style = MaterialTheme.typography.titleMedium)
                     Text("Secondary views are kept out of the primary navigation so the mobile layout remains readable.", style = MaterialTheme.typography.bodySmall)
@@ -550,11 +799,29 @@ private fun MoreScreen(onNavigate: (Int) -> Unit, hasCompletedSession: Boolean) 
 
 @Composable
 private fun SystemScreen(session: SessionEntity?, capabilityJson: String) {
+    // Device identity is available even before the first recording session. A missing
+    // SessionEntity must not make the current device look UNKNOWN.
+    val deviceDisplay = deviceIdentityDisplay(
+        recordedManufacturer = session?.deviceManufacturer,
+        recordedModel = session?.deviceModel,
+        recordedAndroidRelease = session?.androidVersion,
+        recordedApiLevel = session?.sdkVersion,
+        runtimeManufacturer = Build.MANUFACTURER,
+        runtimeModel = Build.MODEL,
+        runtimeAndroidRelease = Build.VERSION.RELEASE,
+        runtimeApiLevel = Build.VERSION.SDK_INT
+    )
     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item { MetricCard("Device", "${session?.deviceManufacturer ?: "UNKNOWN"} ${session?.deviceModel ?: "UNKNOWN"}", "Android ${session?.androidVersion ?: "UNKNOWN"} / API ${session?.sdkVersion ?: 0}") }
+        item {
+            MetricCard(
+                "Device",
+                "${deviceDisplay.manufacturer} ${deviceDisplay.model}",
+                "Android ${deviceDisplay.androidRelease} / API ${deviceDisplay.apiLevel}"
+            )
+        }
         item { MetricCard("Session", session?.sessionId ?: "NONE", session?.lifecycleState ?: "NO SESSION") }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+            Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text("CAPABILITY REPORT", style = MaterialTheme.typography.titleMedium)
                     Text(capabilityJson, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
@@ -562,7 +829,7 @@ private fun SystemScreen(session: SessionEntity?, capabilityJson: String) {
             }
         }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+            Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text("PERMISSION STATE", style = MaterialTheme.typography.titleMedium)
                     Text(session?.permissionStateJson ?: "{}", fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
@@ -583,13 +850,28 @@ private fun OverviewScreen(
     observed: ObservedSkyState,
     observerLat: Double?,
     observerLon: Double?,
-    observerAlt: Double?
+    observerAlt: Double?,
+    message: String?,
+    sessionControls: @Composable () -> Unit,
+    locationContinuity: @Composable () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     LazyColumn(
-        Modifier.fillMaxSize().padding(horizontal = 12.dp),
+        modifier.fillMaxSize().padding(horizontal = 12.dp),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        item { sessionControls() }
+        if (message?.isNotBlank() == true) {
+            item {
+                Text(
+                    message,
+                    Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = HorizonColors.warning
+                )
+            }
+        }
         item {
             InstrumentObservationHeader(
                 active = isLive,
@@ -605,10 +887,12 @@ private fun OverviewScreen(
                 observerAlt = observerAlt,
                 orientationSource = orientationSource,
                 declinationProvider = declinationProvider,
-                isLive = isLive
+                isLive = isLive,
+                compact = true
             )
         }
         item { InstrumentTelemetry(observed) }
+        item { locationContinuity() }
         item { MetricGrid(analysis) }
         item { SignalCard("GNSS C/N0 history", "dB-Hz", analysis.averageCn0DbHz, cnoSamples) }
         item { SignalSummary(analysis) }
@@ -618,7 +902,7 @@ private fun OverviewScreen(
 
 @Composable
 private fun InstrumentObservationHeader(active: Boolean, session: SessionEntity?, observedCount: Int) {
-    Card(
+    Card3D(
         colors = CardDefaults.cardColors(containerColor = HorizonColors.instrument),
         border = androidx.compose.foundation.BorderStroke(2.dp, HorizonColors.border),
         shape = RoundedCornerShape(8.dp)
@@ -663,57 +947,100 @@ private fun InstrumentObservationHeader(active: Boolean, session: SessionEntity?
 
 @Composable
 private fun InstrumentTelemetry(observed: ObservedSkyState) {
-    val best = observed.points.maxByOrNull { it.cn0DbHz ?: Double.NEGATIVE_INFINITY }
-    Card(
-        colors = CardDefaults.cardColors(containerColor = HorizonColors.instrument),
-        border = androidx.compose.foundation.BorderStroke(2.dp, HorizonColors.border),
-        shape = RoundedCornerShape(8.dp)
-    ) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Text(
-                "TELEMETRY",
-                style = MaterialTheme.typography.titleSmall,
-                color = HorizonColors.observed,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold
-            )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                InstrumentValue("C/N0", best?.cn0DbHz?.let { "%.1f dB-Hz".format(it) } ?: "UNAVAILABLE")
-                InstrumentValue("ELEVATION", best?.elevationDeg?.let { "%.1f°".format(it) } ?: "UNAVAILABLE")
-                InstrumentValue("AZIMUTH", best?.azimuthDeg?.let { "%.1f°".format(it) } ?: "UNAVAILABLE")
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val stacked = maxWidth < 320.dp || LocalDensity.current.fontScale >= 1.35f
+        val best = observed.points.maxByOrNull { it.cn0DbHz ?: Double.NEGATIVE_INFINITY }
+        Card3D(
+            colors = CardDefaults.cardColors(containerColor = HorizonColors.instrument),
+            border = androidx.compose.foundation.BorderStroke(2.dp, HorizonColors.border),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text(
+                    "TELEMETRY",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = HorizonColors.observed,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold
+                )
+                val cn0 = best?.cn0DbHz?.let { "%.1f dB-Hz".format(it) } ?: "UNAVAILABLE"
+                val elevation = best?.elevationDeg?.let { "%.1f°".format(it) } ?: "UNAVAILABLE"
+                val azimuth = best?.azimuthDeg?.let { "%.1f°".format(it) } ?: "UNAVAILABLE"
+                if (stacked) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        InstrumentValue("C/N0", cn0)
+                        InstrumentValue("ELEVATION", elevation)
+                        InstrumentValue("AZIMUTH", azimuth)
+                    }
+                } else {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        InstrumentValue("C/N0", cn0, Modifier.weight(1f))
+                        InstrumentValue("ELEVATION", elevation, Modifier.weight(1f))
+                        InstrumentValue("AZIMUTH", azimuth, Modifier.weight(1f))
+                    }
+                }
+                Text(
+                    if (best != null) "SOURCE: OBSERVED SATELLITE FIELD" else "SOURCE: NO OBSERVED GEOMETRY",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = HorizonColors.muted,
+                    fontFamily = FontFamily.Monospace
+                )
             }
-            Text(
-                if (best != null) "SOURCE: OBSERVED SATELLITE FIELD" else "SOURCE: NO OBSERVED GEOMETRY",
-                style = MaterialTheme.typography.labelSmall,
-                color = HorizonColors.muted,
-                fontFamily = FontFamily.Monospace
-            )
         }
     }
 }
 
 @Composable
-private fun RowScope.InstrumentValue(label: String, value: String) {
-    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = HorizonColors.muted, fontFamily = FontFamily.Monospace)
-        Text(value, style = MaterialTheme.typography.bodyMedium, color = HorizonColors.text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+private fun InstrumentValue(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = HorizonColors.muted,
+            fontFamily = FontFamily.Monospace,
+            maxLines = 2
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = HorizonColors.text,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            maxLines = 2
+        )
     }
 }
 
 @Composable
 private fun MetricGrid(a: AnalysisSnapshot) {
-    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("OBSERVATION MATRIX", style = MaterialTheme.typography.titleMedium)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Metric("RAW GNSS", a.gnssRawCount.toString(), Modifier.weight(1f))
-                Metric("GNSS STATUS", a.gnssStatusCount.toString(), Modifier.weight(1f))
-                Metric("FIX", a.gnssFixCount.toString(), Modifier.weight(1f))
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Metric("CELLULAR", a.cellularCount.toString(), Modifier.weight(1f))
-                Metric("SENSORS", a.sensorCount.toString(), Modifier.weight(1f))
-                Metric("TOTAL", a.observationCount.toString(), Modifier.weight(1f))
+    Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val columns = metricColumnsForWidth(maxWidth.value, LocalDensity.current.fontScale)
+            val metrics = listOf(
+                "RAW GNSS" to a.gnssRawCount.toString(),
+                "GNSS STATUS" to a.gnssStatusCount.toString(),
+                "FIX" to a.gnssFixCount.toString(),
+                "CELLULAR" to a.cellularCount.toString(),
+                "SENSORS" to a.sensorCount.toString(),
+                "TOTAL" to a.observationCount.toString()
+            )
+            Column(
+                Modifier.fillMaxWidth().padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text("OBSERVATION MATRIX", style = MaterialTheme.typography.titleMedium)
+                metrics.chunked(columns).forEach { rowMetrics ->
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        rowMetrics.forEach { (label, value) ->
+                            Metric(label, value, Modifier.weight(1f))
+                        }
+                        repeat(columns - rowMetrics.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                }
             }
         }
     }
@@ -721,15 +1048,14 @@ private fun MetricGrid(a: AnalysisSnapshot) {
 
 @Composable
 private fun Metric(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
-        Text(value, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 2, softWrap = true)
+        Text(value, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 2)
     }
 }
-
 @Composable
 private fun MetricCard(title: String, value: String, state: String) {
-    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+    Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(16.dp)) {
             Text(title, style = MaterialTheme.typography.labelSmall)
             Text(value, style = MaterialTheme.typography.bodyLarge, fontFamily = FontFamily.Monospace, maxLines = 2)
@@ -740,7 +1066,7 @@ private fun MetricCard(title: String, value: String, state: String) {
 
 @Composable
 private fun SignalCard(title: String, unit: String, value: Double?, samples: List<Double> = emptyList()) {
-    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+    Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
@@ -762,15 +1088,40 @@ private fun SignalCard(title: String, unit: String, value: Double?, samples: Lis
 }
 
 @Composable
+private fun TimestampedSignalCard(title: String, unit: String, points: List<Pair<Double, Double>>) {
+    val values = points.map { it.second }
+    Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+                Column(Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.titleMedium)
+                    Text("HISTORY SAMPLES: ${points.size} · X=ELAPSED SECONDS", style = MaterialTheme.typography.labelSmall)
+                }
+                Text(values.lastOrNull()?.let { "%.2f $unit".format(it) } ?: "UNAVAILABLE", fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(4.dp))
+            TimestampedLineChart(points)
+            val first = points.firstOrNull()?.first
+            val last = points.lastOrNull()?.first
+            Text(
+                if (first == null || last == null) "Elapsed time unavailable"
+                else "Elapsed ${"%.1f".format(first)}–${"%.1f".format(last)} s from first retained event",
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+    }
+}
+
+@Composable
 private fun SignalSummary(a: AnalysisSnapshot) {
-    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+    Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("DERIVED ANALYSIS", style = MaterialTheme.typography.titleMedium)
             Text("Average C/N0: ${a.averageCn0DbHz?.let { "%.2f dB-Hz".format(it) } ?: "UNAVAILABLE"}")
             Text("Average LTE/NR RSRP: ${a.averageRsrpDbm?.let { "%.2f dBm".format(it) } ?: "UNAVAILABLE"}")
             Text("Average visible satellites: ${a.averageVisibleSatellites?.let { "%.1f".format(it) } ?: "UNAVAILABLE"}")
             Text("Navigation messages: ${a.navigationMessageCount}")
-            Text("AGC: ${a.agcState} · samples=${a.agcSampleCount} · spread=${a.agcSpreadDb?.let { "%.4f dB".format(it) } ?: "UNAVAILABLE"}")
+            Text("AGC: ${a.agcState} | source=${a.agcSource} | samples=${a.agcSampleCount} | spread=${a.agcSpreadDb?.let { "%.4f dB".format(it) } ?: "UNAVAILABLE"}")
             Text("Sequence gaps: ${a.sequenceGapCount}")
             Text("Source-time regressions: ${a.timestampMonotonicViolations}")
         }
@@ -779,13 +1130,13 @@ private fun SignalSummary(a: AnalysisSnapshot) {
 
 @Composable
 private fun EvidenceCard(session: SessionEntity?) {
-    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+    Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("EVIDENCE", style = MaterialTheme.typography.titleMedium)
             Text("Device: ${session?.deviceManufacturer ?: "UNKNOWN"} ${session?.deviceModel ?: "UNKNOWN"}")
             Text("Android: ${session?.androidVersion ?: "UNKNOWN"} / API ${session?.sdkVersion ?: 0}")
             Text("Schema: ${session?.schemaVersion ?: 0}")
-            Text("Source measurement time and HORIZON ingress time are preserved separately; derived values remain separate from raw observations.")
+            Text("Source measurement time and Horizon Observatory ingress time are preserved separately; derived values remain separate from raw observations.")
         }
     }
 }
@@ -801,8 +1152,51 @@ private fun GnssScreen(
 ) {
     val domain = analysis.gnssDomain
     val rawRows = obs.filter { it.type == "GNSS_RAW_MEASUREMENT" }.takeLast(160)
+    val clockRows = obs.filter { it.type == "GNSS_CLOCK" }.takeLast(160)
     val cnoHistory = rawRows.mapNotNull { numericFieldLocal(it, "cn0DbHz") }.filter { it.isFinite() }
-    val agcHistory = rawRows.mapNotNull { numericFieldLocal(it, "automaticGainControlLevelDb") }.filter { it.isFinite() }
+    // Prefer event-level controls persisted in GNSS_CLOCK.eventExtras; use legacy values only as fallback.
+    val eventAgcRows = clockRows.mapNotNull { row ->
+        runCatching {
+            val payload = org.json.JSONObject(row.rawPayloadJson)
+            val extras = payload.optJSONObject("eventExtras")
+            val controls = extras?.optJSONArray("agcEvents")
+            val timestampNs = (payload.opt("eventElapsedRealtimeNanos") as? Number)?.toLong() ?: row.monotonicTimestampNs
+            timestampNs?.let { Triple(it, controls, extras?.optString("agcApi", "NOT_EXPOSED") ?: "NOT_EXPOSED") }
+        }.getOrNull()
+    }
+    val eventAgcControls = eventAgcRows.flatMap { (timestampNs, controls, _) ->
+        (0 until (controls?.length() ?: 0)).mapNotNull { index ->
+            val control = controls?.optJSONObject(index) ?: return@mapNotNull null
+            val level = (control.opt("levelDb") as? Number)?.toDouble()?.takeIf { it.isFinite() } ?: return@mapNotNull null
+            val frequency = (control.opt("carrierFrequencyHz") as? Number)?.toDouble() ?: Double.NaN
+            listOf(control.optInt("constellationType", -1).toDouble(), frequency, level, timestampNs.toDouble())
+        }
+    }
+    val eventAgcHistoryByGroup = eventAgcControls.groupBy { sample ->
+        val band = GnssCarrierBand.bucketMHz(sample[1])
+        "C${sample[0].toInt()}/B${if (band > 0) band.toString() + "MHz" else "UNKNOWN"}"
+    }.toSortedMap().mapValues { (_, samples) ->
+        samples.sortedBy { it[3] }.takeLast(80).map { AgcPlotPoint(it[3].toLong(), it[2]) }
+    }
+    val latestEventAgcAvailability = eventAgcRows.lastOrNull()?.let { (_, controls, api) ->
+        when {
+            api != "EVENT_LEVEL" -> "API_UNAVAILABLE"
+            controls != null && controls.length() > 0 -> "AVAILABLE"
+            else -> "EMPTY_COLLECTION"
+        }
+    } ?: "NOT_OBSERVED"
+    val legacyAgcValues = rawRows.mapNotNull { numericFieldLocal(it, "automaticGainControlLevelDb") }.filter { it.isFinite() }
+    val agcValues = (if (eventAgcControls.isNotEmpty()) eventAgcControls.map { it[2] } else legacyAgcValues).takeLast(160)
+    val agcSource = when {
+        eventAgcControls.isNotEmpty() -> "EVENT_LEVEL_REFLECTED"
+        legacyAgcValues.isNotEmpty() -> "LEGACY_PER_MEASUREMENT_FALLBACK"
+        else -> "UNAVAILABLE"
+    }
+    val agcState = when {
+        agcValues.isEmpty() -> "UNAVAILABLE"
+        agcValues.all { kotlin.math.abs(it - agcValues.first()) < 1e-9 } -> "CONSTANT_WITHIN_1E-9_DB"
+        else -> "VARYING"
+    }
     val navigationMessages = obs.filter { it.type == "GNSS_NAVIGATION_MESSAGE" }.takeLast(40)
     val fixRow = obs.lastOrNull { it.type == "GNSS_FIX" }
     val observerLat = fixRow?.let { numericFieldLocal(it, "latitude") }
@@ -815,7 +1209,24 @@ private fun GnssScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item { SignalCard("GNSS signal history", "dB-Hz", analysis.averageCn0DbHz, cnoHistory) }
-        item { SignalCard("GNSS AGC history", "dB", null, agcHistory) }
+        item {
+            Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("AGC TELEMETRY", style = MaterialTheme.typography.titleMedium)
+                    Text("Source: $agcSource")
+                    Text("State: $agcState; selected samples=${agcValues.size}")
+                    Text("Event-level samples=${eventAgcControls.size}; legacy samples=${legacyAgcValues.size}")
+                    Text("Distinct constellation/carrier groups=${eventAgcHistoryByGroup.size}; per-group history is ordered by monotonic event time.", style = MaterialTheme.typography.bodySmall)
+                    eventAgcHistoryByGroup.forEach { (key, history) ->
+                        val plotPoints = agcPlotPoints(history)
+                        Text("$key · n=${history.size} · last=${history.lastOrNull()?.let { "%.2f dB".format(it.levelDb) } ?: "n/a"}")
+                        TimestampedSignalCard("$key AGC history", "dB", plotPoints)
+                    }
+                    Text("Last event availability: $latestEventAgcAvailability")
+                    Text("Receiver/hardware-dependent telemetry; not a standalone interference classification.", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
         item {
             MetricCard(
                 "GNSS DOMAIN",
@@ -839,7 +1250,7 @@ private fun GnssScreen(
         item { MetricCard("Raw measurements", analysis.gnssRawCount.toString(), if (rawRows.isEmpty()) "NOT OBSERVED IN THIS SESSION" else "MEASURED — RAW EVIDENCE PRESERVED") }
         if (rawRows.isEmpty()) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+                Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("GNSS RAW MEASUREMENTS", style = MaterialTheme.typography.titleMedium)
                         Text("No persisted GNSS_RAW_MEASUREMENT records are available for this session.", style = MaterialTheme.typography.bodySmall)
@@ -875,7 +1286,8 @@ private fun LiveSkyObservatory(
     observerAlt: Double?,
     orientationSource: ControllableOrientationSource,
     declinationProvider: MagneticDeclinationProvider,
-    isLive: Boolean
+    isLive: Boolean,
+    compact: Boolean = false
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, orientationSource, isLive) {
@@ -905,13 +1317,17 @@ private fun LiveSkyObservatory(
     }
     val decision = SkyProjection.decide(pose, declinationDeg, isLive)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        CorrelatedSkyPlot(observed, decision, isLive)
+        CorrelatedSkyPlot(observed, decision, isLive, compact)
+        if (!compact) {
+            PredictedGlobePanel(observed, observerLat, observerLon, observerAlt)
+            NextPassesPanel(observed, observerLat, observerLon, observerAlt)
+        }
         SatellitePanelField(observed, decision)
     }
 }
 
 @Composable
-private fun CorrelatedSkyPlot(observed: ObservedSkyState, orientation: SkyOrientationDecision, isLive: Boolean) {
+private fun CorrelatedSkyPlot(observed: ObservedSkyState, orientation: SkyOrientationDecision, isLive: Boolean, compact: Boolean = false) {
     val mode = orientation.mode
     val labelPaint = remember {
         android.graphics.Paint().apply {
@@ -922,31 +1338,107 @@ private fun CorrelatedSkyPlot(observed: ObservedSkyState, orientation: SkyOrient
             typeface = android.graphics.Typeface.MONOSPACE
         }
     }
-    Card(
+    val ringLabelPaint = remember {
+        android.graphics.Paint().apply {
+            color = android.graphics.Color.LTGRAY
+            textSize = 20f
+            textAlign = android.graphics.Paint.Align.LEFT
+            isAntiAlias = true
+            typeface = android.graphics.Typeface.MONOSPACE
+        }
+    }
+    var dome3d by remember { mutableStateOf(true) }
+    Card3D(
         colors = CardDefaults.cardColors(containerColor = HorizonColors.canvas),
         border = androidx.compose.foundation.BorderStroke(2.dp, HorizonColors.border),
         shape = RoundedCornerShape(8.dp)
     ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        if (isLive) "LIVE SKY" else "OBSERVED SKY",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = HorizonColors.observed,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
+                    )
+                    Text(
+                        "${observed.points.size} SATELLITES | OBSERVED AZ/EL" +
+                            if (observed.excludedWithoutGeometry > 0) " | ${observed.excludedWithoutGeometry} EXCLUDED" else "",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = HorizonColors.muted,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
+                androidx.compose.material3.TextButton(
+                    onClick = { dome3d = !dome3d },
+                    modifier = Modifier.heightIn(min = 36.dp)
+                ) {
+                    Text(if (dome3d) "3D DOME" else "2D PLOT", maxLines = 1, softWrap = false)
+                }
+            }
             Text(
-                if (isLive) "LIVE SKY" else "OBSERVED SKY",
-                style = MaterialTheme.typography.titleMedium,
-                color = HorizonColors.observed,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold
+                when {
+                    !isLive -> "FRAME: NORTH-UP | RECORDED DATA | LIVE ORIENTATION OFF"
+                    mode is SkyOrientationMode.HeadingUp -> "FRAME: DEVICE-TOP-UP | ${orientation.detail}"
+                    else -> "FRAME: NORTH-UP | ${orientation.detail}"
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = HorizonColors.muted,
+                maxLines = 1,
+                softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text("C/N0", style = MaterialTheme.typography.labelSmall, color = HorizonColors.muted)
+                Text("WEAK", style = MaterialTheme.typography.labelSmall, color = Color(0xFFE5484D))
+                Text("->", style = MaterialTheme.typography.labelSmall, color = HorizonColors.muted)
+                Text("STRONG", style = MaterialTheme.typography.labelSmall, color = HorizonColors.observed)
+                Spacer(Modifier.weight(1f))
+                Text("WHITE RING = FIX", style = MaterialTheme.typography.labelSmall, color = Color.White)
+            }
+            Text("GRID = ELEVATION", style = MaterialTheme.typography.labelSmall, color = HorizonColors.muted, maxLines = 1)
             Text(
-                "Correlated observed azimuth/elevation · ${observed.points.size} latest satellites" +
-                    if (observed.excludedWithoutGeometry > 0) " · ${observed.excludedWithoutGeometry} without az/el not plotted" else "",
-                style = MaterialTheme.typography.labelSmall
+                "GRAY = C/N0 UNAVAILABLE",
+                style = MaterialTheme.typography.labelSmall,
+                color = HorizonColors.muted,
+                maxLines = 1
             )
-            Text(
-                if (mode is SkyOrientationMode.HeadingUp) "Orientation: device-top-up · ${orientation.detail}"
-                else "Orientation: north-up · ${orientation.detail}",
-                style = MaterialTheme.typography.labelSmall
-            )
-            Box(Modifier.fillMaxWidth().height(250.dp).background(HorizonColors.canvas)) {
-                Canvas(Modifier.fillMaxSize().padding(12.dp)) {
+            Box(
+                Modifier.fillMaxWidth()
+                    .height(if (compact) 210.dp else 250.dp)
+                    .background(HorizonColors.canvas)
+                    .semantics {
+                        contentDescription = buildString {
+                            append(if (dome3d) "3D observed sky dome." else "2D observed sky plot.")
+                            append(" Satellite positions: ")
+                            append(observed.points.size)
+                            append(". Source is observed azimuth and elevation, not a prediction.")
+                            append(" Orientation: ")
+                            append(orientation.detail)
+                            if (observed.excludedWithoutGeometry > 0) {
+                                append(" Excluded without valid azimuth/elevation: ")
+                                append(observed.excludedWithoutGeometry)
+                                append(".")
+                            }
+                            if (observed.points.isEmpty()) append(" No valid satellite geometry is available.")
+                            else append(" White ring denotes reported use in fix. Color represents reported C/N0.")
+                        }
+                    }
+            ) {
+                if (dome3d) SkyDome3D(observed.points, mode, HorizonColors.observed, HorizonColors.grid, Modifier.fillMaxSize()) else Canvas(Modifier.fillMaxSize().padding(12.dp)) {
                     val diameter = min(size.width, size.height) * 0.82f
                     val radius = diameter / 2f
                     val center = Offset(size.width / 2f, size.height / 2f)
@@ -954,12 +1446,42 @@ private fun CorrelatedSkyPlot(observed: ObservedSkyState, orientation: SkyOrient
                     ringFractions.forEach { fraction ->
                         drawCircle(HorizonColors.grid, radius * fraction, center, style = Stroke(width = 1f))
                     }
+                    drawIntoCanvas { canvas ->
+                        listOf("0deg" to 1f, "30deg" to (2f / 3f), "60deg" to (1f / 3f)).forEach { (label, fraction) ->
+                            canvas.nativeCanvas.drawText(
+                                label,
+                                center.x - radius * fraction + 10f,
+                                center.y - radius * fraction + 16f,
+                                ringLabelPaint
+                            )
+                        }
+                        canvas.nativeCanvas.drawText("90deg", center.x + 6f, center.y + 14f, ringLabelPaint)
+                    }
+                    fun signalColor(cn0DbHz: Double?): Color {
+                        val fraction = horizon.observatory.live.SkyDomeStyle.cn0Fraction(cn0DbHz)
+                        return when {
+                            fraction == null -> Color(0xFF7C8A8C)
+                            fraction < 0.5 -> androidx.compose.ui.graphics.lerp(
+                                Color(0xFFE5484D),
+                                HorizonColors.warning,
+                                (fraction * 2).toFloat()
+                            )
+                            else -> androidx.compose.ui.graphics.lerp(
+                                HorizonColors.warning,
+                                HorizonColors.observed,
+                                ((fraction - 0.5) * 2).toFloat()
+                            )
+                        }
+                    }
                     observed.points.forEach { point ->
                         val p = SkyProjection.project(point.azimuthDeg, point.elevationDeg, mode) ?: return@forEach
                         val x = center.x + (p.x * radius).toFloat()
                         val y = center.y - (p.y * radius).toFloat()
-                        val r = if (point.usedInFix == true) 6f else 4f
-                        drawCircle(HorizonColors.observed, r, Offset(x, y))
+                        val r = if (point.usedInFix == true) 5f else 4f
+                        drawCircle(signalColor(point.cn0DbHz), r, Offset(x, y))
+                        if (point.usedInFix == true) {
+                            drawCircle(Color.White, r + 3f, Offset(x, y), style = Stroke(width = 1.5f))
+                        }
                     }
                     if (mode is SkyOrientationMode.HeadingUp) {
                         drawIntoCanvas { canvas ->
@@ -975,11 +1497,31 @@ private fun CorrelatedSkyPlot(observed: ObservedSkyState, orientation: SkyOrient
                         }
                     }
                 }
-                if (mode !is SkyOrientationMode.HeadingUp) {
+                if (!dome3d && mode !is SkyOrientationMode.HeadingUp) {
                     Text("N", Modifier.align(Alignment.TopCenter).padding(top = 4.dp), style = MaterialTheme.typography.labelSmall)
                     Text("S", Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp), style = MaterialTheme.typography.labelSmall)
                     Text("W", Modifier.align(Alignment.CenterStart).padding(start = 5.dp), style = MaterialTheme.typography.labelSmall)
                     Text("E", Modifier.align(Alignment.CenterEnd).padding(end = 5.dp), style = MaterialTheme.typography.labelSmall)
+                }
+                if (observed.points.isEmpty()) {
+                    Column(
+                        Modifier.align(Alignment.Center).background(HorizonColors.instrument.copy(alpha = 0.97f), RoundedCornerShape(8.dp)).padding(12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            "NO VALID GEOMETRY",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = HorizonColors.muted,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Text(
+                            "Only observed azimuth/elevation is plotted. No synthetic satellite positions are shown.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = HorizonColors.muted,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
                 }
             }
         }
@@ -991,7 +1533,7 @@ private fun SatellitePanelField(
     observed: ObservedSkyState,
     orientation: SkyOrientationDecision
 ) {
-    Card(
+    Card3D(
         colors = CardDefaults.cardColors(containerColor = HorizonColors.instrument),
         border = androidx.compose.foundation.BorderStroke(2.dp, HorizonColors.border),
         shape = RoundedCornerShape(8.dp)
@@ -1007,12 +1549,11 @@ private fun SatellitePanelField(
             ) {
                 Text("SATELLITES", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 Text(
-                    "${observed.points.size} OBSERVED · ${observed.points.size} SHOWN",
+                    "${observed.points.size} OBSERVED / ${observed.points.size} SHOWN",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = FontFamily.Monospace
                 )
             }
-
             if (observed.points.isEmpty()) {
                 Text(
                     "NO OBSERVED SATELLITES WITH VALID AZIMUTH/ELEVATION",
@@ -1020,37 +1561,32 @@ private fun SatellitePanelField(
                 )
                 return@Column
             }
-
-            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                observed.points
-                    .sortedWith(
-                        compareByDescending<ObservedSkyPoint> { it.usedInFix == true }
-                            .thenByDescending { it.cn0DbHz ?: Double.NEGATIVE_INFINITY }
-                            .thenBy { it.satelliteId.constellationType }
-                            .thenBy { it.satelliteId.svid }
-                    )
-                    .chunked(3)
-                    .forEach { row ->
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val columns = satelliteColumnsForWidth(maxWidth.value, LocalDensity.current.fontScale)
+                val sortedPoints = observed.points.sortedWith(
+                    compareByDescending<ObservedSkyPoint> { it.usedInFix == true }
+                        .thenByDescending { it.cn0DbHz ?: Double.NEGATIVE_INFINITY }
+                        .thenBy { it.satelliteId.constellationType }
+                        .thenBy { it.satelliteId.svid }
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    sortedPoints.chunked(columns).forEach { rowPoints ->
                         Row(
                             Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.Top
                         ) {
-                            row.forEach { point ->
-                                SatellitePanelCard(
-                                    point = point,
-                                    modifier = Modifier.weight(1f)
-                                )
+                            rowPoints.forEach { point ->
+                                SatellitePanelCard(point = point, modifier = Modifier.weight(1f))
                             }
-                            repeat(3 - row.size) {
-                                Spacer(Modifier.weight(1f))
-                            }
+                            repeat(columns - rowPoints.size) { Spacer(Modifier.weight(1f)) }
                         }
                     }
+                }
             }
         }
     }
 }
-
 @Composable
 private fun SatellitePanelCard(
     point: ObservedSkyPoint,
@@ -1060,8 +1596,16 @@ private fun SatellitePanelCard(
     val satelliteCode = "$constellationCode${point.satelliteId.svid}"
     val observedAccent = HorizonColors.observed
     val neutral = HorizonColors.border
-    Card(
-        modifier = modifier.height(46.dp),
+    Card3D(
+        modifier = modifier.heightIn(min = 54.dp).semantics(mergeDescendants = true) {
+            contentDescription = satelliteAccessibilityDescription(
+                satelliteCode,
+                point.cn0DbHz,
+                point.elevationDeg,
+                point.azimuthDeg,
+                point.usedInFix
+            )
+        },
         colors = CardDefaults.cardColors(containerColor = HorizonColors.instrument),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
@@ -1126,7 +1670,7 @@ private fun CnoElevationPlot(domain: GnssDomainSnapshot) {
     val points = domain.historyPoints.filter {
         it.cn0DbHz?.isFinite() == true && it.elevationDegrees?.isFinite() == true
     }.takeLast(220)
-    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+    Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("C/N0 VS ELEVATION", style = MaterialTheme.typography.titleMedium)
             Text("Observed correlated points · n=${points.size}", style = MaterialTheme.typography.labelSmall)
@@ -1153,7 +1697,7 @@ private fun CnoElevationPlot(domain: GnssDomainSnapshot) {
 
 @Composable
 private fun ConstellationSummaryPanel(domain: GnssDomainSnapshot) {
-    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+    Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text("CONSTELLATION SUMMARY", style = MaterialTheme.typography.titleMedium)
             if (domain.constellationSummaries.isEmpty()) {
@@ -1178,7 +1722,7 @@ private fun ConstellationSummaryPanel(domain: GnssDomainSnapshot) {
 
 @Composable
 private fun SatelliteEvidenceMatrix(points: List<SatelliteEvidence>) {
-    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+    Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text("CORRELATED SATELLITE EVIDENCE", style = MaterialTheme.typography.titleMedium)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1213,7 +1757,7 @@ private fun SatelliteEvidenceMatrix(points: List<SatelliteEvidence>) {
 
 @Composable
 private fun AntennaEvidencePanel(domain: GnssDomainSnapshot) {
-    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+    Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text("GNSS ANTENNA EVIDENCE", style = MaterialTheme.typography.titleMedium)
             if (domain.antennaEvidence.isEmpty()) {
@@ -1246,7 +1790,7 @@ private fun constellationLabel(type: Int): String = when (type) {
 
 @Composable
 private fun NavigationMessagePanel(count: Int, latest: ObservationEntity?) {
-    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+    Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text("NAVIGATION MESSAGE STREAM", style = MaterialTheme.typography.titleMedium)
             Text("Observed messages: $count", style = MaterialTheme.typography.labelMedium)
@@ -1306,7 +1850,7 @@ private fun CellularScreen(obs: List<ObservationEntity>, analysis: AnalysisSnaps
         }
         if (latestJson != null) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+                Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("SERVING CELL", style = MaterialTheme.typography.titleMedium)
                         Text("${latest?.technology ?: "UNKNOWN"}  MCC ${latestJson.optString("mcc", "—")}  MNC ${latestJson.optString("mnc", "—")}")
@@ -1350,7 +1894,7 @@ private fun TimelineScreen(obs: List<ObservationEntity>, analysis: AnalysisSnaps
     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         item { MetricCard("Unified timeline", timeline.size.toString(), "monotonic ordering preferred") }
         items(timeline) { p ->
-            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+            Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Row(Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("#${p.sequence} ${p.type}", fontFamily = FontFamily.Monospace)
                     Text(p.technology)
@@ -1364,7 +1908,7 @@ private fun TimelineScreen(obs: List<ObservationEntity>, analysis: AnalysisSnaps
 private fun SessionScreen(sessions: List<SessionEntity>) {
     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(sessions) { session ->
-            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+            Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Column(Modifier.padding(12.dp)) {
                     Text(session.sessionId, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
                     Text(session.lifecycleState)
@@ -1397,7 +1941,7 @@ private fun AntennaScreen(domain: GnssDomainSnapshot) {
             )
         }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+            Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text("OBSERVED FREQUENCIES", style = MaterialTheme.typography.titleMedium)
                     Text(
@@ -1411,7 +1955,7 @@ private fun AntennaScreen(domain: GnssDomainSnapshot) {
             }
         }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+            Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("ANTENNA HARDWARE EVIDENCE", style = MaterialTheme.typography.titleMedium)
                     if (domain.antennaEvidence.isEmpty()) {
@@ -1448,14 +1992,14 @@ private fun LogsScreen(obs: List<ObservationEntity>) {
                 if (entries.isEmpty()) {
                     "NO PERSISTED SYSTEM/ERROR EVENTS FOR THIS SESSION"
                 } else {
-                    "Persisted HORIZON application events"
+                    "Persisted Horizon Observatory application events"
                 }
             )
         }
 
         if (entries.isEmpty()) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+                Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                     Column(
                         Modifier.padding(14.dp),
                         verticalArrangement = Arrangement.spacedBy(5.dp)
@@ -1484,7 +2028,7 @@ private fun LogsScreen(obs: List<ObservationEntity>) {
                     payload?.optJSONObject("details")?.toString() ?: payload?.optString("details", "") ?: ""
                 }
 
-                Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+                Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
                     Column(
                         Modifier.padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -1519,7 +2063,11 @@ private fun ExportScreen(
     exportPath: String?,
     exportStatus: String,
     onGenerate: () -> Unit,
-    onSave: () -> Unit
+    onSave: () -> Unit,
+    onReport: (horizon.observatory.export.ReportSection?) -> Unit,
+    identityEntries: Int,
+    identityStatus: String,
+    onImportIdentity: () -> Unit
 ) {
     val audit = remember(observations) {
         IntegrityAudit.audit(
@@ -1546,22 +2094,54 @@ private fun ExportScreen(
     ) {
         MetricCard("Export", if (exportPath != null) "READY" else "NOT GENERATED", exportStatus)
         MetricCard("Session", session?.sessionId ?: "NONE", session?.lifecycleState ?: "NO SESSION")
-        Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+        Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text("EXPORT INTEGRITY", style = MaterialTheme.typography.titleMedium)
-                Text("Integrity clean: ${audit.isClean}")
-                Text("Sequence contiguous: ${audit.sequenceContiguous}")
-                Text("Ingress timestamp complete: ${audit.ingestionTimestampedObservationCount == audit.observationCount}")
-                Text("Ingress time monotonic: ${audit.ingestionTimestampsNonDecreasing}")
-                Text("Source-time regressions: ${audit.sourceTimestampRegressions} (diagnostic, not a failure by itself)")
-                Text("Observations: ${observations.size}  |  System events: $eventCount  |  Errors: $errorCount")
+                Text("OBSERVATION WINDOW DIAGNOSTICS", style = MaterialTheme.typography.titleMedium)
+                Text("Window integrity clean: ${audit.isClean}")
+                Text("Window sequence contiguous: ${audit.sequenceContiguous}")
+                Text("Window ingress timestamp complete: ${audit.ingestionTimestampedObservationCount == audit.observationCount}")
+                Text("Window ingress time monotonic: ${audit.ingestionTimestampsNonDecreasing}")
+                Text("Window source-time regressions: ${audit.sourceTimestampRegressions} (diagnostic, not a failure by itself)")
+                Text("Displayed window: ${observations.size} observations  |  System events: $eventCount  |  Errors: $errorCount")
+                Text("These values describe observations currently loaded by the UI. During recording they may cover only a recent window and do not certify the selected session or ZIP. Use dataset_manifest.json and integrity_audit.json inside a verified export for package integrity.", style = MaterialTheme.typography.bodySmall)
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = onGenerate, modifier = Modifier.weight(1f)) { Text("GENERATE PACKAGE") }
             OutlinedButton(onClick = onSave, enabled = exportPath != null, modifier = Modifier.weight(1f)) { Text("CHOOSE FOLDER & SAVE ZIP") }
         }
-        Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.canvas)) {
+        Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("SATELLITE IDENTITY TABLE", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Operator-supplied GNSS → NORAD mapping (CSV with source, evidence, validity window). Without it every satellite stays UNMATCHED and the predicted globe/passes stay empty. Nothing is guessed. Need a starting point? Reports → IDENTITY HINTS suggests UNVERIFIED rows from sky geometry; you review and confirm them.",
+                    style = MaterialTheme.typography.labelSmall
+                )
+                Text("Loaded entries: $identityEntries", style = MaterialTheme.typography.labelMedium)
+                if (identityStatus.isNotEmpty()) Text(identityStatus, style = MaterialTheme.typography.labelSmall)
+                OutlinedButton(onClick = onImportIdentity, modifier = Modifier.fillMaxWidth()) { Text("IMPORT IDENTITY CSV") }
+                Text("Header: ${horizon.observatory.astronomy.identity.IdentityTableCsv.HEADER}", style = MaterialTheme.typography.labelSmall)
+            }
+        }
+        Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("SECTION REPORTS", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Markdown + CSV + SHA-256 per section, as a ZIP. Missing data is written NOT AVAILABLE; predicted values only in the separate, labelled PREDICTED reports.",
+                    style = MaterialTheme.typography.labelSmall
+                )
+                Button(onClick = { onReport(null) }, modifier = Modifier.fillMaxWidth()) { Text("ALL REPORTS (ZIP)") }
+                horizon.observatory.export.ReportSection.values().toList().chunked(2).forEach { pair ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        pair.forEach { sec ->
+                            OutlinedButton(onClick = { onReport(sec) }, modifier = Modifier.weight(1f)) { Text(sec.title.uppercase()) }
+                        }
+                        if (pair.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+        Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.canvas)) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("PACKAGE CONTENTS", style = MaterialTheme.typography.titleMedium)
                 Text("dataset_manifest.json")
@@ -1575,7 +2155,7 @@ private fun ExportScreen(
                 Text("permissions.json")
                 Text("integrity_audit.json")
                 Text("checksums.sha256")
-                Text("Choose a folder, then HORIZON writes the verified ZIP there. Package data comes from persisted Room data and HORIZON session logs; Android logcat is not silently represented as application data.", style = MaterialTheme.typography.labelSmall)
+                Text("Choose a folder, then Horizon Observatory writes the verified ZIP there. Package data comes from persisted Room data and Horizon Observatory session logs; Android logcat is not silently represented as application data.", style = MaterialTheme.typography.labelSmall)
             }
         }
         exportPath?.let { path ->
@@ -1590,7 +2170,7 @@ private fun DiagnosticsScreen(session: SessionEntity?, capabilityJson: String, a
     LazyColumn(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { MetricCard("Diagnostics", session?.lifecycleState ?: "NONE", "Sequence gaps ${analysis.sequenceGapCount}; timestamp violations ${analysis.timestampMonotonicViolations}") }
         item {
-            Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.canvas)) {
+            Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.canvas)) {
                 Text(capabilityJson, Modifier.padding(12.dp), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
             }
         }
@@ -1599,7 +2179,7 @@ private fun DiagnosticsScreen(session: SessionEntity?, capabilityJson: String, a
 
 @Composable
 private fun ObservationRow(item: ObservationEntity) {
-    Card(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
+    Card3D(colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)) {
         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text("#${item.sequenceNumber}  ${item.type}", fontWeight = FontWeight.SemiBold)
             Text("${item.technology} / ${item.provider}", style = MaterialTheme.typography.labelSmall)
@@ -1633,18 +2213,64 @@ private fun MiniLineChart(samples: List<Double>) {
                         if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
                     }
 
-                    // A single measured sample is still rendered as evidence.
                     if (samples.size == 1) {
-                        val y = size.height * 0.5f
-                        drawCircle(
-                            color = HorizonColors.observed,
-                            radius = 5.5f,
-                            center = Offset(size.width * 0.5f, y)
-                        )
+                        drawCircle(color = HorizonColors.observed, radius = 5.5f, center = Offset(size.width * 0.5f, size.height * 0.5f))
                     } else {
                         drawPath(path, color = HorizonColors.observed, style = Stroke(width = 3f))
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimestampedLineChart(points: List<Pair<Double, Double>>) {
+    Box(
+        Modifier.fillMaxWidth().height(132.dp).background(HorizonColors.canvas),
+        contentAlignment = Alignment.Center
+    ) {
+        if (points.isEmpty()) {
+            Text("NO TIMESTAMPED AGC HISTORY", style = MaterialTheme.typography.labelSmall)
+        } else {
+            Canvas(Modifier.fillMaxSize().padding(8.dp)) {
+                val minX = points.minOf { it.first }
+                val maxX = points.maxOf { it.first }
+                val minY = points.minOf { it.second }
+                val maxY = points.maxOf { it.second }
+                val xSpan = (maxX - minX).takeIf { it > 0.0 } ?: 1.0
+                val ySpan = (maxY - minY).takeIf { it > 0.0001 } ?: 1.0
+                val left = 22f
+                val right = size.width - 4f
+                val top = 6f
+                val bottom = size.height - 20f
+                val plotWidth = (right - left).coerceAtLeast(1f)
+                val plotHeight = (bottom - top).coerceAtLeast(1f)
+                val path = Path()
+                points.forEachIndexed { index, point ->
+                    val x = left + plotWidth * ((point.first - minX) / xSpan).toFloat()
+                    val y = top + plotHeight * (1f - ((point.second - minY) / ySpan).toFloat())
+                    if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                }
+                drawPath(path, color = HorizonColors.observed, style = Stroke(width = 3f))
+                val ticks = if (maxX > minX) listOf(minX, (minX + maxX) / 2.0, maxX) else listOf(minX)
+                ticks.forEach { tick ->
+                    val x = left + plotWidth * ((tick - minX) / xSpan).toFloat()
+                    drawLine(HorizonColors.grid, Offset(x, top), Offset(x, bottom), strokeWidth = 1f)
+                    drawContext.canvas.nativeCanvas.drawText("%.1f".format(tick), x - 12f, size.height - 3f, android.graphics.Paint().apply {
+                        color = android.graphics.Color.LTGRAY
+                        textSize = 10f
+                        textAlign = android.graphics.Paint.Align.CENTER
+                        isAntiAlias = true
+                    })
+                }
+                val labelPaint = android.graphics.Paint().apply {
+                    color = android.graphics.Color.LTGRAY
+                    textSize = 10f
+                    isAntiAlias = true
+                }
+                drawContext.canvas.nativeCanvas.drawText("${"%.1f".format(maxY)}", 1f, top + 8f, labelPaint)
+                drawContext.canvas.nativeCanvas.drawText("${"%.1f".format(minY)}", 1f, bottom, labelPaint)
             }
         }
     }
@@ -1670,7 +2296,7 @@ private object HorizonColors {
 }
 
 @Composable
-private fun InstrumentTopBar(title: String, active: Boolean) {
+private fun InstrumentTopBar(brand: String, title: String, active: Boolean) {
     Surface(
         modifier = Modifier.statusBarsPadding(),
         color = HorizonColors.instrument,
@@ -1687,7 +2313,7 @@ private fun InstrumentTopBar(title: String, active: Boolean) {
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        "HORIZON // OBSERVATORY",
+                        brand,
                         style = MaterialTheme.typography.labelSmall,
                         color = HorizonColors.observed,
                         fontFamily = FontFamily.Monospace,
@@ -1760,4 +2386,110 @@ private fun HorizonTheme(content: @Composable () -> Unit) {
         ),
         content = content
     )
+}
+
+
+/**
+ * Location Continuity: keeps Horizon's foreground GNSS acquisition running (existing ObservatoryService).
+ * State comes from the service via ContinuityStatusHub and the pure ContinuityUiReducer; nothing here is
+ * placeholder data. It does NOT claim to defeat interference or to feed other apps.
+ */
+@Composable
+private fun LocationContinuityCard(onRequestPermissions: () -> Unit) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val controller = remember { horizon.observatory.resilience.EmergencyNavigationController(ctx) }
+    val service by horizon.observatory.resilience.ContinuityStatusHub.state.collectAsStateWithLifecycle()
+    val debouncer = remember { horizon.observatory.resilience.ContinuityUiDebouncer() }
+    var requestedAtMs by remember { mutableStateOf<Long?>(null) }
+    var tick by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(1_000L); tick++ } }
+    @Suppress("UNUSED_VARIABLE") val tickRead = tick // 1 Hz refresh of permission/location/pref and the debouncer
+
+    val nowMs = android.os.SystemClock.elapsedRealtime()
+    val requested = controller.enabled
+    val hasFine = ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    val locationManager = ctx.getSystemService(LocationManager::class.java)
+    val locationOn = locationManager != null && androidx.core.location.LocationManagerCompat.isLocationEnabled(locationManager)
+    val notificationsOn = androidx.core.app.NotificationManagerCompat.from(ctx).areNotificationsEnabled()
+    val target = horizon.observatory.resilience.ContinuityUiReducer.reduce(
+        horizon.observatory.resilience.ContinuityInputs(requested, service, hasFine, locationOn, requestedAtMs?.let { nowMs - it })
+    )
+    val shown = debouncer.update(target, nowMs)
+    val headlineColor = when (shown) {
+        horizon.observatory.resilience.ContinuityUiState.ACTIVE -> HorizonColors.observed
+        horizon.observatory.resilience.ContinuityUiState.OFF, horizon.observatory.resilience.ContinuityUiState.STOPPING -> HorizonColors.muted
+        else -> HorizonColors.warning
+    }
+    val stopping = shown == horizon.observatory.resilience.ContinuityUiState.STOPPING
+    // Primary button only when there is something to start or fix; a healthy running mode offers just "TURN OFF".
+    val showPrimary = !requested || shown == horizon.observatory.resilience.ContinuityUiState.PERMISSION_REQUIRED ||
+        shown == horizon.observatory.resilience.ContinuityUiState.LOCATION_OFF ||
+        shown == horizon.observatory.resilience.ContinuityUiState.FAILED
+
+    Card3D(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = HorizonColors.surface)
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("LOCATION CONTINUITY", style = MaterialTheme.typography.labelSmall)
+            Text(horizon.observatory.resilience.ContinuityCopy.headline(shown), color = headlineColor, fontWeight = FontWeight.Bold)
+            if (shown == horizon.observatory.resilience.ContinuityUiState.DEGRADED) {
+                Text(
+                    "State: ${service.navigationState?.name ?: "UNKNOWN"}. Any position shown by Horizon is labelled observed or estimated.",
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+            if (requested && !notificationsOn) {
+                Text("Notifications are off: the foreground notification and its Turn off button may be hidden.", style = MaterialTheme.typography.labelSmall, color = HorizonColors.warning)
+            }
+            Text(horizon.observatory.resilience.ContinuityCopy.LIMITS, style = MaterialTheme.typography.labelSmall, color = HorizonColors.muted)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (showPrimary) {
+                    Button(
+                        onClick = {
+                            if (!hasFine) {
+                                onRequestPermissions()
+                            } else if (!locationOn) {
+                                ctx.startActivity(Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                            } else {
+                                controller.updateEnabled(true)
+                                requestedAtMs = android.os.SystemClock.elapsedRealtime()
+                                ContextCompat.startForegroundService(
+                                    ctx,
+                                    Intent(ctx, ObservatoryService::class.java)
+                                        .setAction(ObservatoryService.ACTION_SET_EMERGENCY_NAVIGATION)
+                                        .putExtra(ObservatoryService.EXTRA_ENABLED, true)
+                                )
+                            }
+                        },
+                        enabled = !stopping,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            when {
+                                !hasFine -> "GRANT LOCATION PERMISSION"
+                                !locationOn -> "OPEN LOCATION SETTINGS"
+                                shown == horizon.observatory.resilience.ContinuityUiState.FAILED -> "RETRY"
+                                else -> "KEEP GNSS ACTIVE"
+                            }
+                        )
+                    }
+                }
+                if (requested && !stopping) {
+                    OutlinedButton(
+                        onClick = {
+                            controller.updateEnabled(false)
+                            requestedAtMs = null
+                            ctx.startService(
+                                Intent(ctx, ObservatoryService::class.java)
+                                    .setAction(ObservatoryService.ACTION_SET_EMERGENCY_NAVIGATION)
+                                    .putExtra(ObservatoryService.EXTRA_ENABLED, false)
+                            )
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) { Text("TURN OFF") }
+                }
+            }
+        }
+    }
 }

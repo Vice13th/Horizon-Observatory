@@ -133,5 +133,10 @@ data class NavigationEstimate(
     val horizontalUncertaintyM: Double,
     val verticalUncertaintyM: Double?,
     val provenance: String,
-    val navigationState: NavigationState
+    val navigationState: NavigationState,
+    /** Constant-velocity assumption: the anchor's speed carried forward, not a fresh measurement. */
+    val speedMps: Double? = null,
+    /** Constant-velocity assumption: the anchor's course carried forward, not a fresh measurement. */
+    val bearingDeg: Double? = null,
+    val estimator: String = CoastingPolicy.ESTIMATOR_ID
 )

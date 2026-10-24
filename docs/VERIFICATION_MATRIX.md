@@ -1,12 +1,12 @@
-# HORIZON — Verification Matrix
+﻿# HORIZON â€” Verification Matrix
 
-> **Canonical reconciliation — 2026-10-06**
+> **Canonical reconciliation â€” 2026-10-06**
 >
 > Remote main was reconciled after discovering historical UI-B1 context that referenced a local workspace (C:\Horizon\horizon_stage2) without a corresponding GitHub receipt. That handoff is historical, not current repository truth.
 >
-> **Current verified foundation:** GNSS acquisition → Observation Bus → Room persistence → readback → export → checksum → semantic normalization is VERIFIED/CLOSED on SM-A075F.  
-> **Current resilience state:** K0–K7 software integration is implemented and explicitly receipted where marked VERIFIED/DEVICE-OBSERVED.  
-> **Current UI lane:** presentation-only; raw evidence, persistence/export semantics, and propagation remain protected.  
+> **Current verified foundation:** GNSS acquisition â†’ Observation Bus â†’ Room persistence â†’ readback â†’ export â†’ checksum â†’ semantic normalization is VERIFIED/CLOSED on SM-A075F.
+> **Current resilience state:** K0â€“K7 software integration is implemented and explicitly receipted where marked VERIFIED/DEVICE-OBSERVED.
+> **Current UI lane:** presentation-only; raw evidence, persistence/export semantics, and propagation remain protected.
 > **Open:** NORAD mapping UNKNOWN, device-specific UTC edge case UNVERIFIED, physical orientation/panel rotation UNVERIFIED/BLOCKED on the target evidence, scientific OrbitCore reference-vector accuracy PARTIAL / VERIFIED CASES, K8 physical interference/long-run validation PENDING.
 >
 > Rows below are a cumulative evidence history. Older rows may use statuses that were correct at the time they were written; they must not be read as the current project verdict.
@@ -30,7 +30,7 @@
 | GNSS navigation message capture | NOT_OBSERVED for session `f860...` | 0 persisted records |
 | Cellular callback path | VERIFIED | 9 callback records in `35f8...` |
 | Cellular fresh request path | VERIFIED | 18 request records in `35f8...` |
-| Cellular freshness metadata | MEASURED | 7–5014 ms in `35f8...` |
+| Cellular freshness metadata | MEASURED | 7â€“5014 ms in `35f8...` |
 | Session sequence integrity | VERIFIED | contiguous 1..N in both sessions |
 | Ingestion monotonic integrity | VERIFIED | non-decreasing in both sessions |
 | Source timestamp regressions | OBSERVED | retained and reported, not treated as ingestion-order violations |
@@ -61,7 +61,7 @@
 | K5 Emergency Navigation lifecycle | DEVICE-PARTIAL / VERIFIED RECOVERY | Service recovery closed interrupted session; clean stop completed; background/screen-off long-run remains unverified |
 | K6 Reception Optimization | IMPLEMENTED / TESTED | Software-only policy; no RF/antenna gain claim |
 | K7 Resilient Location | DEVICE-VERIFIED CONTRACT / INTEGRATED FEED | Explicit provider contract instrumented; runtime publishes observed GNSS and dead-reckoned snapshots; shell consumer denied by required read permission as designed |
-| K8 controlled GNSS-loss resilience | VERIFIED CONTROLLED LOSS | Location mode 3→0→3; observed transitions through GNSS degraded/lost/inertial/multi-source and recovery; not physical interference validation |
+| K8 controlled GNSS-loss resilience | VERIFIED CONTROLLED LOSS | Location mode 3â†’0â†’3; observed transitions through GNSS degraded/lost/inertial/multi-source and recovery; not physical interference validation |
 | K8 physical interference / long-run validation | PENDING | Requires controlled physical interference/degradation, truth comparison, long-run background/screen-off and resource/battery receipts |
 
 ## 2026-10-06 K0-K7 RUNTIME HARDENING RECEIPT
@@ -73,12 +73,12 @@
 - Device regression: 14 instrumentation tests finished on SM-A075F / Android 16, 2 existing migration tests skipped.
 - APK: `2F3C43B74CBFF7D9D79C3415B19E1517E2F8D3ABE59092A9203B89DB797B0AB2`.
 - K8 physical/long-run validation remains PENDING.
-## FINAL K RUNTIME HARDENING RECEIPT — 2026-10-06
+## FINAL K RUNTIME HARDENING RECEIPT â€” 2026-10-06
 
 Final source correction after review: interference classification ordering now gives strong JAM/SPOOF/DEGRADED evidence precedence over recovery flags, with explicit recovery remaining reachable before NORMAL. Regression coverage was extended for this precedence boundary.
 
 Final receipt: `:app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug` BUILD SUCCESSFUL; 163 unit tests, 0 failures, 0 errors, 3 existing reference-vector skips. APK SHA-256: `4641C4F855C8EB92E769E404171237CFBC11D2F345F611CBBB6DE92E590DBE0C`. `:app:connectedPrimaryDebugAndroidTest` BUILD SUCCESSFUL; 14 tests finished on SM-A075F / Android 16, 2 existing migration tests skipped. No new K8 physical-interference claim is made.
-## PROPAGATION + EVIDENCE HARDENING RECEIPT — 2026-10-06
+## PROPAGATION + EVIDENCE HARDENING RECEIPT â€” 2026-10-06
 
 Source-audit fixes completed after real-device and OrbitCore regression:
 - OrbitCore adapter now supplies deterministic non-null OMM identity fallbacks for missing object name/ID/classification, matching the library's non-null constructor contract.

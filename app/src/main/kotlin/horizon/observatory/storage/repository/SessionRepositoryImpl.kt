@@ -67,6 +67,12 @@ class SessionRepositoryImpl(
         sessionDao.markSessionCrashClosed(sessionId, TimestampEngine.currentUtcMillis())
     }
 
+    override suspend fun updateSessionDeviceMetadata(sessionId: String, deviceMetadataJson: String) {
+        check(sessionDao.updateDeviceMetadata(sessionId, deviceMetadataJson) == 1) {
+            "Session device metadata update failed: $sessionId"
+        }
+    }
+
     override suspend fun updateSessionMetadata(
         sessionId: String,
         deviceMetadataJson: String,
@@ -85,6 +91,8 @@ class SessionRepositoryImpl(
     override fun observeSession(sessionId: String): Flow<SessionEntity?> = sessionDao.observeSession(sessionId)
     override fun getObservations(sessionId: String): Flow<List<ObservationEntity>> = observationDao.getObservationsOrderedForSession(sessionId)
     override suspend fun getObservationsSnapshot(sessionId: String): List<ObservationEntity> = observationDao.getObservationsSnapshot(sessionId)
+    override suspend fun getObservationPage(sessionId: String, afterSequence: Long, limit: Int): List<ObservationEntity> =
+        observationDao.getObservationPage(sessionId, afterSequence, limit)
     override suspend fun getRecentObservationsSnapshot(sessionId: String, limit: Int): List<ObservationEntity> =
         observationDao.getRecentObservationsSnapshot(sessionId, limit).asReversed()
     override suspend fun countObservations(sessionId: String): Int = observationDao.countForSession(sessionId)

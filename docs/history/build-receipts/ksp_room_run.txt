@@ -1,0 +1,49 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+
+> Configure project :app
+w: Deprecated Gradle Version
+The used Gradle version (Gradle 8.11.1) is deprecated and will not be supported in future Kotlin Gradle Plugin releases.
+The minimum supported Gradle version will become Gradle 8.14.4 in Kotlin 2.5.0.
+
+This warning can be suppressed in 'gradle.properties':
+    kotlin.suppressGradlePluginWarnings=DeprecatedGradleVersionWarning
+Solution: Please update the Gradle version to at least Gradle 8.14.4.
+
+.\gradlew.bat : Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of
+version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were
+released at different times.
+At line:1 char:33
++ ... zon_stage2; .\gradlew.bat :app:kspPrimaryDebugKotlin --no-daemon --co ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: SDK pr...ifferent times.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+> Task :propagation-contract:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :propagation-contract:compileKotlin UP-TO-DATE
+> Task :propagation-contract:compileJava NO-SOURCE
+> Task :propagation-contract:processResources NO-SOURCE
+> Task :propagation-contract:classes UP-TO-DATE
+> Task :propagation-contract:jar UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:prePrimaryDebugBuild UP-TO-DATE
+> Task :app:generatePrimaryDebugBuildConfig UP-TO-DATE
+> Task :app:checkPrimaryDebugAarMetadata UP-TO-DATE
+> Task :app:generatePrimaryDebugResValues UP-TO-DATE
+> Task :app:mapPrimaryDebugSourceSetPaths UP-TO-DATE
+> Task :app:generatePrimaryDebugResources UP-TO-DATE
+> Task :app:mergePrimaryDebugResources UP-TO-DATE
+> Task :app:packagePrimaryDebugResources UP-TO-DATE
+> Task :app:parsePrimaryDebugLocalResources UP-TO-DATE
+> Task :app:createPrimaryDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksPrimaryDebug UP-TO-DATE
+> Task :app:processPrimaryDebugMainManifest UP-TO-DATE
+> Task :app:processPrimaryDebugManifest UP-TO-DATE
+> Task :app:processPrimaryDebugManifestForPackage UP-TO-DATE
+> Task :app:processPrimaryDebugResources UP-TO-DATE
+> Task :app:kspPrimaryDebugKotlin
+[Incubating] Problems report is available at: [historical local build path omitted]
+
+BUILD SUCCESSFUL in 1m 6s
+17 actionable tasks: 1 executed, 16 up-to-date

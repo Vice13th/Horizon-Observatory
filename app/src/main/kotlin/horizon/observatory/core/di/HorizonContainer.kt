@@ -57,8 +57,12 @@ class HorizonContainer(context: Context) {
     val orbitCatalogFetcher: OrbitCatalogFetcher = HttpUrlConnectionOrbitCatalogFetcher(deviceClock)
     val orbitCatalogIngestor = OrbitCatalogIngestor(orbitCatalogFetcher, orbitDataSource)
 
-    // Empty table => every satellite resolves to UNMATCHED. No identity is guessed.
-    val satelliteIdentityResolver: SatelliteIdentityResolver = TableSatelliteIdentityResolver(emptyList())
+    // Empty until the operator imports an identity CSV (Export screen) => every satellite is UNMATCHED.
+    // No identity is guessed; a persisted table is re-loaded at start.
+    val satelliteIdentityResolver = horizon.observatory.astronomy.identity.ReloadableIdentityResolver().also { r ->
+        runCatching { horizon.observatory.astronomy.identity.IdentityTableStore.load(appContext) }.getOrNull()
+            ?.let { r.replace(it.entries) }
+    }
 
     // T1 loads the OrbitCore bridge reflectively so primary/ts do not gain the bridge dependency.
     // The bridge itself has OrbitCore as runtimeOnly, keeping OrbitCore metadata out of app KAPT.
@@ -90,6 +94,7 @@ class HorizonContainer(context: Context) {
         stalenessPolicy = orbitStalenessPolicy
     )
     val predictionLayer = PredictionLayerStateHolder(satellitePredictionUseCase)
+    val predictedViews = horizon.observatory.astronomy.prediction.PredictedViewsStateHolder(satellitePredictionUseCase)
 
     // Live device pose (presentation input only). The listener is NOT registered until the UI starts it.
     val deviceOrientationSource: ControllableOrientationSource = RotationVectorOrientationSource(appContext)

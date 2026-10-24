@@ -1,0 +1,45 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+
+> Configure project :app
+.\gradlew.bat : e: [historical local build path omitted] Unresolved reference: compilerOptions
+At line:1 char:454
++ ... oNewline }; .\gradlew.bat :propagation-contract:compileKotlin :orbitc ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (e: [historical local path omitted]compilerOptions:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+e: [historical local build path omitted] Unresolved reference: jvmTarget
+w: Deprecated Gradle Version
+The used Gradle version (Gradle 8.11.1) is deprecated and will not be supported in future Kotlin Gradle Plugin releases.
+The minimum supported Gradle version will become Gradle 8.14.4 in Kotlin 2.5.0.
+
+This warning can be suppressed in 'gradle.properties':
+    kotlin.suppressGradlePluginWarnings=DeprecatedGradleVersionWarning
+Solution: Please update the Gradle version to at least Gradle 8.14.4.
+
+[Incubating] Problems report is available at: [historical local build path omitted]
+
+FAILURE: Build failed with an exception.
+
+* Where:
+Build file '[historical local path omitted]\app\build.gradle.kts' line: 71
+
+* What went wrong:
+Script compilation errors:
+
+  Line 71:     compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+               ^ Unresolved reference: compilerOptions
+
+  Line 71:     compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+                                 ^ Unresolved reference: jvmTarget
+
+2 errors
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 15s

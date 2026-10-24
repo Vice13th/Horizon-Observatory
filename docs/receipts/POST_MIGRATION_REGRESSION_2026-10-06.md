@@ -1,7 +1,7 @@
 ﻿# POST-MIGRATION REGRESSION RECEIPT ΓÇö 2026-10-06
 
 **Milestone:** Phase A / Post-Kotlin-2.4 + Room/KSP migration regression
-**Device:** Hive / Samsung SM-A075F / R8YY92YWAAF
+**Device:** Hive / Samsung SM-A075F / [device serial redacted]
 **Package:** horizon.observatory.debug
 **Session:** `fa2c48ec-15e6-40c1-a892-c170bc27cd04`
 

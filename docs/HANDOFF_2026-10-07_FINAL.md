@@ -1,4 +1,4 @@
-# Horizon Observatory — Final Handoff — 2026-10-07
+﻿# Horizon Observatory â€” Final Handoff â€” 2026-10-07
 
 ## Goal
 Preserve the verified Horizon Observatory state after the accepted B3/B4 live-data/UI changes and the ResilienceEngineTest fix so the next session can continue from repository truth without reopening closed scientific boundaries.
@@ -46,7 +46,7 @@ Preserve the verified Horizon Observatory state after the accepted B3/B4 live-da
 - `docs/checkpoint/HORIZON_CHECKPOINT_2026-10-07_FINAL.md`
 - `docs/HANDOFF_2026-10-07_FINAL.md`
 
-## Fresh Verification Addendum � 2026-10-07 02:10�02:14 local device time
+## Fresh Verification Addendum — 2026-10-07 02:10–02:14 local device time
 
 ### Repository / artifact
 - Canonical HEAD and origin/main remained `3ed4f007e5c21a561d0449e1a55003f93b92396b`.
@@ -78,7 +78,7 @@ Preserve the verified Horizon Observatory state after the accepted B3/B4 live-da
 - This addendum records only newly observed evidence; historical receipts remain unchanged.
 
 
-## Evidence-Closure Addendum — 2026-10-07
+## Evidence-Closure Addendum â€” 2026-10-07
 
 Controlled export/readback closure was completed against the latest completed device session `7f9066a6-17c6-4307-ac48-4274379742ec` using the existing `ExportEngine`; no production/source changes were made.
 
@@ -107,7 +107,7 @@ Controlled export/readback closure was completed against the latest completed de
 Scientific gates remain unchanged: NORAD mapping, UTC edge cases, OrbitCore reference-vector accuracy, physical heading/orientation, and K8 long-duration/interference validation remain open.
 
 
-## Visual Device Evidence Addendum — 2026-10-07
+## Visual Device Evidence Addendum â€” 2026-10-07
 
 A real physical-device screenshot was captured from the verified Samsung SM-A075F / Android 16 / API 36 while HORIZON Observatory was the resumed foreground activity.
 
@@ -116,7 +116,7 @@ A real physical-device screenshot was captured from the verified Samsung SM-A075
 - Orientation text in the captured UI explicitly states north-up recorded data and that live orientation was not applied; no physical-heading claim is made.
 - Raw device capture timestamp: 2026-10-07 03:04:29 +0330.
 - Hero image: `docs/assets/horizon-observatory-device-verified.png`.
-- Image dimensions: 720 × 1446 pixels; the crop removes only the Android status/navigation chrome and does not alter application content.
+- Image dimensions: 720 Ã— 1446 pixels; the crop removes only the Android status/navigation chrome and does not alter application content.
 - Hero image SHA-256: `A6BE2027F07881245F8545A0C9FA067EB832050A2C397B66B435109A4751AFD5`.
 - The screenshot was taken directly from the running application via the authorized physical-device ADB framebuffer capture path; no generated or synthetic UI/data was used.
 - No scientific values, satellite identities, geometry, orientation claims, or telemetry were edited.

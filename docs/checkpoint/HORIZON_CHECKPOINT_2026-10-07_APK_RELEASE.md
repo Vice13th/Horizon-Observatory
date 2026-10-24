@@ -1,4 +1,4 @@
-# HORIZON CHECKPOINT — 2026-10-07 APK RELEASE
+﻿# HORIZON CHECKPOINT â€” 2026-10-07 APK RELEASE
 
 ## Purpose
 Record the publication of the first device-verified HORIZON Observatory APK without reopening or weakening the closed GNSS evidence boundary.
@@ -19,7 +19,7 @@ Record the publication of the first device-verified HORIZON Observatory APK with
 - Existing GNSS/device evidence closure remains unchanged.
 
 ## Closed foundation
-GNSS → Observation → Sequence → Room → Live UI → Completed Session → Export → Readback → Checksum remains the verified evidence chain.
+GNSS â†’ Observation â†’ Sequence â†’ Room â†’ Live UI â†’ Completed Session â†’ Export â†’ Readback â†’ Checksum remains the verified evidence chain.
 
 ## Open scientific gates
 NORAD identity mapping, UTC edge cases, OrbitCore reference-vector accuracy, physical orientation/heading, and K8 long-duration/interference validation remain open. No release publication step upgrades these gates.

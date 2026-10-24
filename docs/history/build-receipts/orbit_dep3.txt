@@ -1,0 +1,40 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+
+> Task :orbitcore-bridge:dependencies
+
+------------------------------------------------------------
+Project ':orbitcore-bridge'
+------------------------------------------------------------
+
+debugRuntimeClasspath - Runtime classpath of /debug.
++--- project :propagation-contract
+|    \--- org.jetbrains.kotlin:kotlin-stdlib:1.9.24
+|         \--- org.jetbrains:annotations:13.0
++--- com.parodison:orbit-core:0.1.0
+|    \--- com.parodison:orbit-core-android:0.1.0
+|         +--- org.jetbrains.kotlin:kotlin-stdlib:2.4.0 -> 1.9.24 (*)
+|         +--- org.jetbrains.kotlinx:kotlinx-datetime:0.8.0
+|         |    \--- org.jetbrains.kotlinx:kotlinx-datetime-jvm:0.8.0
+|         |         \--- org.jetbrains.kotlin:kotlin-stdlib:2.1.20 -> 1.9.24 (*)
+|         \--- org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0
+|              \--- org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.9.0
+|                   +--- org.jetbrains.kotlinx:kotlinx-serialization-bom:1.9.0
+|                   |    +--- org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0 (c)
+|                   |    +--- org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.9.0 (c)
+|                   |    +--- org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0 (c)
+|                   |    \--- org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.9.0 (c)
+|                   +--- org.jetbrains.kotlin:kotlin-stdlib:2.2.0 -> 1.9.24 (*)
+|                   \--- org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0
+|                        \--- org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.9.0
+|                             +--- org.jetbrains.kotlinx:kotlinx-serialization-bom:1.9.0 (*)
+|                             \--- org.jetbrains.kotlin:kotlin-stdlib:2.2.0 -> 1.9.24 (*)
+\--- org.jetbrains.kotlin:kotlin-stdlib:2.4.0 -> 1.9.24 (*)
+
+(c) - A dependency constraint, not a dependency. The dependency affected by the constraint occurs elsewhere in the tree.
+(*) - Indicates repeated occurrences of a transitive dependency subtree. Gradle expands transitive dependency subtrees only once per project; repeat occurrences only display the root of the subtree, followed by this annotation.
+
+A web-based, searchable dependency report is available by adding the --scan option.
+
+BUILD SUCCESSFUL in 12s
+1 actionable task: 1 executed

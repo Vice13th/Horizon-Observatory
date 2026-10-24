@@ -1,4 +1,4 @@
-# FINAL GATE V3 R2 Resource Packaging Fix
+﻿# FINAL GATE V3 R2 Resource Packaging Fix
 
 ## Root cause
 R2 omitted two files that were present in the previous V3 package and referenced by the project's checkpoint inventory:

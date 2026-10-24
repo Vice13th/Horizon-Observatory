@@ -1,4 +1,4 @@
-# HORIZON — Latest Runtime Evidence: c40cd3d7-f824-4e05-bfa3-95707110ea97
+﻿# HORIZON â€” Latest Runtime Evidence: c40cd3d7-f824-4e05-bfa3-95707110ea97
 
 ## Session
 
@@ -37,9 +37,9 @@
 - Correlated measurements: 1681
 - Navigation messages: 41
 - Average C/N0: 19.279 dB-Hz
-- C/N0 range: 0–37.185001373291016 dB-Hz
-- Average elevation: 42.860°
-- AGC range: 6–6 dB
+- C/N0 range: 0â€“37.185001373291016 dB-Hz
+- Average elevation: 42.860Â°
+- AGC range: 6â€“6 dB
 
 ## Capability evidence
 

@@ -43,19 +43,54 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
             else -> SourceStatus.AVAILABLE
         }
 
+    private val deliveryDiagnostics = GnssDeliveryDiagnostics()
+
+    internal fun resetDeliveryDiagnosticsForSession() = deliveryDiagnostics.resetForSession()
+
+    internal fun deliveryDiagnosticsSnapshot(): JSONObject = deliveryDiagnostics.snapshot()
+
+    internal fun finalizeDeliveryDiagnostics(finalState: String = "FINALIZED") =
+        deliveryDiagnostics.finalizeSession(finalState)
+
     override val observationFlow: Flow<RawObservation> = callbackFlow {
         val manager = locationManager ?: run { close(); return@callbackFlow }
         if (status != SourceStatus.AVAILABLE) { close(); return@callbackFlow }
 
+        fun offer(observation: RawObservation) {
+            val result = trySend(observation)
+            deliveryDiagnostics.recordDelivery(
+                observation.type,
+                success = result.isSuccess,
+                reason = if (result.isFailure) GnssDeliveryDiagnostics.classifyFailure(result.isClosed) else null
+            )
+        }
+
         val measurementCallback = object : GnssMeasurementsEvent.Callback() {
             override fun onGnssMeasurementsReceived(eventArgs: GnssMeasurementsEvent) {
+                deliveryDiagnostics.onMeasurementsCallback(eventArgs.measurements.size)
+                val callbackElapsedNs = android.os.SystemClock.elapsedRealtimeNanos()
+                val receiverClock = eventArgs.clock
+                // These GnssClock elapsed-realtime accessors were added in API 29.
+                // Do not access them on API 26-28 or trust the receiver value when unavailable.
+                val hasReceiverElapsedRealtime = Build.VERSION.SDK_INT >= 29 && receiverClock.hasElapsedRealtimeNanos()
+                val receiverElapsedNs = if (hasReceiverElapsedRealtime) receiverClock.elapsedRealtimeNanos else 0L
+                val eventTimestamp = selectGnssEventTimestamp(
+                    apiLevel = Build.VERSION.SDK_INT,
+                    hasReceiverElapsedRealtime = hasReceiverElapsedRealtime,
+                    receiverElapsedRealtimeNanos = receiverElapsedNs,
+                    callbackElapsedRealtimeNanos = callbackElapsedNs
+                )
+                val eventElapsedNs = eventTimestamp.elapsedRealtimeNanos
+                // Receipt-time fallback is not receiver measurement time; persist the source on both row types.
+                offer(eventArgs.toClockObservation(eventElapsedNs, eventTimestamp.source))
                 eventArgs.measurements.forEach { measurement ->
-                    trySend(measurement.toRawObservation(eventArgs.clock.elapsedRealtimeNanos))
+                    offer(measurement.toRawObservation(eventElapsedNs, eventTimestamp.source))
                 }
             }
         }
         val statusCallback = object : GnssStatus.Callback() {
             override fun onSatelliteStatusChanged(status: GnssStatus) {
+                deliveryDiagnostics.onStatusCallback()
                 val elapsed = android.os.SystemClock.elapsedRealtimeNanos()
                 val satellites = JSONArray()
                 for (i in 0 until status.satelliteCount) {
@@ -83,7 +118,7 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
                 val payload = JSONObject()
                     .put("satelliteCount", status.satelliteCount)
                     .put("satellites", satellites)
-                trySend(RawObservation(
+                offer(RawObservation(
                     type = ObservationType.GNSS_STATUS,
                     utcTimestampMs = TimestampEngine.elapsedNanosToUtcMillis(elapsed),
                     monotonicTimestampNs = elapsed,
@@ -121,12 +156,14 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
 
         val antennaListener = if (Build.VERSION.SDK_INT >= 30) object : GnssAntennaInfo.Listener {
             override fun onGnssAntennaInfoReceived(antennaInfos: MutableList<GnssAntennaInfo>) {
-                antennaInfos.forEach { trySend(antennaObservation(it)) }
+                deliveryDiagnostics.onAntennaCallback(antennaInfos.size)
+                antennaInfos.forEach { offer(antennaObservation(it)) }
             }
         } else null
 
         val navCallback = object : GnssNavigationMessage.Callback() {
             override fun onGnssNavigationMessageReceived(event: GnssNavigationMessage) {
+                deliveryDiagnostics.onNavigationCallback()
                 val elapsed = android.os.SystemClock.elapsedRealtimeNanos()
                 val payload = JSONObject()
                     .put("type", event.type)
@@ -136,7 +173,7 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
                     .put("status", event.status)
                     .put("dataLength", event.data.size)
                     .put("dataBase64", Base64.getEncoder().encodeToString(event.data))
-                trySend(RawObservation(
+                offer(RawObservation(
                     type = ObservationType.GNSS_NAVIGATION_MESSAGE,
                     utcTimestampMs = TimestampEngine.elapsedNanosToUtcMillis(elapsed),
                     monotonicTimestampNs = elapsed,
@@ -169,7 +206,9 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
         if (Build.VERSION.SDK_INT >= 30 && antennaListener != null) {
             antennaRegistered = runCatching { manager.registerAntennaInfoListener(executor, antennaListener) }.getOrDefault(false)
             if (Build.VERSION.SDK_INT >= 31) {
-                runCatching { manager.getGnssAntennaInfos() }.getOrNull().orEmpty().forEach { trySend(antennaObservation(it)) }
+                val initialAntennaInfos = runCatching { manager.getGnssAntennaInfos() }.getOrNull().orEmpty()
+                deliveryDiagnostics.onInitialAntennaRows(initialAntennaInfos.size)
+                initialAntennaInfos.forEach { offer(antennaObservation(it)) }
             }
         }
 
@@ -203,7 +242,7 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
         closeFlow?.invoke()
     }
 
-    private fun GnssMeasurement.toRawObservation(eventElapsedNs: Long): RawObservation {
+    private fun GnssMeasurement.toRawObservation(eventElapsedNs: Long, eventTimestampSource: String): RawObservation {
         val payload = JSONObject().apply {
             put("constellationType", constellationType)
             put("svid", svid)
@@ -227,6 +266,7 @@ class GnssObservationSource(private val context: Context) : ObservationSource {
             if (Build.VERSION.SDK_INT >= 30 && hasFullInterSignalBiasUncertaintyNanos()) put("fullInterSignalBiasUncertaintyNanos", fullInterSignalBiasUncertaintyNanos) else put("fullInterSignalBiasUncertaintyNanos", JSONObject.NULL)
             if (Build.VERSION.SDK_INT >= 30 && hasBasebandCn0DbHz()) put("basebandCn0DbHz", basebandCn0DbHz) else put("basebandCn0DbHz", JSONObject.NULL)
             put("eventElapsedRealtimeNanos", eventElapsedNs)
+            put("eventTimestampSource", eventTimestampSource)
         }
         return RawObservation(
             type = ObservationType.GNSS_RAW_MEASUREMENT,

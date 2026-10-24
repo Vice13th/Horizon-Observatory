@@ -1,0 +1,5 @@
+# Scientific reference-vector files require deterministic line endings across Windows and Linux.
+app/src/test/resources/sgp4/SGP4-VER.TLE text eol=crlf
+app/src/test/resources/sgp4/tcppver.out text eol=lf
+orbitcore-bridge/src/test/resources/sgp4/SGP4-VER.TLE text eol=crlf
+orbitcore-bridge/src/test/resources/sgp4/tcppver.out text eol=lf

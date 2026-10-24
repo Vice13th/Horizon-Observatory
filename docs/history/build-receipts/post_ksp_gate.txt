@@ -1,0 +1,167 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+
+> Configure project :app
+w: Deprecated Gradle Version
+The used Gradle version (Gradle 8.11.1) is deprecated and will not be supported in future Kotlin Gradle Plugin releases.
+The minimum supported Gradle version will become Gradle 8.14.4 in Kotlin 2.5.0.
+
+This warning can be suppressed in 'gradle.properties':
+    kotlin.suppressGradlePluginWarnings=DeprecatedGradleVersionWarning
+Solution: Please update the Gradle version to at least Gradle 8.14.4.
+
+.\gradlew.bat : Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of
+version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were
+released at different times.
+At line:1 char:33
++ ... zon_stage2; .\gradlew.bat :app:compilePrimaryDebugKotlin :app:testPri ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: SDK pr...ifferent times.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+> Task :propagation-contract:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :propagation-contract:compileKotlin UP-TO-DATE
+> Task :propagation-contract:compileJava NO-SOURCE
+> Task :propagation-contract:processResources NO-SOURCE
+> Task :propagation-contract:classes UP-TO-DATE
+> Task :propagation-contract:jar UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:prePrimaryDebugBuild UP-TO-DATE
+> Task :app:generatePrimaryDebugBuildConfig UP-TO-DATE
+> Task :app:checkPrimaryDebugAarMetadata UP-TO-DATE
+> Task :app:generatePrimaryDebugResValues UP-TO-DATE
+> Task :app:mapPrimaryDebugSourceSetPaths UP-TO-DATE
+> Task :app:generatePrimaryDebugResources UP-TO-DATE
+> Task :app:mergePrimaryDebugResources UP-TO-DATE
+> Task :app:packagePrimaryDebugResources UP-TO-DATE
+> Task :app:parsePrimaryDebugLocalResources UP-TO-DATE
+> Task :app:createPrimaryDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksPrimaryDebug UP-TO-DATE
+> Task :app:processPrimaryDebugMainManifest UP-TO-DATE
+> Task :app:processPrimaryDebugManifest UP-TO-DATE
+> Task :app:processPrimaryDebugManifestForPackage UP-TO-DATE
+> Task :app:processPrimaryDebugResources UP-TO-DATE
+> Task :app:kspPrimaryDebugKotlin UP-TO-DATE
+> Task :app:prePrimaryDebugUnitTestBuild UP-TO-DATE
+> Task :app:preT1DebugBuild UP-TO-DATE
+> Task :app:javaPreCompilePrimaryDebugUnitTest
+> Task :app:javaPreCompilePrimaryDebug
+> Task :app:generateT1DebugBuildConfig
+> Task :orbitcore-bridge:preBuild UP-TO-DATE
+> Task :orbitcore-bridge:preDebugBuild UP-TO-DATE
+> Task :app:generateT1DebugResValues
+> Task :orbitcore-bridge:generateDebugResValues
+> Task :orbitcore-bridge:writeDebugAarMetadata
+> Task :orbitcore-bridge:generateDebugResources
+> Task :app:checkT1DebugAarMetadata
+> Task :orbitcore-bridge:packageDebugResources
+> Task :app:mapT1DebugSourceSetPaths
+> Task :app:generateT1DebugResources
+> Task :app:packageT1DebugResources
+> Task :app:createT1DebugCompatibleScreenManifests
+> Task :app:extractDeepLinksT1Debug
+> Task :orbitcore-bridge:extractDeepLinksDebug
+> Task :orbitcore-bridge:compileDebugLibraryResources
+> Task :app:parseT1DebugLocalResources
+> Task :orbitcore-bridge:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :orbitcore-bridge:parseDebugLocalResources
+> Task :orbitcore-bridge:javaPreCompileDebug
+> Task :app:preT1DebugUnitTestBuild UP-TO-DATE
+> Task :orbitcore-bridge:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileT1DebugUnitTest
+> Task :app:javaPreCompileT1Debug
+> Task :orbitcore-bridge:javaPreCompileDebugUnitTest
+> Task :orbitcore-bridge:generateDebugRFile
+> Task :orbitcore-bridge:processDebugManifest
+> Task :app:processT1DebugMainManifest
+> Task :app:processT1DebugManifest
+> Task :app:processT1DebugManifestForPackage
+> Task :orbitcore-bridge:generateDebugUnitTestStubRFile
+> Task :app:mergeT1DebugResources
+
+> Task :orbitcore-bridge:compileDebugKotlin
+w: [historical local build path omitted] Java type mismatch: inferred type is 'Any?', but 'Any' was expected.
+w: [historical local build path omitted] Java type mismatch: inferred type is 'Any?', but 'Any' was expected.
+
+> Task :app:processT1DebugResources
+> Task :orbitcore-bridge:compileDebugJavaWithJavac NO-SOURCE
+> Task :orbitcore-bridge:processDebugJavaRes
+> Task :orbitcore-bridge:bundleLibRuntimeToJarDebug
+> Task :orbitcore-bridge:bundleLibCompileToJarDebug
+> Task :orbitcore-bridge:compileDebugUnitTestKotlin
+> Task :orbitcore-bridge:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :orbitcore-bridge:processDebugUnitTestJavaRes
+> Task :orbitcore-bridge:testDebugUnitTest
+> Task :app:compilePrimaryDebugKotlin
+> Task :app:kspT1DebugKotlin
+
+> Task :app:compilePrimaryDebugKotlin
+w: [historical local build path omitted] This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: [historical local build path omitted] 'val timeStamp: Long' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] 'fun hasAutomaticGainControlLevelDb(): Boolean' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] 'val automaticGainControlLevelDb: Double' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] 'fun hasCarrierPhase(): Boolean' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] 'val carrierPhase: Double' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] 'fun hasCarrierPhaseUncertainty(): Boolean' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] 'val carrierPhaseUncertainty: Double' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] Unnecessary non-null assertion (!!) on a non-null receiver of type 'Long'.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+w: [historical local build path omitted] Java type mismatch: inferred type is 'Nothing?', but 'String' was expected.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+w: [historical local build path omitted] Unnecessary non-null assertion (!!) on a non-null receiver of type 'Long'.
+w: [historical local build path omitted] Unnecessary non-null assertion (!!) on a non-null receiver of type 'String'.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+w: [historical local build path omitted] 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
+w: [historical local build path omitted] Unnecessary safe call on a non-null receiver of type 'ObservationEntity'.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+
+> Task :app:compileT1DebugKotlin
+w: [historical local build path omitted] This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: [historical local build path omitted] 'val timeStamp: Long' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] 'fun hasAutomaticGainControlLevelDb(): Boolean' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] 'val automaticGainControlLevelDb: Double' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] 'fun hasCarrierPhase(): Boolean' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] 'val carrierPhase: Double' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] 'fun hasCarrierPhaseUncertainty(): Boolean' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] 'val carrierPhaseUncertainty: Double' is deprecated. Deprecated in Java.
+w: [historical local build path omitted] Unnecessary non-null assertion (!!) on a non-null receiver of type 'Long'.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+w: [historical local build path omitted] Java type mismatch: inferred type is 'Nothing?', but 'String' was expected.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+w: [historical local build path omitted] Unnecessary non-null assertion (!!) on a non-null receiver of type 'Long'.
+w: [historical local build path omitted] Unnecessary non-null assertion (!!) on a non-null receiver of type 'String'.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+w: [historical local build path omitted] 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.
+w: [historical local build path omitted] Unnecessary safe call on a non-null receiver of type 'ObservationEntity'.
+w: [historical local build path omitted] 'when' expression over a subject of type 'Any?' is not exhaustive. Add a 'null' or 'else' branch.
+
+> Task :app:compilePrimaryDebugJavaWithJavac
+> Task :app:processPrimaryDebugJavaRes
+> Task :app:bundlePrimaryDebugClassesToCompileJar
+> Task :app:bundlePrimaryDebugClassesToRuntimeJar
+> Task :app:kspPrimaryDebugUnitTestKotlin SKIPPED
+> Task :app:compileT1DebugJavaWithJavac
+> Task :app:processT1DebugJavaRes
+> Task :app:bundleT1DebugClassesToRuntimeJar
+> Task :app:bundleT1DebugClassesToCompileJar
+> Task :app:kspT1DebugUnitTestKotlin SKIPPED
+> Task :app:compilePrimaryDebugUnitTestKotlin
+> Task :app:compilePrimaryDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processPrimaryDebugUnitTestJavaRes
+> Task :app:compileT1DebugUnitTestKotlin
+> Task :app:testPrimaryDebugUnitTest
+> Task :app:compileT1DebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processT1DebugUnitTestJavaRes
+> Task :app:testT1DebugUnitTest
+[Incubating] Problems report is available at: [historical local build path omitted]
+
+BUILD SUCCESSFUL in 1m 28s
+71 actionable tasks: 54 executed, 17 up-to-date

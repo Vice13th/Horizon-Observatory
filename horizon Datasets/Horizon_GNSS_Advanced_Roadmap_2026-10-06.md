@@ -1,8 +1,8 @@
-# HORIZON OBSERVATORY — ADVANCED GNSS ROADMAP
-## Research-Driven Engineering Plan — 2026-10-06
+﻿# HORIZON OBSERVATORY â€” ADVANCED GNSS ROADMAP
+## Research-Driven Engineering Plan â€” 2026-10-06
 
-**Dataset:** `Horizon_GNSS_Research_Dataset_2026-10-06.json`  
-**Baseline:** `HORIZON_CHECKPOINT_2026-10-06_STAGE2_VERIFIED`  
+**Dataset:** `Horizon_GNSS_Research_Dataset_2026-10-06.json`
+**Baseline:** `HORIZON_CHECKPOINT_2026-10-06_STAGE2_VERIFIED`
 **Operating principle:** Evidence > narrative; Execution > appearance; Verification > confidence.
 
 ---
@@ -30,12 +30,12 @@ The target system must be able to:
 
 Every subsystem uses exactly these states:
 
-- `VERIFIED` — directly demonstrated by current evidence.
-- `OBSERVED` — directly observed, but not yet generalized.
-- `UNVERIFIED` — implementation or behavior exists/appears possible but has not been proven.
-- `BLOCKED` — current hardware/software/evidence prevents verification.
-- `RESEARCH_TARGET` — supported by external research and selected as a future engineering target.
-- `INFERRED` — engineering inference; never present it as empirical fact.
+- `VERIFIED` â€” directly demonstrated by current evidence.
+- `OBSERVED` â€” directly observed, but not yet generalized.
+- `UNVERIFIED` â€” implementation or behavior exists/appears possible but has not been proven.
+- `BLOCKED` â€” current hardware/software/evidence prevents verification.
+- `RESEARCH_TARGET` â€” supported by external research and selected as a future engineering target.
+- `INFERRED` â€” engineering inference; never present it as empirical fact.
 
 Rules:
 
@@ -128,7 +128,7 @@ Android Sensors / GNSS
        | Broadcast   |       | PCO / PCV   |
        | SP3 / CLK   |       | Gain        |
        | SSR / HAS   |       +-------------+
-       +------+------+ 
+       +------+------+
               |
               v
 +---------------------------+
@@ -176,7 +176,7 @@ Android Sensors / GNSS
 
 ---
 
-# 4. P0 — Evidence Foundation
+# 4. P0 â€” Evidence Foundation
 
 ## Objective
 
@@ -257,7 +257,7 @@ normalizer_version
 
 ---
 
-# 5. P1 — Scientific GNSS Core
+# 5. P1 â€” Scientific GNSS Core
 
 ## P1.1 Broadcast ephemeris
 
@@ -324,7 +324,7 @@ The UI must make the evidence visible instead of hiding it behind one fix number
 
 ---
 
-# 6. P1 — RINEX 4.01
+# 6. P1 â€” RINEX 4.01
 
 RINEX must become a first-class export target.
 
@@ -367,7 +367,7 @@ A golden raw dataset exported to RINEX and re-read must produce equivalent canon
 
 ---
 
-# 7. P2 — Precise Positioning
+# 7. P2 â€” Precise Positioning
 
 ## P2.1 RTCM
 
@@ -426,7 +426,7 @@ This is strategically important because it gives Horizon a deterministic offline
 
 ---
 
-# 8. P3 — PPP / HAS / SSR
+# 8. P3 â€” PPP / HAS / SSR
 
 ## PPP
 
@@ -477,7 +477,7 @@ SSR validity
 
 ---
 
-# 9. P3 — Antenna Intelligence
+# 9. P3 â€” Antenna Intelligence
 
 When `GnssAntennaInfo` is available, preserve:
 
@@ -491,7 +491,7 @@ Do not invent antenna corrections when Android does not expose them.
 
 ---
 
-# 10. P3 — GNSS/INS
+# 10. P3 â€” GNSS/INS
 
 ## Stage 1
 
@@ -537,7 +537,7 @@ The filter must be able to identify bad measurements rather than blindly fuse th
 
 ---
 
-# 11. P4 — Factor Graph Optimization
+# 11. P4 â€” Factor Graph Optimization
 
 Only begin after the EKF pipeline is independently verified.
 
@@ -566,7 +566,7 @@ solver_version
 
 ---
 
-# 12. P4 — Integrity Observatory
+# 12. P4 â€” Integrity Observatory
 
 Integrity is a first-class domain.
 
@@ -602,7 +602,7 @@ Future:
 
 ---
 
-# 13. P4 — Spoofing / RFI
+# 13. P4 â€” Spoofing / RFI
 
 Do not build a detector that simply labels abnormal C/N0 as spoofing.
 
@@ -622,7 +622,7 @@ A spoofing result must include evidence and confidence.
 
 ---
 
-# 14. P5 — Deterministic Replay
+# 14. P5 â€” Deterministic Replay
 
 Replay is one of the highest-value features.
 
@@ -762,7 +762,7 @@ sensor unavailable
 must remain visibly distinct from:
 
 ```text
-heading = 0°
+heading = 0Â°
 ```
 
 No fake rotation.
@@ -1003,7 +1003,7 @@ This distinction is mandatory.
 
 # 25. Risks
 
-## R1 — Hardware limitation
+## R1 â€” Hardware limitation
 
 Some Android phones do not expose all GNSS fields.
 
@@ -1011,7 +1011,7 @@ Mitigation:
 
 Capability-driven architecture.
 
-## R2 — Carrier-phase quality
+## R2 â€” Carrier-phase quality
 
 Smartphone ADR may contain discontinuities and hardware-dependent behavior.
 
@@ -1019,7 +1019,7 @@ Mitigation:
 
 Quality flags + cycle-slip analysis + raw preservation.
 
-## R3 — Ephemeris availability
+## R3 â€” Ephemeris availability
 
 Navigation messages may be absent.
 
@@ -1027,7 +1027,7 @@ Mitigation:
 
 External ephemeris/correction sources.
 
-## R4 — Solver complexity
+## R4 â€” Solver complexity
 
 RTK/PPP are substantially more complex than SPP.
 
@@ -1035,19 +1035,19 @@ Mitigation:
 
 Incremental solver gates.
 
-## R5 — UI claims exceeding scientific evidence
+## R5 â€” UI claims exceeding scientific evidence
 
 Mitigation:
 
 Integrity/provenance state visible in UI.
 
-## R6 — Terra/GNSS architectural coupling
+## R6 â€” Terra/GNSS architectural coupling
 
 Mitigation:
 
 Strict domain boundary.
 
-## R7 — Replay nondeterminism
+## R7 â€” Replay nondeterminism
 
 Mitigation:
 
@@ -1064,7 +1064,7 @@ Capability ledger
 Timestamp
 Provenance
 
-↓
+â†“
 
 P1
 Ephemeris
@@ -1073,7 +1073,7 @@ WLS
 Residuals
 RINEX
 
-↓
+â†“
 
 P2
 RTCM
@@ -1081,7 +1081,7 @@ NTRIP
 RTK
 PPK
 
-↓
+â†“
 
 P3
 PPP
@@ -1090,7 +1090,7 @@ SSR
 Antenna model
 GNSS/INS EKF
 
-↓
+â†“
 
 P4
 FDE
@@ -1100,7 +1100,7 @@ PDR
 RFI
 Spoofing
 
-↓
+â†“
 
 P5
 Replay
@@ -1114,7 +1114,7 @@ Do not invert this order for visual reasons.
 
 ---
 
-# 27. Definition of Done — Scientific Horizon
+# 27. Definition of Done â€” Scientific Horizon
 
 Horizon reaches the intended scientific maturity when:
 
@@ -1143,20 +1143,20 @@ The final product should not be optimized to look like an advanced GNSS applicat
 
 It should be engineered so that an independent reviewer can ask:
 
-> “Where did this number come from?”
+> â€œWhere did this number come from?â€
 
 and Horizon can answer:
 
 ```text
 session
-→ raw observation
-→ normalized observation
-→ ephemeris/correction
-→ geometry
-→ solver
-→ residual
-→ integrity assessment
-→ rendered value
+â†’ raw observation
+â†’ normalized observation
+â†’ ephemeris/correction
+â†’ geometry
+â†’ solver
+â†’ residual
+â†’ integrity assessment
+â†’ rendered value
 ```
 
 That provenance chain is the core product.
@@ -1165,28 +1165,28 @@ That provenance chain is the core product.
 
 ## External research anchors
 
-1. Android GNSS APIs and raw measurements  
+1. Android GNSS APIs and raw measurements
    https://developer.android.com/develop/sensors-and-location/sensors/gnss
 
-2. GPSTest  
+2. GPSTest
    https://github.com/barbeau/gpstest
 
-3. IGS products/access  
+3. IGS products/access
    https://connect.igs.org/products-access/
 
-4. Galileo HAS  
+4. Galileo HAS
    https://gssc.esa.int/navipedia/index.php/Galileo_High_Accuracy_Service_%28HAS%29
 
-5. NSGRX / Android-to-RINEX research  
+5. NSGRX / Android-to-RINEX research
    https://nottingham-repository.worktribe.com/output/70323219
 
-6. Robust Android GNSS/INS  
+6. Robust Android GNSS/INS
    https://experts.umn.edu/en/publications/robust-android-gnss-positioning-using-single-differenced-tightly-/
 
-7. Smartphone GNSS-PPK/PDR/FGO research  
+7. Smartphone GNSS-PPK/PDR/FGO research
    https://pmc.ncbi.nlm.nih.gov/articles/PMC11433767/
 
-8. Android GNSS/RFI research  
+8. Android GNSS/RFI research
    https://www.mdpi.com/2673-4591/126/1/4
 
 ---
@@ -1199,12 +1199,12 @@ A roadmap item changes from `RESEARCH_TARGET` to `VERIFIED` only after:
 
 ```text
 implementation
-→ build
-→ runtime execution
-→ raw evidence
-→ reproducible test
-→ artifact/hash
-→ checkpoint update
+â†’ build
+â†’ runtime execution
+â†’ raw evidence
+â†’ reproducible test
+â†’ artifact/hash
+â†’ checkpoint update
 ```
 
 No exception.

@@ -1,0 +1,89 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+
+> Configure project :app
+w: Deprecated Gradle Version
+The used Gradle version (Gradle 8.11.1) is deprecated and will not be supported in future Kotlin Gradle Plugin releases.
+The minimum supported Gradle version will become Gradle 8.14.4 in Kotlin 2.5.0.
+
+This warning can be suppressed in 'gradle.properties':
+    kotlin.suppressGradlePluginWarnings=DeprecatedGradleVersionWarning
+Solution: Please update the Gradle version to at least Gradle 8.14.4.
+
+.\gradlew.bat : Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of
+version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were
+released at different times.
+At line:1 char:302
++ ... oNewline }; .\gradlew.bat :propagation-contract:compileKotlin :orbitc ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: SDK pr...ifferent times.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+> Task :propagation-contract:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :propagation-contract:compileKotlin
+> Task :propagation-contract:processResources NO-SOURCE
+> Task :orbitcore-bridge:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :orbitcore-bridge:preBuild UP-TO-DATE
+> Task :orbitcore-bridge:preDebugBuild UP-TO-DATE
+> Task :orbitcore-bridge:generateDebugResValues
+> Task :orbitcore-bridge:generateDebugResources
+> Task :orbitcore-bridge:packageDebugResources
+> Task :orbitcore-bridge:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:prePrimaryDebugBuild UP-TO-DATE
+> Task :orbitcore-bridge:javaPreCompileDebugUnitTest
+> Task :orbitcore-bridge:javaPreCompileDebug
+> Task :app:generatePrimaryDebugBuildConfig
+> Task :orbitcore-bridge:parseDebugLocalResources
+> Task :app:checkPrimaryDebugAarMetadata
+> Task :app:generatePrimaryDebugResValues
+> Task :orbitcore-bridge:generateDebugRFile
+> Task :app:mapPrimaryDebugSourceSetPaths
+> Task :app:generatePrimaryDebugResources
+> Task :orbitcore-bridge:generateDebugUnitTestStubRFile
+> Task :app:packagePrimaryDebugResources
+> Task :app:createPrimaryDebugCompatibleScreenManifests
+> Task :app:parsePrimaryDebugLocalResources
+> Task :app:extractDeepLinksPrimaryDebug
+> Task :app:processPrimaryDebugMainManifest
+> Task :app:processPrimaryDebugManifest
+> Task :app:processPrimaryDebugManifestForPackage
+> Task :app:mergePrimaryDebugResources
+> Task :app:processPrimaryDebugResources
+> Task :propagation-contract:compileJava NO-SOURCE
+> Task :propagation-contract:classes UP-TO-DATE
+> Task :propagation-contract:jar
+
+> Task :orbitcore-bridge:compileDebugKotlin
+w: [historical local build path omitted] Java type mismatch: inferred type is 'Any?', but 'Any' was expected.
+w: [historical local build path omitted] Java type mismatch: inferred type is 'Any?', but 'Any' was expected.
+
+> Task :orbitcore-bridge:compileDebugJavaWithJavac NO-SOURCE
+> Task :orbitcore-bridge:processDebugJavaRes
+> Task :orbitcore-bridge:bundleLibRuntimeToJarDebug
+> Task :orbitcore-bridge:bundleLibCompileToJarDebug
+> Task :orbitcore-bridge:compileDebugUnitTestKotlin
+> Task :orbitcore-bridge:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :orbitcore-bridge:processDebugUnitTestJavaRes
+> Task :orbitcore-bridge:testDebugUnitTest
+> Task :app:kaptGenerateStubsPrimaryDebugKotlin
+> Task :app:kaptPrimaryDebugKotlin FAILED
+[Incubating] Problems report is available at: [historical local build path omitted]
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:kaptPrimaryDebugKotlin'.
+> A failure occurred while executing
+org.jetbrains.kotlin.gradle.internal.KaptWithoutKotlincTask$KaptExecutionWorkAction
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1m 50s
+33 actionable tasks: 33 executed

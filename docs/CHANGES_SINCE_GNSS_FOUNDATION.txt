@@ -1,4 +1,4 @@
-HORIZON — Changes since HORIZON_NEXT_PHASE_GNSS_DOMAIN_2026-09-24
+﻿HORIZON â€” Changes since HORIZON_NEXT_PHASE_GNSS_DOMAIN_2026-09-24
 
 Main source changes:
 - GnssEvidenceModels.kt: added signal statistics, history points, constellation summaries and latest-satellite snapshot.

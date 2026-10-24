@@ -1,0 +1,1521 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+
+> Configure project :app
+.\gradlew.bat : e: [historical local build path omitted] Expecting an element
+At line:1 char:600
++ ... alCount 55; .\gradlew.bat :orbitcore-bridge:compileDebugKotlin :app:c ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (e: [historical local path omitted]ting an element:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+e: [historical local build path omitted] Expecting an element
+e: [historical local build path omitted] Unexpected tokens (use ';' to separate expressions on the
+same line)
+e: [historical local build path omitted] Expecting an element
+e: [historical local build path omitted] Expecting an element
+e: [historical local build path omitted] Unresolved reference: n
+e: [historical local build path omitted] Unresolved reference: n
+e: [historical local build path omitted] Unresolved reference: ndependencies
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block: Action<DependencyConstraint>):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public inline fun DependencyHandler.add(configuration: String, dependencyNotation: String, dependencyConfiguration:
+ExternalModuleDependency.() -> Unit): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block: Action<DependencyConstraint>):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block: Action<DependencyConstraint>):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block: Action<DependencyConstraint>):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block: Action<DependencyConstraint>):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block: Action<DependencyConstraint>):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference: platform
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block: Action<DependencyConstraint>):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block: Action<DependencyConstraint>):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block: Action<DependencyConstraint>):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.debugImplementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.debugImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.debugImplementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.debugImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.debugImplementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.debugImplementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.debugImplementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.debugImplementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.debugImplementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.debugImplementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block: Action<DependencyConstraint>):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block: Action<DependencyConstraint>):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block: Action<DependencyConstraint>):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block: Action<DependencyConstraint>):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Type mismatch: inferred type is
+Provider<MinimalExternalModuleDependency!>! but Action<KaptExtension> was expected
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.testImplementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.testImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.testImplementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.testImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.testImplementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.testImplementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.testImplementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.testImplementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.testImplementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.testImplementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.testImplementation(artifactNotation: Any): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun ArtifactHandler.testImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.testImplementation(constraintNotation: Any): DependencyConstraint defined in
+org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.testImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.testImplementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.testImplementation(dependencyNotation: Any): Dependency? defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.testImplementation(group: String?, name: String?, version: String? = ..., configuration:
+String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.testImplementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.testImplementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.testImplementation(dependencyNotation: ProviderConvertible<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any): DependencyConstraint
+defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.androidTestImplementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any): DependencyConstraint
+defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.androidTestImplementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+e: [historical local build path omitted] Unresolved reference. None of the following candidates is
+applicable because of receiver type mismatch:
+public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any): DependencyConstraint
+defined in org.gradle.kotlin.dsl
+public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+public fun <T : Dependency?> DependencyHandler.androidTestImplementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(dependencyNotation: Provider<*>, dependencyConfiguration:
+Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+public fun DependencyHandler.androidTestImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+FAILURE: Build completed with 2 failures.
+
+1: Task failed with an exception.
+-----------
+* Where:
+Build file '[historical local path omitted]\app\build.gradle.kts' line: 74
+
+* What went wrong:
+Script compilation errors:
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+                                          ^ Expecting an element
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+                                                                  ^ Expecting an element
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+                                                                                                                    ^
+Unexpected tokens (use ';' to separate expressions on the same line)
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+
+^ Expecting an element
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+
+  ^ Expecting an element
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+                                           ^ Unresolved reference: n
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+
+ ^ Unresolved reference: n
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+
+   ^ Unresolved reference: ndependencies
+
+  Line 075:     implementation(project(":propagation-contract"))
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 078:     add("t1Implementation", project(":orbitcore-bridge"))
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public inline fun DependencyHandler.add(configuration: String, dependencyNotation: String,
+dependencyConfiguration: ExternalModuleDependency.() -> Unit): ExternalModuleDependency defined in
+org.gradle.kotlin.dsl
+
+  Line 080:     implementation(libs.androidx.core.ktx)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 081:     implementation(libs.androidx.activity.compose)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 082:     implementation(libs.androidx.lifecycle.runtime.ktx)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 083:     implementation(libs.androidx.lifecycle.service)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 085:     implementation(platform(libs.androidx.compose.bom))
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 085:     implementation(platform(libs.androidx.compose.bom))
+                               ^ Unresolved reference: platform
+
+  Line 086:     implementation(libs.androidx.compose.ui)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 087:     implementation(libs.androidx.compose.ui.tooling.preview)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 088:     implementation(libs.androidx.compose.material3)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 089:     debugImplementation(libs.androidx.compose.ui.tooling)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.debugImplementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.debugImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.debugImplementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.debugImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.debugImplementation(dependency: TypeVariable(T),
+action: Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.debugImplementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.debugImplementation(group: String?, name: String?, version: String? =
+..., configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.debugImplementation(dependencyNotation: String?,
+dependencyConfiguration: Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.debugImplementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.debugImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 091:     implementation(libs.kotlinx.coroutines.core)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 092:     implementation(libs.kotlinx.coroutines.android)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 094:     implementation(libs.androidx.room.runtime)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 095:     implementation(libs.androidx.room.ktx)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 096:     kapt(libs.androidx.room.compiler)
+                     ^ Type mismatch: inferred type is Provider<MinimalExternalModuleDependency!>! but
+Action<KaptExtension> was expected
+
+  Line 098:     testImplementation(libs.junit)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.testImplementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.testImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.testImplementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.testImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.testImplementation(dependency: TypeVariable(T),
+action: Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(group: String?, name: String?, version: String? =
+..., configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: String?,
+dependencyConfiguration: Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 100:     testImplementation(libs.org.json)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.testImplementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.testImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.testImplementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.testImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.testImplementation(dependency: TypeVariable(T),
+action: Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(group: String?, name: String?, version: String? =
+..., configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: String?,
+dependencyConfiguration: Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 102:     androidTestImplementation(libs.androidx.test.ext.junit)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any): PublishArtifact
+defined in org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.androidTestImplementation(dependency:
+TypeVariable(T), action: Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: Any): Dependency?
+defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(group: String?, name: String?, version:
+String? = ..., configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: String?,
+dependencyConfiguration: Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 103:     androidTestImplementation(libs.androidx.test.runner)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any): PublishArtifact
+defined in org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.androidTestImplementation(dependency:
+TypeVariable(T), action: Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: Any): Dependency?
+defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(group: String?, name: String?, version:
+String? = ..., configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: String?,
+dependencyConfiguration: Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 104:     androidTestImplementation(libs.androidx.room.testing)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any): PublishArtifact
+defined in org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.androidTestImplementation(dependency:
+TypeVariable(T), action: Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: Any): Dependency?
+defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(group: String?, name: String?, version:
+String? = ..., configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: String?,
+dependencyConfiguration: Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+30 errors
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+2: Task failed with an exception.
+-----------
+* Where:
+Build file '[historical local path omitted]\app\build.gradle.kts' line: 74
+
+* What went wrong:
+Script compilation errors:
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+                                          ^ Expecting an element
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+                                                                  ^ Expecting an element
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+                                                                                                                    ^
+Unexpected tokens (use ';' to separate expressions on the same line)
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+
+^ Expecting an element
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+
+  ^ Expecting an element
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+                                           ^ Unresolved reference: n
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+
+ ^ Unresolved reference: n
+
+  Line 074: configurations.configureEach {\n
+resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:2.4.0")\n}\n\ndependencies {
+
+   ^ Unresolved reference: ndependencies
+
+  Line 075:     implementation(project(":propagation-contract"))
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 078:     add("t1Implementation", project(":orbitcore-bridge"))
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public inline fun DependencyHandler.add(configuration: String, dependencyNotation: String,
+dependencyConfiguration: ExternalModuleDependency.() -> Unit): ExternalModuleDependency defined in
+org.gradle.kotlin.dsl
+
+  Line 080:     implementation(libs.androidx.core.ktx)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 081:     implementation(libs.androidx.activity.compose)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 082:     implementation(libs.androidx.lifecycle.runtime.ktx)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 083:     implementation(libs.androidx.lifecycle.service)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 085:     implementation(platform(libs.androidx.compose.bom))
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 085:     implementation(platform(libs.androidx.compose.bom))
+                               ^ Unresolved reference: platform
+
+  Line 086:     implementation(libs.androidx.compose.ui)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 087:     implementation(libs.androidx.compose.ui.tooling.preview)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 088:     implementation(libs.androidx.compose.material3)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 089:     debugImplementation(libs.androidx.compose.ui.tooling)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.debugImplementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.debugImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.debugImplementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.debugImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.debugImplementation(dependency: TypeVariable(T),
+action: Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.debugImplementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.debugImplementation(group: String?, name: String?, version: String? =
+..., configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.debugImplementation(dependencyNotation: String?,
+dependencyConfiguration: Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.debugImplementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.debugImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 091:     implementation(libs.kotlinx.coroutines.core)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 092:     implementation(libs.kotlinx.coroutines.android)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 094:     implementation(libs.androidx.room.runtime)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 095:     implementation(libs.androidx.room.ktx)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.implementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.implementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.implementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.implementation(dependency: TypeVariable(T), action:
+Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(group: String?, name: String?, version: String? = ...,
+configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: String?, dependencyConfiguration:
+Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.implementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 096:     kapt(libs.androidx.room.compiler)
+                     ^ Type mismatch: inferred type is Provider<MinimalExternalModuleDependency!>! but
+Action<KaptExtension> was expected
+
+  Line 098:     testImplementation(libs.junit)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.testImplementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.testImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.testImplementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.testImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.testImplementation(dependency: TypeVariable(T),
+action: Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(group: String?, name: String?, version: String? =
+..., configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: String?,
+dependencyConfiguration: Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 100:     testImplementation(libs.org.json)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.testImplementation(artifactNotation: Any): PublishArtifact defined in
+org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.testImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.testImplementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.testImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.testImplementation(dependency: TypeVariable(T),
+action: Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: Any): Dependency? defined in
+org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(group: String?, name: String?, version: String? =
+..., configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: String?,
+dependencyConfiguration: Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.testImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 102:     androidTestImplementation(libs.androidx.test.ext.junit)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any): PublishArtifact
+defined in org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.androidTestImplementation(dependency:
+TypeVariable(T), action: Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: Any): Dependency?
+defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(group: String?, name: String?, version:
+String? = ..., configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: String?,
+dependencyConfiguration: Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 103:     androidTestImplementation(libs.androidx.test.runner)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any): PublishArtifact
+defined in org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.androidTestImplementation(dependency:
+TypeVariable(T), action: Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: Any): Dependency?
+defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(group: String?, name: String?, version:
+String? = ..., configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: String?,
+dependencyConfiguration: Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+  Line 104:     androidTestImplementation(libs.androidx.room.testing)
+                ^ Unresolved reference. None of the following candidates is applicable because of receiver type
+mismatch:
+                    public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any): PublishArtifact
+defined in org.gradle.kotlin.dsl
+                    public fun ArtifactHandler.androidTestImplementation(artifactNotation: Any, configureAction:
+Action<ConfigurablePublishArtifact>): PublishArtifact defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any):
+DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun DependencyConstraintHandler.androidTestImplementation(constraintNotation: Any, block:
+Action<DependencyConstraint>): DependencyConstraint defined in org.gradle.kotlin.dsl
+                    public fun <T : Dependency?> DependencyHandler.androidTestImplementation(dependency:
+TypeVariable(T), action: Action<TypeVariable(T)>): TypeVariable(T) defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: Any): Dependency?
+defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(group: String?, name: String?, version:
+String? = ..., configuration: String? = ..., classifier: String? = ..., ext: String? = ..., dependencyConfiguration:
+Action<ExternalModuleDependency>? = ...): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: String?,
+dependencyConfiguration: Action<ExternalModuleDependency>): ExternalModuleDependency defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: Provider<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+                    public fun DependencyHandler.androidTestImplementation(dependencyNotation: ProviderConvertible<*>,
+dependencyConfiguration: Action<ExternalModuleDependency>): Unit defined in org.gradle.kotlin.dsl
+
+30 errors
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+BUILD FAILED in 20s

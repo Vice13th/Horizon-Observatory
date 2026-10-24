@@ -1,4 +1,4 @@
-# HORIZON — FINAL GATE V3 Root-Cause Analysis
+﻿# HORIZON â€” FINAL GATE V3 Root-Cause Analysis
 
 Date: 2026-09-24
 

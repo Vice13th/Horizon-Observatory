@@ -1,4 +1,4 @@
-# HORIZON — Build and Device Validation
+﻿# HORIZON â€” Build and Device Validation
 
 ## Windows environment used in the verified workflow
 

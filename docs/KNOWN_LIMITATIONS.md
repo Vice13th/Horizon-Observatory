@@ -1,4 +1,4 @@
-# HORIZON — Known Limitations at Checkpoint
+﻿# HORIZON â€” Known Limitations at Checkpoint
 
 1. The current checkpoint is not a final release.
 2. No new APK is bundled as part of this checkpoint.
@@ -13,6 +13,6 @@
 
 ## Orbit prediction foundation (added with the orbit-prediction checkpoint)
 See `docs/ORBIT_PREDICTION_ARCHITECTURE.md`. In short: no SGP4/SDP4 backend and no reference vectors are integrated
-(predictions end `ENGINE_UNAVAILABLE`), the SVID→NORAD table is empty (satellites end `UNMATCHED`), Room schema
+(predictions end `ENGINE_UNAVAILABLE`), the SVIDâ†’NORAD table is empty (satellites end `UNMATCHED`), Room schema
 baselines 5/6/7 are not checked in (migration tests skip), the catalog is never fetched automatically, sensor-driven
 device orientation is `Unavailable`, and build / tests / device are UNVERIFIED for this checkpoint.

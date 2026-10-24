@@ -1,19 +1,19 @@
-# Horizon Observatory — Visual / Loading / Easter Egg Handoff
+﻿# Horizon Observatory â€” Visual / Loading / Easter Egg Handoff
 
 ## Purpose
 Make Horizon Observatory unmistakably scientific, atmospheric, and instrumentation-driven while remaining part of the VICE13TH LABS family.
 
 ## Shared VICE13TH LABS DNA
-Use the parent DNA—dark cinematic foundation, strict hierarchy, premium spacing, material depth, restrained motion—without sharing product palettes.
+Use the parent DNAâ€”dark cinematic foundation, strict hierarchy, premium spacing, material depth, restrained motionâ€”without sharing product palettes.
 
 ## Horizon visual identity
 Direction: **Frosted Glass + Atmospheric Scientific HUD**.
 Base: space-black / deep navy.
 Primary instrumentation accent: cyan/teal.
 Secondary semantic accent: restrained amber for telemetry/warning conditions only.
-The visual language should suggest scientific instruments, sky geometry, telemetry, and observation—not a generic dashboard.
+The visual language should suggest scientific instruments, sky geometry, telemetry, and observationâ€”not a generic dashboard.
 
-## Loading states — REQUIRED
+## Loading states â€” REQUIRED
 Design and audit:
 - application startup
 - GNSS/session initialization
@@ -25,7 +25,7 @@ Design and audit:
 
 Loading states must clearly distinguish **waiting, acquiring, processing, complete, degraded, and failed** states. Do not use fake telemetry as decoration.
 
-## Easter Eggs — REQUIRED
+## Easter Eggs â€” REQUIRED
 Easter Eggs should reinforce observation/scientific discovery themes: constellation references, subtle orbital motifs, hidden technical details, or carefully authored instrument behaviors.
 They must never be confused with live measurements, predicted state, or real evidence.
 
@@ -37,7 +37,7 @@ No random purple/green recoloring, fake scientific data, decorative telemetry pr
 ## Verification gate
 Audit loading and transient states on real device / representative runtime where available, capture screenshots, and separate design intent from verified behavior.
 
-> WORKFLOW: INSPECT → REPORT → IMPLEMENT → VERIFY
+> WORKFLOW: INSPECT â†’ REPORT â†’ IMPLEMENT â†’ VERIFY
 > BEFORE IMPLEMENTATION: Read AGENTS.md, CHECKPOINT.md, and the current roadmap/technical-gap document. Reconcile this handoff with those sources before changing code.
 
 ## Execution hardening

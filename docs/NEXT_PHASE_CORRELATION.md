@@ -1,4 +1,4 @@
-# HORIZON — Next Task: GNSS Correlation Layer
+﻿# HORIZON â€” Next Task: GNSS Correlation Layer
 
 ## Objective
 

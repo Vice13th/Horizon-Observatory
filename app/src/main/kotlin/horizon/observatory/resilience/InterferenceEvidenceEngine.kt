@@ -9,11 +9,13 @@ class InterferenceEvidenceEngine(
     fun assess(s: InterferenceSnapshot): InterferenceAssessment {
         val signals = mutableListOf<EvidenceSignal>()
         var score = 0.0
-        var weight = 0.0
+        var observedWeight = 0.0
         fun add(name: String, hit: Boolean, w: Double, value: String) {
             signals += EvidenceSignal(name, value, w)
-            weight += w
-            if (hit) score += w
+            if (value != "UNKNOWN") {
+                observedWeight += w
+                if (hit) score += w
+            }
         }
         val cn0Drop = if (s.cn0MedianDbHz != null && s.baselineCn0MedianDbHz != null)
             s.baselineCn0MedianDbHz - s.cn0MedianDbHz else null
@@ -27,7 +29,7 @@ class InterferenceEvidenceEngine(
         add("DOPPLER_RESIDUAL", s.dopplerResidualRms != null && s.dopplerResidualRms > 3.0, 0.05, s.dopplerResidualRms?.toString() ?: "UNKNOWN")
         add("ADR_RESIDUAL", s.adrResidualRms != null && s.adrResidualRms > 1.0, 0.05, s.adrResidualRms?.toString() ?: "UNKNOWN")
         if (s.ageMs != null && s.ageMs > 5000) add("STALE_MEASUREMENTS", true, 0.10, s.ageMs.toString())
-        val normalized = if (weight == 0.0) 0.0 else score / weight
+        val normalized = if (observedWeight == 0.0) 0.0 else score / observedWeight
         val hasEvidence = s.cn0MedianDbHz != null || s.baselineCn0MedianDbHz != null ||
             s.trackedSatelliteCount != null || s.usedInFixSatelliteCount != null ||
             s.baselineTrackedSatelliteCount != null || s.constellationCount != null ||
@@ -35,7 +37,7 @@ class InterferenceEvidenceEngine(
             s.pvtDegraded != null || s.measurementContinuityLost != null ||
             s.crossSourceDisagreement != null || s.ageMs != null
         val state = when {
-            !hasEvidence -> InterferenceState.UNKNOWN
+            !hasEvidence || observedWeight < MIN_OBSERVED_WEIGHT -> InterferenceState.UNKNOWN
             normalized >= jamLikelyScore && (cn0Drop != null || satDrop != null) -> InterferenceState.JAM_LIKELY
             s.crossSourceDisagreement == true && s.cn0MedianDbHz != null && normalized >= degradedScore -> InterferenceState.SPOOF_LIKELY
             normalized >= degradedScore -> InterferenceState.DEGRADED
@@ -43,6 +45,10 @@ class InterferenceEvidenceEngine(
             else -> InterferenceState.NORMAL
         }
         return InterferenceAssessment(state, normalized, signals)
+    }
+
+    private companion object {
+        private const val MIN_OBSERVED_WEIGHT = 0.30
     }
 
     private fun InterferenceSnapshot.hasRecoveryEvidence(): Boolean =
@@ -53,4 +59,3 @@ class InterferenceEvidenceEngine(
         pvtDegraded == false && measurementContinuityLost == false &&
             (cn0MedianDbHz == null || baselineCn0MedianDbHz == null || cn0MedianDbHz >= baselineCn0MedianDbHz)
 }
-

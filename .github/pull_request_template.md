@@ -1,7 +1,7 @@
-﻿## What and why
+## What and why
 
 ## Evidence (label each claim: VERIFIED / OBSERVED / MEASURED / INFERRED / UNVERIFIED)
-- [ ] `./gradlew :app:testDebugUnitTest` executed â€” result:
+- [ ] `./gradlew :app:testDebugUnitTest` executed — result:
 - [ ] Device/emulator checks (if UI or acquisition changed):
 - [ ] Verification matrix updated (`docs/verification/VERIFICATION_MATRIX.md`) only with executed evidence
 

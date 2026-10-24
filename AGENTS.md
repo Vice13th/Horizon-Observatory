@@ -1,4 +1,4 @@
-﻿# HORIZON â€” AGENT BOOTSTRAP CONTRACT
+# HORIZON — AGENT BOOTSTRAP CONTRACT
 
 Read these first for every material task:
 
@@ -43,7 +43,7 @@ Do not invoke irrelevant plugins just to satisfy a checklist.
 
 Default:
 
-`INSPECT â†’ RECONCILE â†’ PLAN â†’ IMPLEMENT â†’ TEST â†’ BUILD â†’ VERIFY â†’ DOCUMENT â†’ NEXT GATE`
+`INSPECT → RECONCILE → PLAN → IMPLEMENT → TEST → BUILD → VERIFY → DOCUMENT → NEXT GATE`
 
 After a gate passes, continue automatically to the next unblocked gate.
 
@@ -67,8 +67,8 @@ Rules:
 
 - Do NOT wait for B4/B5 orientation hardware limitations before implementing K.
 - Do NOT wait for all UI polish before implementing K.
-- B1â€“B3 UI work and K software work may proceed in parallel when file ownership is independent.
-- K0â€“K7 software architecture, state machine, evidence model, replay/simulation, tests, persistence, emergency mode, reception-optimization profile, and explicit external-location API work should be completed locally first.
+- B1–B3 UI work and K software work may proceed in parallel when file ownership is independent.
+- K0–K7 software architecture, state machine, evidence model, replay/simulation, tests, persistence, emergency mode, reception-optimization profile, and explicit external-location API work should be completed locally first.
 - K8 physical/device validation is the only late hardware gate; prepare its exact verification batch while local K work continues.
 - Use golden/synthetic/replay datasets for K development when physical interference testing is unavailable, but label those results separately from real-device evidence.
 - Every K component must preserve raw evidence and explicit uncertainty/provenance.
@@ -79,18 +79,18 @@ Rules:
 Preferred K execution order:
 
 K0 capability contract
-â†’ K1 interference evidence
-â†’ K2 survivor/trust ranking
-â†’ K3 resilience state machine
-â†’ K4 last-trusted PVT + uncertainty bridge
-â†’ K5 Emergency Navigation mode
-â†’ K6 Reception Optimization
-â†’ K7 Horizon Resilient Location API/bridge
-â†’ K8 real-device/long-run validation
+→ K1 interference evidence
+→ K2 survivor/trust ranking
+→ K3 resilience state machine
+→ K4 last-trusted PVT + uncertainty bridge
+→ K5 Emergency Navigation mode
+→ K6 Reception Optimization
+→ K7 Horizon Resilient Location API/bridge
+→ K8 real-device/long-run validation
 
 Parallelize K0/K1/K2/K3/K4/K5/K6/K7 wherever dependencies and file ownership permit.
 
-## Current HORIZON checkpoint â€” 2026-10-06
+## Current HORIZON checkpoint — 2026-10-06
 
 **CHECKPOINT:** HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED
 
@@ -111,7 +111,7 @@ docs/verification/device-receipts/HORIZON_MEASUREMENT_ROOM_READBACK_8cf1c36f-838
 - Export SHA-256: b5697add8563c8380f85f7bc2bc403a5041a2a9f7d3194cc11883b922174e64e.
 
 **OPEN / DO NOT GUESS**
-- NORAD mapping: UNKNOWN; resolver remains empty-table and no SVIDâ†’NORAD guesses are allowed.
+- NORAD mapping: UNKNOWN; resolver remains empty-table and no SVID→NORAD guesses are allowed.
 - Device-specific UTC edge-case verification: UNVERIFIED.
 - Source timestamp regressions: 150 in the fresh session; diagnostic only, not an ingestion-order failure.
 - K8 physical interference/long-run validation remains pending.
@@ -142,7 +142,7 @@ Use:
 
 Rule:
 
-**NO RECEIPT â†’ NO EPISTEMIC UPGRADE**
+**NO RECEIPT → NO EPISTEMIC UPGRADE**
 
 Never invent measurements, device capabilities, test results, API behavior, or completion status.
 
@@ -163,7 +163,7 @@ Complete means relevant tests/build/device verification and durable evidence.
 If a required external capability is unavailable, mark BLOCKED once, preserve evidence, and continue independent workstreams.
 
 
-## UI TOOL-FIRST OVERRIDE â€” B1/B2
+## UI TOOL-FIRST OVERRIDE — B1/B2
 
 B1/B2 UI/UX work is **DESIGN-FIRST, TOOL-FIRST**.
 
@@ -182,4 +182,4 @@ Before substantial UI implementation:
 Skipping an available design tool without an explicit recorded reason is a UI-gate violation.
 
 Required path:
-`INSPECT â†’ REPRODUCE â†’ DESIGN TOOL â†’ VISUAL REVIEW â†’ IMPLEMENT â†’ TEST â†’ BUILD â†’ DEVICE VERIFY â†’ VISUAL QA â†’ DOCUMENT`
+`INSPECT → REPRODUCE → DESIGN TOOL → VISUAL REVIEW → IMPLEMENT → TEST → BUILD → DEVICE VERIFY → VISUAL QA → DOCUMENT`

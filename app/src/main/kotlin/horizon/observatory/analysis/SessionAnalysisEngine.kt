@@ -20,7 +20,35 @@ class SessionAnalysisEngine {
         val gnssDomain = gnssCorrelationEngine.buildSnapshot(observations)
 
         val cno = gnssRaw.mapNotNull { it.rawPayloadJson.doubleOrNull("cn0DbHz") }
-        val agc = gnssRaw.mapNotNull { it.rawPayloadJson.doubleOrNull("automaticGainControlLevelDb") }
+        val eventAgc = observations
+            .asSequence()
+            .filter { it.type == "GNSS_CLOCK" }
+            .flatMap { observation ->
+                val controls = runCatching {
+                    JSONObject(observation.rawPayloadJson)
+                        .optJSONObject("eventExtras")
+                        ?.optJSONArray("agcEvents")
+                }.getOrNull()
+                (0 until (controls?.length() ?: 0)).asSequence().mapNotNull { index ->
+                    val control = controls?.optJSONObject(index) ?: return@mapNotNull null
+                    val level = (control.opt("levelDb") as? Number)?.toDouble()
+                    level?.takeIf { it.isFinite() }
+                }
+            }
+            .toList()
+        val legacyAgc = gnssRaw
+            .mapNotNull { it.rawPayloadJson.doubleOrNull("automaticGainControlLevelDb") }
+            .filter { it.isFinite() }
+        val agcSource = when {
+            eventAgc.isNotEmpty() -> "EVENT_LEVEL"
+            legacyAgc.isNotEmpty() -> "LEGACY_MEASUREMENT"
+            else -> "UNAVAILABLE"
+        }
+        val agc = when (agcSource) {
+            "EVENT_LEVEL" -> eventAgc
+            "LEGACY_MEASUREMENT" -> legacyAgc
+            else -> emptyList()
+        }
         val rsrpAll = cellular.mapNotNull {
             it.rawPayloadJson.doubleOrNull("rsrp") ?: it.rawPayloadJson.doubleOrNull("ssRsrp")
         }
@@ -88,7 +116,8 @@ class SessionAnalysisEngine {
             latestCellAgeMs = latestAgeMs,
             freshCellRequestSamples = freshRequestSamples,
             cellularCallbackSamples = callbackSamples,
-            gnssDomain = gnssDomain
+            gnssDomain = gnssDomain,
+            agcSource = agcSource
         )
     }
 
@@ -215,7 +244,8 @@ data class AnalysisSnapshot(
         correlatedMeasurementCount = 0,
         statusOnlySatelliteCount = 0,
         rawOnlySatelliteCount = 0
-    )
+    ),
+    val agcSource: String = "UNAVAILABLE"
 )
 
 data class TimelinePoint(

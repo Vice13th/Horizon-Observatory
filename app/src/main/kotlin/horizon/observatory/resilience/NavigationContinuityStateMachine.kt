@@ -1,4 +1,4 @@
-﻿package horizon.observatory.resilience
+package horizon.observatory.resilience
 
 class NavigationContinuityStateMachine(
     private val transitionDebounceSamples: Int = 2
@@ -20,6 +20,12 @@ class NavigationContinuityStateMachine(
         return NavigationTransition(from, target, e)
     }
 
+    /**
+     * `multiSourceAgreement` is the ONLY path into MULTI_SOURCE_FUSION: it must be a passing consistency
+     * decision over independent position evidence, never the mere freshness of sensor callbacks.
+     * `recoveryGnss` is evaluated first in every degraded state so restored GNSS is never trapped behind
+     * a sensor-driven state.
+     */
     private fun nextTarget(s: NavigationState, e: NavigationEvidence): NavigationState? = when (s) {
         NavigationState.FULL_GNSS -> when {
             e.recoveryGnss -> NavigationState.RECOVERY
@@ -40,27 +46,32 @@ class NavigationContinuityStateMachine(
             else -> NavigationState.PARTIAL_GNSS
         }
         NavigationState.GNSS_LOST -> when {
+            e.recoveryGnss -> NavigationState.RECOVERY
             e.multiSourceAgreement -> NavigationState.MULTI_SOURCE_FUSION
             e.validImu -> NavigationState.INERTIAL_BRIDGING
             e.validCell -> NavigationState.CELL_AIDED
             else -> NavigationState.GNSS_LOST
         }
         NavigationState.INERTIAL_BRIDGING -> when {
-            e.multiSourceAgreement -> NavigationState.MULTI_SOURCE_FUSION
-            !e.validImu && e.validCell -> NavigationState.CELL_AIDED
             e.recoveryGnss -> NavigationState.RECOVERY
-            else -> NavigationState.INERTIAL_BRIDGING
+            e.multiSourceAgreement -> NavigationState.MULTI_SOURCE_FUSION
+            e.validImu -> NavigationState.INERTIAL_BRIDGING
+            e.validCell -> NavigationState.CELL_AIDED
+            else -> NavigationState.GNSS_LOST
         }
         NavigationState.CELL_AIDED -> when {
-            e.multiSourceAgreement -> NavigationState.MULTI_SOURCE_FUSION
-            e.validImu && e.validCell -> NavigationState.MULTI_SOURCE_FUSION
             e.recoveryGnss -> NavigationState.RECOVERY
-            else -> NavigationState.CELL_AIDED
+            e.multiSourceAgreement -> NavigationState.MULTI_SOURCE_FUSION
+            e.validCell -> NavigationState.CELL_AIDED
+            e.validImu -> NavigationState.INERTIAL_BRIDGING
+            else -> NavigationState.GNSS_LOST
         }
         NavigationState.MULTI_SOURCE_FUSION -> when {
             e.recoveryGnss -> NavigationState.RECOVERY
-            !e.validImu && !e.validCell -> NavigationState.GNSS_LOST
-            else -> NavigationState.MULTI_SOURCE_FUSION
+            e.multiSourceAgreement -> NavigationState.MULTI_SOURCE_FUSION
+            e.validImu -> NavigationState.INERTIAL_BRIDGING
+            e.validCell -> NavigationState.CELL_AIDED
+            else -> NavigationState.GNSS_LOST
         }
         NavigationState.RECOVERY -> when {
             e.healthyGnss -> NavigationState.FULL_GNSS

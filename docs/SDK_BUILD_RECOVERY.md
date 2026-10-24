@@ -1,4 +1,4 @@
-# Horizon SDK / Build Recovery
+﻿# Horizon SDK / Build Recovery
 
 ## Windows bootstrap
 

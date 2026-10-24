@@ -1,4 +1,4 @@
-# HORIZON — Current Engineering Checkpoint
+﻿# HORIZON â€” Current Engineering Checkpoint
 Date: 2026-09-24
 
 ## Scope
@@ -87,7 +87,7 @@ The next engineering investigation should focus on:
 - Session-analysis allocations over a growing dataset.
 - queue drain / database write contention.
 - foreground service and sensor/GNSS callback scheduling.
-- process RSS/PSS trend during a controlled 2–5 minute run.
+- process RSS/PSS trend during a controlled 2â€“5 minute run.
 
 No performance fix is included in this checkpoint unless supported by a concrete source change and measurement.
 

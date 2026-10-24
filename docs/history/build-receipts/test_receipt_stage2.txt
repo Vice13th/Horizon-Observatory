@@ -1,0 +1,92 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+.\gradlew.bat : Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of
+version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were
+released at different times.
+At line:1 char:33
++ ... zon_stage2; .\gradlew.bat :orbitcore-bridge:testDebugUnitTest :app:te ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: SDK pr...ifferent times.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+> Task :propagation-contract:checkKotlinGradlePluginConfigurationErrors
+> Task :propagation-contract:compileKotlin UP-TO-DATE
+> Task :propagation-contract:compileJava NO-SOURCE
+> Task :propagation-contract:processResources NO-SOURCE
+> Task :propagation-contract:classes UP-TO-DATE
+> Task :propagation-contract:jar UP-TO-DATE
+> Task :orbitcore-bridge:checkKotlinGradlePluginConfigurationErrors
+> Task :orbitcore-bridge:preBuild UP-TO-DATE
+> Task :orbitcore-bridge:preDebugBuild UP-TO-DATE
+> Task :orbitcore-bridge:generateDebugResValues UP-TO-DATE
+> Task :orbitcore-bridge:generateDebugResources UP-TO-DATE
+> Task :orbitcore-bridge:packageDebugResources UP-TO-DATE
+> Task :orbitcore-bridge:parseDebugLocalResources UP-TO-DATE
+> Task :orbitcore-bridge:generateDebugRFile UP-TO-DATE
+> Task :orbitcore-bridge:compileDebugKotlin UP-TO-DATE
+> Task :orbitcore-bridge:preDebugUnitTestBuild UP-TO-DATE
+> Task :orbitcore-bridge:javaPreCompileDebug
+> Task :orbitcore-bridge:compileDebugJavaWithJavac NO-SOURCE
+> Task :orbitcore-bridge:javaPreCompileDebugUnitTest
+> Task :orbitcore-bridge:processDebugJavaRes
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+> Task :app:preBuild UP-TO-DATE
+> Task :app:prePrimaryDebugBuild UP-TO-DATE
+> Task :app:generatePrimaryDebugBuildConfig UP-TO-DATE
+> Task :orbitcore-bridge:bundleLibRuntimeToJarDebug
+> Task :orbitcore-bridge:generateDebugUnitTestStubRFile
+> Task :orbitcore-bridge:bundleLibCompileToJarDebug
+> Task :app:checkPrimaryDebugAarMetadata UP-TO-DATE
+> Task :app:generatePrimaryDebugResValues UP-TO-DATE
+> Task :app:mapPrimaryDebugSourceSetPaths UP-TO-DATE
+> Task :app:generatePrimaryDebugResources UP-TO-DATE
+> Task :app:mergePrimaryDebugResources UP-TO-DATE
+> Task :app:packagePrimaryDebugResources UP-TO-DATE
+> Task :app:parsePrimaryDebugLocalResources UP-TO-DATE
+> Task :app:createPrimaryDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksPrimaryDebug UP-TO-DATE
+> Task :app:processPrimaryDebugMainManifest UP-TO-DATE
+> Task :app:processPrimaryDebugManifest UP-TO-DATE
+> Task :app:processPrimaryDebugManifestForPackage UP-TO-DATE
+> Task :app:processPrimaryDebugResources UP-TO-DATE
+> Task :app:kaptGenerateStubsPrimaryDebugKotlin UP-TO-DATE
+> Task :app:kaptPrimaryDebugKotlin UP-TO-DATE
+> Task :app:compilePrimaryDebugKotlin UP-TO-DATE
+> Task :app:prePrimaryDebugUnitTestBuild UP-TO-DATE
+> Task :app:preT1DebugBuild UP-TO-DATE
+> Task :app:javaPreCompilePrimaryDebug
+> Task :app:javaPreCompilePrimaryDebugUnitTest
+> Task :app:generateT1DebugBuildConfig
+> Task :orbitcore-bridge:compileDebugUnitTestKotlin
+> Task :app:compilePrimaryDebugJavaWithJavac
+> Task :orbitcore-bridge:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :orbitcore-bridge:processDebugUnitTestJavaRes
+
+> Task :orbitcore-bridge:testDebugUnitTest
+
+OrbitCoreSgp4Sdp4BackendTest > real OrbitCore runtime is reachable and returns finite state FAILED
+    java.lang.AssertionError at OrbitCoreSgp4Sdp4BackendTest.kt:38
+
+1 test completed, 1 failed
+
+> Task :orbitcore-bridge:testDebugUnitTest FAILED
+[Incubating] Problems report is available at: [historical local build path omitted]
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':orbitcore-bridge:testDebugUnitTest'.
+> There were failing tests. See the report at:
+[historical local build path omitted]
+
+* Try:
+> Run with --scan to get full insights.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 22s
+41 actionable tasks: 16 executed, 25 up-to-date

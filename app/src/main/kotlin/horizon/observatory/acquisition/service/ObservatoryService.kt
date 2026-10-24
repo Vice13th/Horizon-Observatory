@@ -3,6 +3,7 @@ package horizon.observatory.acquisition.service
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -40,6 +41,14 @@ import horizon.observatory.resilience.EmergencyNavigationController
 import horizon.observatory.resilience.NavigationState
 import horizon.observatory.resilience.ResilienceRuntime
 import horizon.observatory.resilience.ResilienceRuntimeUpdate
+import horizon.observatory.resilience.ContinuityFailure
+import horizon.observatory.resilience.ContinuityServiceStatus
+import horizon.observatory.resilience.ContinuityStatusHub
+import horizon.observatory.resilience.ObservedFixMapper
+import horizon.observatory.resilience.ObservedFixMapping
+import horizon.observatory.resilience.PublishDecision
+import horizon.observatory.resilience.SnapshotPublishGate
+import horizon.observatory.resilience.ResilientFixKind
 import horizon.observatory.resilience.ResilientLocationSnapshot
 import horizon.observatory.resilience.ResilientLocationStore
 import kotlinx.coroutines.CoroutineScope
@@ -55,6 +64,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.atomic.AtomicBoolean
 import org.json.JSONObject
 
 class ObservatoryService : Service() {
@@ -82,6 +92,10 @@ class ObservatoryService : Service() {
     private val ingressMutex = Mutex()
     /** Serializes STOP requests so duplicate stop intents cannot race the session state machine. */
     private val stopMutex = Mutex()
+    /** Closes the window between "start requested" and `currentSessionId` being assigned on the IO thread. */
+    private val startRequested = AtomicBoolean(false)
+    private var lastObservedRejection: String? = null
+    private var publishGate = SnapshotPublishGate()
 
     override fun onCreate() {
         super.onCreate()
@@ -101,6 +115,18 @@ class ObservatoryService : Service() {
         serviceScope.launch {
             repository.recoverUnclosedSessions().forEach { stale ->
                 observationQueue.drain(stale.sessionId)
+                runCatching {
+                    val session = repository.getSession(stale.sessionId) ?: return@runCatching
+                    val metadata = JSONObject(session.deviceMetadataJson)
+                    val diagnostics = metadata.optJSONObject("gnssDeliveryDiagnostics") ?: return@runCatching
+                    if (diagnostics.optString("state") != "FINALIZED") {
+                        diagnostics.put("state", "UNAVAILABLE_PROCESS_LOSS")
+                            .put("countsComplete", false)
+                            .put("invariantsHold", false)
+                        metadata.put("gnssDeliveryDiagnostics", diagnostics)
+                        repository.updateSessionDeviceMetadata(stale.sessionId, metadata.toString())
+                    }
+                }.onFailure { Log.e(SERVICE_TAG, "Failed to mark crash-session GNSS diagnostics incomplete session=${stale.sessionId}", it) }
                 repository.markCrashClosed(stale.sessionId)
             }
         }
@@ -123,29 +149,48 @@ class ObservatoryService : Service() {
     }
 
     private fun handleActionStart() {
+        ContinuityStatusHub.report(ContinuityServiceStatus.STARTING)
         if (!canStartLocationForegroundService()) {
+            ContinuityStatusHub.report(ContinuityServiceStatus.FAILED, ContinuityFailure.PERMISSION_MISSING)
             stopSelf(); return
         }
         if (!startForegroundServiceNotificationSafely()) {
+            ContinuityStatusHub.report(ContinuityServiceStatus.FAILED, ContinuityFailure.FOREGROUND_START_REJECTED)
             stopSelf(); return
         }
         startObserving()
     }
 
     private fun startObserving() {
-        if (currentSessionId != null) return
+        if (currentSessionId != null || !startRequested.compareAndSet(false, true)) {
+            if (currentSessionId != null) ContinuityStatusHub.report(ContinuityServiceStatus.ACTIVE)
+            return
+        }
         serviceScope.launch {
-            val sessionId = repository.createSession()
+            val sessionId = try {
+                repository.createSession()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                Log.e(SERVICE_TAG, "createSession failed", t)
+                startRequested.set(false)
+                ContinuityStatusHub.report(ContinuityServiceStatus.FAILED, ContinuityFailure.SESSION_START_FAILED)
+                return@launch
+            }
             currentSessionId = sessionId
+            gnssRawSource.resetDeliveryDiagnosticsForSession()
             sequencer = SessionSequencer()
             resilienceRuntime = ResilienceRuntime()
+            publishGate = SnapshotPublishGate()
 
             val report = capabilityScanner.buildReport()
             val device = report.json.optJSONObject("device")?.toString() ?: "{}"
             val permissions = report.json.optJSONObject("permissions")?.toString() ?: "{}"
-            repository.updateSessionMetadata(sessionId, device, report.json.toString(), permissions)
+            val deviceMetadata = JSONObject(device).put("gnssDeliveryDiagnostics", gnssRawSource.deliveryDiagnosticsSnapshot())
+            repository.updateSessionMetadata(sessionId, deviceMetadata.toString(), report.json.toString(), permissions)
 
             persistSystemEvent(sessionId, "SESSION_STARTED", JSONObject().put("capabilityReport", report.json))
+            ContinuityStatusHub.report(ContinuityServiceStatus.ACTIVE)
 
             sourceJobs += launchSource(sessionId, gnssFixSource)
             sourceJobs += launchSource(sessionId, gnssRawSource)
@@ -185,6 +230,7 @@ class ObservatoryService : Service() {
                     if (stamped.type == ObservationType.GNSS_FIX) {
                         publishObservedGnssFix(stamped)
                     }
+                    ContinuityStatusHub.reportNavigationState(resilienceRuntime?.navigationState)
                     // A sequence number is not reusable. Once allocated, the observation must
                     // survive collector cancellation long enough to reach the durable queue.
                     // Otherwise a normal stop can create an artificial gap such as 1..2281
@@ -227,10 +273,30 @@ class ObservatoryService : Service() {
                     return@withLock
                 }
 
+                ContinuityStatusHub.report(ContinuityServiceStatus.STOPPING)
                 healthJob?.cancel()
                 listOf(gnssRawSource, gnssFixSource, cellularSource, sensorSource).forEach { it.stop() }
-                sourceJobs.forEach { job -> withTimeoutOrNull(SOURCE_STOP_TIMEOUT_MS) { job.cancelAndJoin() } }
+                var sourceShutdownComplete = true
+                sourceJobs.forEach { job ->
+                    // stop() closes each callbackFlow first. Join naturally so already accepted
+                    // buffered channel elements can still reach launchSource's durable queue.
+                    // Cancelling immediately after close can discard accepted-but-not-yet-collected
+                    // observations, making source accepted counters exceed persisted rows.
+                    val stopped = joinSourceJobGracefully(job, SOURCE_STOP_TIMEOUT_MS)
+                    if (!stopped) sourceShutdownComplete = false
+                }
                 sourceJobs.clear()
+                val diagnosticsFinalState = if (sourceShutdownComplete) "FINALIZED" else "FINALIZATION_INCOMPLETE"
+                gnssRawSource.finalizeDeliveryDiagnostics(diagnosticsFinalState)
+                if (!sourceShutdownComplete) {
+                    Log.e(SERVICE_TAG, "GNSS delivery diagnostics are incomplete because one or more source jobs timed out session=$sessionId")
+                }
+                runCatching {
+                    val session = repository.getSession(sessionId) ?: error("Session vanished during GNSS diagnostics finalization: $sessionId")
+                    val metadata = JSONObject(session.deviceMetadataJson)
+                    metadata.put("gnssDeliveryDiagnostics", gnssRawSource.deliveryDiagnosticsSnapshot())
+                    repository.updateSessionDeviceMetadata(sessionId, metadata.toString())
+                }.onFailure { Log.e(SERVICE_TAG, "Failed to persist GNSS delivery diagnostics session=$sessionId", it) }
 
                 repository.beginStopping(sessionId)
                 persistSystemEvent(sessionId, "SESSION_STOPPING", JSONObject())
@@ -270,6 +336,9 @@ class ObservatoryService : Service() {
             currentSessionId = null
             sequencer = null
             resilienceRuntime = null
+            startRequested.set(false)
+            ContinuityStatusHub.reportNavigationState(null)
+            ContinuityStatusHub.report(ContinuityServiceStatus.STOPPED)
             Log.i(SERVICE_TAG, "Session COMPLETED session=$sessionId observations=${repository.countObservations(sessionId)}")
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
@@ -278,27 +347,32 @@ class ObservatoryService : Service() {
     }
 
 
+    /**
+     * Publishes an OBSERVED_GNSS snapshot. A fix that lacks only OPTIONAL fields (for example vertical
+     * accuracy) is still published, with those fields null. The raw observation is never modified.
+     */
     private fun publishObservedGnssFix(observation: RawObservation) {
-        runCatching {
-            val payload = JSONObject(observation.payloadJson)
-            val lat = payload.optDouble("latitude", Double.NaN)
-            val lon = payload.optDouble("longitude", Double.NaN)
-            if (lat.isNaN() || lon.isNaN()) return
-            val altitude = payload.optDouble("altitude", Double.NaN).takeUnless { it.isNaN() }
-            val accuracy = payload.optDouble("accuracyMeters", Double.NaN).takeUnless { it.isNaN() } ?: return
-            resilientLocationStore.publish(
-                ResilientLocationSnapshot(
-                    latitudeDeg = lat,
-                    longitudeDeg = lon,
-                    altitudeM = altitude,
-                    horizontalUncertaintyM = accuracy,
-                    verticalUncertaintyM = payload.optDouble("verticalAccuracyMeters", Double.NaN).takeUnless { it.isNaN() } ?: return,
-                    timestampMonotonicNs = observation.monotonicTimestampNs ?: return,
-                    navigationState = resilienceRuntime?.navigationState ?: NavigationState.FULL_GNSS,
-                    provenance = "GNSS_OBSERVED"
-                )
-            )
+        val state = resilienceRuntime?.navigationState ?: NavigationState.FULL_GNSS
+        when (val mapped = ObservedFixMapper.map(observation, state)) {
+            is ObservedFixMapping.Mapped -> publishSnapshot(mapped.snapshot)
+            is ObservedFixMapping.Rejected -> logRejection(mapped.reason)
         }
+    }
+
+    /** The only path to the store: the gate decides first (no time regression, no estimate over an observed fix). */
+    private fun publishSnapshot(snapshot: ResilientLocationSnapshot) {
+        when (val decision = publishGate.decide(snapshot)) {
+            PublishDecision.Publish ->
+                if (resilientLocationStore.publish(snapshot)) lastObservedRejection = null else logRejection("STORE_REFUSED")
+            is PublishDecision.Skip -> logRejection("GATE_${decision.reason}")
+        }
+    }
+
+    /** Logs once per distinct reason so a persistent fault cannot flood the log. */
+    private fun logRejection(reason: String) {
+        if (reason == lastObservedRejection) return
+        lastObservedRejection = reason
+        Log.w(SERVICE_TAG, "Resilient snapshot not published: $reason")
     }
 
     private suspend fun persistResilienceUpdateUnlocked(
@@ -333,13 +407,18 @@ class ObservatoryService : Service() {
                 put("estimate", JSONObject()
                     .put("latitudeDeg", estimate.latitudeDeg)
                     .put("longitudeDeg", estimate.longitudeDeg)
-                    .put("altitudeM", estimate.altitudeM)
+                    .put("altitudeM", estimate.altitudeM ?: JSONObject.NULL)
                     .put("timestampMonotonicNs", estimate.timestampMonotonicNs)
                     .put("horizontalUncertaintyM", estimate.horizontalUncertaintyM)
-                    .put("verticalUncertaintyM", estimate.verticalUncertaintyM)
+                    .put("verticalUncertaintyM", estimate.verticalUncertaintyM ?: JSONObject.NULL)
                     .put("navigationState", estimate.navigationState.name)
-                    .put("provenance", estimate.provenance))
+                    .put("provenance", estimate.provenance)
+                    .put("fixKind", ResilientFixKind.SHORT_HORIZON_ESTIMATE.name)
+                    .put("estimator", estimate.estimator)
+                    .put("speedMps", estimate.speedMps ?: JSONObject.NULL)
+                    .put("bearingDeg", estimate.bearingDeg ?: JSONObject.NULL))
             }
+            update.coastingRejection?.let { put("coastingRejection", it.name) }
         }
         observationQueue.enqueue(
             sessionId,
@@ -359,7 +438,7 @@ class ObservatoryService : Service() {
             )
         )
         update.estimate?.let { estimate ->
-            resilientLocationStore.publish(
+            publishSnapshot(
                 ResilientLocationSnapshot(
                     latitudeDeg = estimate.latitudeDeg,
                     longitudeDeg = estimate.longitudeDeg,
@@ -368,7 +447,12 @@ class ObservatoryService : Service() {
                     verticalUncertaintyM = estimate.verticalUncertaintyM,
                     timestampMonotonicNs = estimate.timestampMonotonicNs,
                     navigationState = estimate.navigationState,
-                    provenance = estimate.provenance
+                    provenance = estimate.provenance,
+                    fixKind = ResilientFixKind.SHORT_HORIZON_ESTIMATE,
+                    utcTimestampMs = TimestampEngine.elapsedNanosToUtcMillis(estimate.timestampMonotonicNs).takeIf { it > 0L },
+                    speedMps = estimate.speedMps,
+                    bearingDeg = estimate.bearingDeg,
+                    estimator = estimate.estimator
                 )
             )
         }
@@ -454,17 +538,42 @@ class ObservatoryService : Service() {
     }
 
     private fun startForegroundServiceNotificationSafely(): Boolean {
-        val channelId = "observatory_channel"
+        val isParallel = packageName.startsWith("horizon.observatory.parallel")
+        val brand = if (isParallel) "Horizon Parallel" else when {
+            packageName.startsWith("horizon.observatory.ts") -> "Horizon Observatory TS"
+            packageName.startsWith("horizon.observatory.t1") -> "Horizon Observatory T1"
+            else -> "Horizon Observatory"
+        }
+        val channelId = when {
+            isParallel -> "horizon_parallel_observatory_channel"
+            packageName.startsWith("horizon.observatory.ts") -> "observatory_ts_channel"
+            packageName.startsWith("horizon.observatory.t1") -> "observatory_t1_channel"
+            else -> "observatory_channel"
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             getSystemService(NotificationManager::class.java)?.createNotificationChannel(
-                NotificationChannel(channelId, "Horizon Background Observation", NotificationManager.IMPORTANCE_LOW)
+                NotificationChannel(channelId, "$brand Background Observation", NotificationManager.IMPORTANCE_LOW)
             )
         }
+        val continuity = emergencyNavigationController.enabled
+        val stopIntent = Intent(this, ObservatoryService::class.java).apply {
+            if (continuity) {
+                action = ACTION_SET_EMERGENCY_NAVIGATION
+                putExtra(EXTRA_ENABLED, false)
+            } else action = ACTION_STOP
+        }
+        val stopPending = PendingIntent.getService(
+            this, if (continuity) 2 else 1, stopIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
         val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Horizon Observatory")
-            .setContentText("Collecting raw observations locally")
+            .setContentTitle(if (continuity) "$brand - Location Continuity on" else brand)
+            .setContentText(
+                if (continuity) "Keeping GNSS acquisition active. Cannot defeat radio interference."
+                else "Collecting raw observations locally"
+            )
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setOngoing(true)
+            .addAction(0, if (continuity) "Turn off" else "Stop", stopPending)
             .build()
         return runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -477,6 +586,8 @@ class ObservatoryService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        ContinuityStatusHub.reportNavigationState(null)
+        if (ContinuityStatusHub.state.value.status != ContinuityServiceStatus.FAILED) ContinuityStatusHub.report(ContinuityServiceStatus.STOPPED)
         sourceJobs.forEach { it.cancel() }
         healthJob?.cancel()
         gnssRawSource.takeIf { ::gnssRawSource.isInitialized }?.stop()

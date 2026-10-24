@@ -1,5 +1,5 @@
-# HORIZON T1 CHECKPOINT
-Stage: 1 (INSPECT / GROUND TRUTH) — **BLOCKED at OrbitCore API boundary**
+﻿# HORIZON T1 CHECKPOINT
+Stage: 1 (INSPECT / GROUND TRUTH) â€” **BLOCKED at OrbitCore API boundary**
 Date: 2026-10-01
 
 ## IDENTITY

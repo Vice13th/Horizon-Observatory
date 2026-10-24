@@ -1,4 +1,4 @@
-# Horizon Live Data B3 Verification — 2026-10-07
+﻿# Horizon Live Data B3 Verification â€” 2026-10-07
 
 ## Scope
 
@@ -27,12 +27,12 @@ Repair and verify the frozen Live Sky / GNSS live-data path without changing raw
 
 ### Build
 
-- :app:assemblePrimaryDebug — PASS
+- :app:assemblePrimaryDebug â€” PASS
 - Final APK SHA-256: 6452A10C275028FEFB9C8E5A2F64ED616293F5509E0E90E7BC81E7142065915E
 
 ### Unit tests
 
-- :app:testPrimaryDebugUnitTest — FAIL, pre-existing unrelated test compilation error
+- :app:testPrimaryDebugUnitTest â€” FAIL, pre-existing unrelated test compilation error
 - Failure remains at app/src/test/kotlin/horizon/observatory/resilience/ResilienceEngineTest.kt:68 because a nullable Double? is used as a non-null Double.
 - No test source was modified for this live-data change.
 
@@ -49,7 +49,7 @@ Verified on the installed final APK:
 - Overview Live Sky displayed 18 latest satellites.
 - GNSS Live Sky displayed 18 latest satellites.
 - Both views use the same ObservedSkyState source in code.
-- GNSS screen showed HISTORY SAMPLES: 96, GNSS DOMAIN with latest satellite evidence · correlated=103 · nav=3, and LIVE SKY with 18 latest satellites.
+- GNSS screen showed HISTORY SAMPLES: 96, GNSS DOMAIN with latest satellite evidence Â· correlated=103 Â· nav=3, and LIVE SKY with 18 latest satellites.
 - Device reports no rotation-vector sensor; UI correctly remains north-up and states that live orientation is unavailable.
 - No FATAL EXCEPTION / AndroidRuntime crash was observed in the final smoke-test log.
 - Session was stopped cleanly after verification and returned to COMPLETED / IDLE.

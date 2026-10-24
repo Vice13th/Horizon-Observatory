@@ -1,9 +1,9 @@
-# HORIZON — Engineering Checkpoint
+﻿# HORIZON â€” Engineering Checkpoint
 
 Date: 2026-09-24
 Target: Samsung Galaxy A07 / SM-A075F
 Android: 16 / API 36
-State: **CHECKPOINT — NEXT PHASE ACQUISITION VERIFIED ON PHYSICAL DEVICE; CORRELATION LAYER NEXT**
+State: **CHECKPOINT â€” NEXT PHASE ACQUISITION VERIFIED ON PHYSICAL DEVICE; CORRELATION LAYER NEXT**
 
 ## Purpose
 
@@ -78,9 +78,9 @@ Two real exported sessions are included under `evidence/sessions/`.
 - elevation/azimuth entries: 2,057 / 2,057
 - AGC samples: 207
 - AGC observed: 6.0 dB, exactly constant
-- C/N0: 13.731–35.0 dB-Hz; mean ≈ 20.819 dB-Hz
+- C/N0: 13.731â€“35.0 dB-Hz; mean â‰ˆ 20.819 dB-Hz
 - cellular acquisition triggers: 18 `REQUEST_CELL_INFO_UPDATE`, 9 `TELEPHONY_CALLBACK`
-- cellular source age: 7–5014 ms
+- cellular source age: 7â€“5014 ms
 - sequence 1..2395 contiguous
 - ingestion timestamps non-decreasing
 - integrity clean
@@ -98,7 +98,7 @@ Two real exported sessions are included under `evidence/sessions/`.
 - elevation/azimuth entries: 2,277 / 2,277
 - AGC samples: 129
 - AGC observed: 6.0 dB, exactly constant
-- C/N0: 14.4–26.6 dB-Hz; mean ≈ 22.675 dB-Hz
+- C/N0: 14.4â€“26.6 dB-Hz; mean â‰ˆ 22.675 dB-Hz
 - sequence 1..3523 contiguous
 - ingestion timestamps non-decreasing
 - integrity clean

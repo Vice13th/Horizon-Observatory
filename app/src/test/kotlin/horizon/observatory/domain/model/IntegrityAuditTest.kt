@@ -2,6 +2,7 @@ package horizon.observatory.domain.model
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -45,5 +46,33 @@ class IntegrityAuditTest {
         ))
         assertFalse(result.ingestionTimestampsNonDecreasing)
         assertFalse(result.isClean)
+    }
+
+    @Test
+    fun incrementalAuditMatchesBatchAuditWithMissingTimestampsAndSequenceGap() {
+        val rows = listOf(
+            RawObservationView(1, 400, 100),
+            RawObservationView(2, null, null),
+            RawObservationView(4, 200, 120),
+            RawObservationView(5, 250, 110),
+            RawObservationView(6, null, 130)
+        )
+        val batch = IntegrityAudit.audit(rows)
+        val incremental = IncrementalIntegrityAudit().also { builder -> rows.forEach(builder::append) }.finish()
+        assertEquals(batch, incremental)
+    }
+
+    @Test
+    fun incrementalAuditRequiresStrictSequenceOrdering() {
+        val builder = IncrementalIntegrityAudit()
+        builder.append(RawObservationView(1, 10, 10))
+        assertThrows(IllegalArgumentException::class.java) {
+            builder.append(RawObservationView(1, 20, 20))
+        }
+    }
+
+    @Test
+    fun emptyIncrementalAuditMatchesEmptyBatchAudit() {
+        assertEquals(IntegrityAudit.audit(emptyList()), IncrementalIntegrityAudit().finish())
     }
 }

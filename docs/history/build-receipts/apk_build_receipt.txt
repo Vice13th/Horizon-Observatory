@@ -1,0 +1,152 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+
+> Configure project :app
+w: Deprecated Gradle Version
+The used Gradle version (Gradle 8.11.1) is deprecated and will not be supported in future Kotlin Gradle Plugin releases.
+The minimum supported Gradle version will become Gradle 8.14.4 in Kotlin 2.5.0.
+
+This warning can be suppressed in 'gradle.properties':
+    kotlin.suppressGradlePluginWarnings=DeprecatedGradleVersionWarning
+Solution: Please update the Gradle version to at least Gradle 8.14.4.
+
+.\gradlew.bat : Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of
+version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were
+released at different times.
+At line:1 char:33
++ ... zon_stage2; .\gradlew.bat :app:assemblePrimaryDebug :app:assembleT1De ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: SDK pr...ifferent times.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:prePrimaryDebugBuild UP-TO-DATE
+> Task :app:mergePrimaryDebugNativeDebugMetadata NO-SOURCE
+> Task :propagation-contract:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :propagation-contract:compileKotlin UP-TO-DATE
+> Task :propagation-contract:compileJava NO-SOURCE
+> Task :propagation-contract:processResources NO-SOURCE
+> Task :propagation-contract:classes UP-TO-DATE
+> Task :propagation-contract:jar UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generatePrimaryDebugBuildConfig UP-TO-DATE
+> Task :app:checkPrimaryDebugAarMetadata UP-TO-DATE
+> Task :app:generatePrimaryDebugResValues UP-TO-DATE
+> Task :app:mapPrimaryDebugSourceSetPaths UP-TO-DATE
+> Task :app:generatePrimaryDebugResources UP-TO-DATE
+> Task :app:mergePrimaryDebugResources UP-TO-DATE
+> Task :app:packagePrimaryDebugResources UP-TO-DATE
+> Task :app:parsePrimaryDebugLocalResources UP-TO-DATE
+> Task :app:createPrimaryDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksPrimaryDebug UP-TO-DATE
+> Task :app:processPrimaryDebugMainManifest UP-TO-DATE
+> Task :app:processPrimaryDebugManifest UP-TO-DATE
+> Task :app:processPrimaryDebugManifestForPackage UP-TO-DATE
+> Task :app:processPrimaryDebugResources UP-TO-DATE
+> Task :app:kspPrimaryDebugKotlin UP-TO-DATE
+> Task :app:compilePrimaryDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompilePrimaryDebug UP-TO-DATE
+> Task :app:compilePrimaryDebugJavaWithJavac UP-TO-DATE
+> Task :app:mergePrimaryDebugShaders
+> Task :app:compilePrimaryDebugShaders NO-SOURCE
+> Task :app:generatePrimaryDebugAssets UP-TO-DATE
+> Task :app:mergePrimaryDebugAssets
+> Task :app:compressPrimaryDebugAssets
+> Task :app:desugarPrimaryDebugFileDependencies
+> Task :app:checkPrimaryDebugDuplicateClasses
+> Task :app:dexBuilderPrimaryDebug
+> Task :app:mergeExtDexPrimaryDebug
+> Task :app:mergePrimaryDebugGlobalSynthetics
+> Task :app:processPrimaryDebugJavaRes UP-TO-DATE
+> Task :app:mergeLibDexPrimaryDebug
+> Task :app:mergePrimaryDebugJniLibFolders
+> Task :app:validateSigningPrimaryDebug
+> Task :app:mergePrimaryDebugNativeLibs
+> Task :app:writePrimaryDebugAppMetadata
+> Task :app:writePrimaryDebugSigningConfigVersions
+> Task :app:preT1DebugBuild UP-TO-DATE
+> Task :app:mergeT1DebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateT1DebugBuildConfig UP-TO-DATE
+> Task :orbitcore-bridge:preBuild UP-TO-DATE
+> Task :orbitcore-bridge:preDebugBuild UP-TO-DATE
+> Task :orbitcore-bridge:writeDebugAarMetadata UP-TO-DATE
+
+> Task :app:stripPrimaryDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so. Run with --info option to learn more.
+
+> Task :app:mergeProjectDexPrimaryDebug
+> Task :app:checkT1DebugAarMetadata UP-TO-DATE
+> Task :app:generateT1DebugResValues UP-TO-DATE
+> Task :orbitcore-bridge:generateDebugResValues UP-TO-DATE
+> Task :orbitcore-bridge:generateDebugResources UP-TO-DATE
+> Task :orbitcore-bridge:packageDebugResources UP-TO-DATE
+> Task :app:mapT1DebugSourceSetPaths UP-TO-DATE
+> Task :app:generateT1DebugResources UP-TO-DATE
+> Task :app:mergeT1DebugResources UP-TO-DATE
+> Task :app:packageT1DebugResources UP-TO-DATE
+> Task :app:parseT1DebugLocalResources UP-TO-DATE
+> Task :app:createT1DebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksT1Debug UP-TO-DATE
+> Task :orbitcore-bridge:extractDeepLinksDebug UP-TO-DATE
+> Task :orbitcore-bridge:processDebugManifest UP-TO-DATE
+> Task :app:processT1DebugMainManifest UP-TO-DATE
+> Task :app:processT1DebugManifest UP-TO-DATE
+> Task :app:processT1DebugManifestForPackage UP-TO-DATE
+> Task :orbitcore-bridge:compileDebugLibraryResources UP-TO-DATE
+> Task :orbitcore-bridge:parseDebugLocalResources UP-TO-DATE
+> Task :orbitcore-bridge:generateDebugRFile UP-TO-DATE
+> Task :app:processT1DebugResources UP-TO-DATE
+> Task :orbitcore-bridge:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :orbitcore-bridge:compileDebugKotlin UP-TO-DATE
+> Task :orbitcore-bridge:javaPreCompileDebug UP-TO-DATE
+> Task :orbitcore-bridge:compileDebugJavaWithJavac NO-SOURCE
+> Task :orbitcore-bridge:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :app:kspT1DebugKotlin UP-TO-DATE
+> Task :app:compileT1DebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileT1Debug UP-TO-DATE
+> Task :app:compileT1DebugJavaWithJavac UP-TO-DATE
+> Task :app:mergeT1DebugShaders
+> Task :app:compileT1DebugShaders NO-SOURCE
+> Task :app:generateT1DebugAssets UP-TO-DATE
+> Task :orbitcore-bridge:mergeDebugShaders
+> Task :orbitcore-bridge:compileDebugShaders NO-SOURCE
+> Task :orbitcore-bridge:generateDebugAssets UP-TO-DATE
+> Task :orbitcore-bridge:mergeDebugAssets
+> Task :app:mergeT1DebugAssets
+> Task :app:compressT1DebugAssets
+> Task :app:desugarT1DebugFileDependencies
+> Task :app:checkT1DebugDuplicateClasses
+> Task :orbitcore-bridge:bundleLibRuntimeToDirDebug
+> Task :app:mergePrimaryDebugJavaResource
+> Task :app:dexBuilderT1Debug
+> Task :app:mergeLibDexT1Debug
+> Task :app:packagePrimaryDebug
+> Task :app:createPrimaryDebugApkListingFileRedirect
+> Task :app:assemblePrimaryDebug
+> Task :orbitcore-bridge:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :app:processT1DebugJavaRes UP-TO-DATE
+> Task :orbitcore-bridge:processDebugJavaRes UP-TO-DATE
+> Task :app:mergeT1DebugJniLibFolders
+> Task :orbitcore-bridge:mergeDebugJniLibFolders
+> Task :orbitcore-bridge:mergeDebugNativeLibs NO-SOURCE
+> Task :orbitcore-bridge:copyDebugJniLibsProjectOnly
+> Task :app:validateSigningT1Debug
+> Task :app:mergeProjectDexT1Debug
+> Task :app:mergeT1DebugGlobalSynthetics
+> Task :app:writeT1DebugAppMetadata
+> Task :app:writeT1DebugSigningConfigVersions
+> Task :app:mergeT1DebugNativeLibs
+
+> Task :app:stripT1DebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so. Run with --info option to learn more.
+
+> Task :app:mergeT1DebugJavaResource
+> Task :app:mergeExtDexT1Debug
+> Task :app:packageT1Debug
+> Task :app:createT1DebugApkListingFileRedirect
+> Task :app:assembleT1Debug
+[Incubating] Problems report is available at: [historical local build path omitted]
+
+BUILD SUCCESSFUL in 1m 12s
+97 actionable tasks: 43 executed, 54 up-to-date

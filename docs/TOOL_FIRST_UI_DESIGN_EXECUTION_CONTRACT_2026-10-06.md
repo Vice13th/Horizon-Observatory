@@ -1,21 +1,21 @@
-# HORIZON — TOOL-FIRST UI DESIGN EXECUTION CONTRACT
+﻿# HORIZON â€” TOOL-FIRST UI DESIGN EXECUTION CONTRACT
 ## 2026-10-06
 
 Status: CANONICAL / ACTIVE for B1/B2 UI/UX work.
 
 Purpose:
-Prevent visual redesign work from being reduced to ad-hoc Compose styling. For B1/B2, the workflow is DESIGN → VISUAL REVIEW → IMPLEMENT → DEVICE VERIFY.
+Prevent visual redesign work from being reduced to ad-hoc Compose styling. For B1/B2, the workflow is DESIGN â†’ VISUAL REVIEW â†’ IMPLEMENT â†’ DEVICE VERIFY.
 
 ## 1. TOOL-FIRST GATE
 
 Before changing UI code, inspect the capabilities exposed by the current runtime.
 
 Preferred tools:
-1. Figma — primary visual design, design system, screen structure and reusable components.
-2. MagicPath — interactive prototyping, alternate layout exploration and rapid visual iteration.
-3. tldraw — structural wireframes when useful.
-4. Canva / Adobe — visual assets only when genuinely useful and actually available.
-5. Image generation — supporting assets only; never a substitute for UI/UX design.
+1. Figma â€” primary visual design, design system, screen structure and reusable components.
+2. MagicPath â€” interactive prototyping, alternate layout exploration and rapid visual iteration.
+3. tldraw â€” structural wireframes when useful.
+4. Canva / Adobe â€” visual assets only when genuinely useful and actually available.
+5. Image generation â€” supporting assets only; never a substitute for UI/UX design.
 
 Do not claim a tool was used unless the runtime actually exposed and exercised it.
 
@@ -128,7 +128,7 @@ Do not design a desktop dashboard and merely shrink it.
 ## 9. IMPLEMENTATION FIREWALL
 
 Architecture:
-RAW EVIDENCE → DOMAIN STATE → DERIVED STATE → BOUNDED UI PROJECTION → VISUALIZATION.
+RAW EVIDENCE â†’ DOMAIN STATE â†’ DERIVED STATE â†’ BOUNDED UI PROJECTION â†’ VISUALIZATION.
 
 Do not:
 - query Room from composables;
@@ -145,13 +145,13 @@ Do not modify OrbitCore / SGP4 / SDP4 / propagation / Observation Bus / Room / e
 
 ## 10. EXECUTION
 
-INSPECT → REPRODUCE → DESIGN TOOL → VISUAL REVIEW → IMPLEMENT → TEST → BUILD → DEVICE VERIFY → VISUAL QA → DOCUMENT.
+INSPECT â†’ REPRODUCE â†’ DESIGN TOOL â†’ VISUAL REVIEW â†’ IMPLEMENT â†’ TEST â†’ BUILD â†’ DEVICE VERIFY â†’ VISUAL QA â†’ DOCUMENT.
 
 Design-tool output is part of the implementation evidence, not optional narration.
 
 ## 11. EVIDENCE
 
-A design is not “verified” because code compiles.
+A design is not â€œverifiedâ€ because code compiles.
 
 Record:
 DESIGN RECEIPT
@@ -204,4 +204,4 @@ After each write, verify only the changed surface.
 Final report:
 STATE / TOOLS USED / DESIGN OUTPUT / SELECTED DIRECTION / FILES CHANGED / TESTS / BUILD / APK SHA-256 / DEVICE / UNVERIFIED / NEXT BOUNDED STEP.
 
-No receipt → no epistemic upgrade.
+No receipt â†’ no epistemic upgrade.

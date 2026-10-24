@@ -1,4 +1,4 @@
-# HORIZON — CURRENT ENGINEERING HANDOFF / 2026-10-06
+﻿# HORIZON â€” CURRENT ENGINEERING HANDOFF / 2026-10-06
 
 ## Start here
 
@@ -21,7 +21,7 @@ The acquisition-to-export evidence gate is VERIFIED/CLOSED. Scientific identity/
 
 ### Verified chain
 
-GNSS → Observation Bus → Room → readback → ExportEngine → checksum/readback → semantic normalization
+GNSS â†’ Observation Bus â†’ Room â†’ readback â†’ ExportEngine â†’ checksum/readback â†’ semantic normalization
 
 ### Canonical receipt
 
@@ -51,16 +51,16 @@ Do not modify as part of the current UI phase:
 
 ## Open
 
-1. NORAD mapping — UNKNOWN
+1. NORAD mapping â€” UNKNOWN
    - resolver is empty-table;
-   - no guessed SVID→NORAD identity;
+   - no guessed SVIDâ†’NORAD identity;
    - next design must carry lookup provenance.
 
-2. UTC edge-case — UNVERIFIED
+2. UTC edge-case â€” UNVERIFIED
    - requires device-specific instrumentation;
    - do not promote documentation-only reasoning to VERIFIED.
 
-3. K8 physical/long-run validation — PENDING
+3. K8 physical/long-run validation â€” PENDING
    - physical interference/degradation;
    - background/screen-off behavior;
    - resource/battery/long-run measurements.
@@ -71,7 +71,7 @@ Do not modify as part of the current UI phase:
 
 ## Immediate execution lane
 
-### Lane A — UI / UX
+### Lane A â€” UI / UX
 
 Highest priority.
 
@@ -86,7 +86,7 @@ Targets:
 - long-session rendering performance;
 - polished mobile layout.
 
-### Lane B — Documentation
+### Lane B â€” Documentation
 
 Every material UI change updates:
 - checkpoint/handoff as needed;
@@ -94,7 +94,7 @@ Every material UI change updates:
 - verification matrix when evidence changes;
 - receipt if a fresh runtime receipt is captured.
 
-### Lane C — Deferred science
+### Lane C â€” Deferred science
 
 NORAD and UTC remain explicit debt. Do not opportunistically reopen propagation.
 
@@ -120,10 +120,10 @@ Record:
 - performance measurement when relevant;
 - explicit UNVERIFIED/BLOCKED items.
 
-No receipt → no epistemic upgrade.
+No receipt â†’ no epistemic upgrade.
 
 
-## UI DESIGN TOOL GATE — B1/B2
+## UI DESIGN TOOL GATE â€” B1/B2
 
 B1/B2 must begin with a real design/prototype pass before substantial Compose implementation.
 
@@ -131,6 +131,6 @@ Canonical contract:
 `docs/TOOL_FIRST_UI_DESIGN_EXECUTION_CONTRACT_2026-10-06.md`
 
 Preferred tool path:
-Figma → MagicPath → tldraw, with Canva/Adobe only for actual asset-production needs when available.
+Figma â†’ MagicPath â†’ tldraw, with Canva/Adobe only for actual asset-production needs when available.
 
 Required evidence includes the actual tool used and demonstrable design output. Code compilation alone does not establish visual completion.

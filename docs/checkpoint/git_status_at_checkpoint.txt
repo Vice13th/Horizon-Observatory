@@ -1,4 +1,4 @@
- M app/src/main/kotlin/horizon/observatory/acquisition/cellular/CellInfoSource.kt
+﻿ M app/src/main/kotlin/horizon/observatory/acquisition/cellular/CellInfoSource.kt
  M app/src/main/kotlin/horizon/observatory/acquisition/gnss/GnssObservationSource.kt
  M app/src/main/kotlin/horizon/observatory/acquisition/gnss/LocationFixSource.kt
  M app/src/main/kotlin/horizon/observatory/acquisition/sensor/SensorObservationSource.kt

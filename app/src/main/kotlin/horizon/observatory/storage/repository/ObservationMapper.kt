@@ -68,7 +68,8 @@ private fun sourceCategoryFor(type: ObservationType): String = when (type) {
     ObservationType.GNSS_RAW_MEASUREMENT,
     ObservationType.GNSS_STATUS,
     ObservationType.GNSS_NAVIGATION_MESSAGE,
-    ObservationType.GNSS_ANTENNA_INFO -> "GNSS"
+    ObservationType.GNSS_ANTENNA_INFO,
+    ObservationType.GNSS_CLOCK -> "GNSS"
     ObservationType.CELLULAR_INFO -> "CELLULAR"
     ObservationType.ASSISTANCE_EVENT -> "ASSISTANCE"
     ObservationType.SYSTEM_EVENT,

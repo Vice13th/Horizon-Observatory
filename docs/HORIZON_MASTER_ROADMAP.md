@@ -1,19 +1,19 @@
-# HORIZON OBSERVATORY — MASTER ROADMAP & EXECUTION LEDGER
+﻿# HORIZON OBSERVATORY â€” MASTER ROADMAP & EXECUTION LEDGER
 
-> **CURRENT REMOTE RECONCILIATION — 2026-10-06**
+> **CURRENT REMOTE RECONCILIATION â€” 2026-10-06**
 >
-> Repository: Vice13th/Horizon-Observatory  
-> Branch: main  
+> Repository: Vice13th/Horizon-Observatory
+> Branch: main
 > Current remote HEAD: **inspect `main` directly; do not hard-code a SHA inside status documents.**
 > Current checkpoint: HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED
 >
 > **Important:** the previously recorded workspace path C:\Horizon\horizon_stage2 is historical context only. A local handoff from that workspace MUST NOT be treated as a pushed repository change unless a Git commit/receipt proves it.
 >
-> **Current authority order:** current main source → latest dated checkpoint/receipt → verification matrix → current handoff → historical handoffs. Chat history and unreceipted local workspaces are not repository truth.
+> **Current authority order:** current main source â†’ latest dated checkpoint/receipt â†’ verification matrix â†’ current handoff â†’ historical handoffs. Chat history and unreceipted local workspaces are not repository truth.
 >
 > **Current lane:** UI/UX modernization only, presentation-layer and evidence-preserving. Scientific propagation, OrbitCore, SGP4/SDP4, raw-evidence semantics, persistence, and export contracts remain frozen unless a new evidence-backed defect requires reopening them.
 >
-> **Current verified foundation:** GNSS acquisition → Observation Bus → Room → readback → export → checksum/readback → semantic normalization is VERIFIED/CLOSED.
+> **Current verified foundation:** GNSS acquisition â†’ Observation Bus â†’ Room â†’ readback â†’ export â†’ checksum/readback â†’ semantic normalization is VERIFIED/CLOSED.
 >
 > **Open gates:** NORAD mapping UNKNOWN; device-specific UTC edge case UNVERIFIED; physical orientation/panel rotation UNVERIFIED/BLOCKED; scientific OrbitCore reference-vector accuracy PARTIAL / VERIFIED CASES; epoch-edge and broader vector coverage UNVERIFIED; K8 physical interference/long-run validation PENDING.
 >
@@ -23,14 +23,14 @@
 
 Status vocabulary:
 
-- **VERIFIED** Ã¢â‚¬â€ directly demonstrated by a reproducible receipt.
-- **OBSERVED** Ã¢â‚¬â€ directly observed but not yet generalized.
-- **MEASURED** Ã¢â‚¬â€ numerical evidence captured from the system.
-- **UNVERIFIED** Ã¢â‚¬â€ implementation exists or appears plausible, but current evidence does not prove it.
-- **BLOCKED** Ã¢â‚¬â€ current hardware/software/evidence prevents verification.
-- **FAILED** Ã¢â‚¬â€ an explicit test or operation failed; failure remains part of provenance.
-- **RESEARCH TARGET** Ã¢â‚¬â€ selected from external scientific/engineering research for future implementation.
-- **INFERRED** Ã¢â‚¬â€ engineering inference; never present as empirical fact.
+- **VERIFIED** ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â directly demonstrated by a reproducible receipt.
+- **OBSERVED** ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â directly observed but not yet generalized.
+- **MEASURED** ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â numerical evidence captured from the system.
+- **UNVERIFIED** ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â implementation exists or appears plausible, but current evidence does not prove it.
+- **BLOCKED** ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â current hardware/software/evidence prevents verification.
+- **FAILED** ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â an explicit test or operation failed; failure remains part of provenance.
+- **RESEARCH TARGET** ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â selected from external scientific/engineering research for future implementation.
+- **INFERRED** ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â engineering inference; never present as empirical fact.
 
 Non-negotiable rules:
 
@@ -53,23 +53,23 @@ Current architectural direction:
 
 ```
 GNSS / Android Sensors
-        Ã¢â€ â€œ
+        ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“
 Acquisition
-        Ã¢â€ â€œ
+        ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“
 Normalization
-        Ã¢â€ â€œ
+        ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“
 Immutable Observation Bus
-        Ã¢â€ â€œ
+        ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“
 Timestamp Engine
-        Ã¢â€ â€œ
+        ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“
 Room Storage
-        Ã¢â€ â€œ
+        ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“
 Ephemeris / Geometry / Solver
-        Ã¢â€ â€œ
+        ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“
 Integrity / Replay / Analysis
-        Ã¢â€ â€œ
+        ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“
 Export
-        Ã¢â€ â€œ
+        ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“
 Geographic + Observatory Visualization
 ```
 
@@ -77,13 +77,13 @@ Terra orbital propagation remains a separate scientific domain:
 
 ```
 Catalog / OMM
-   Ã¢â€ â€œ
+   ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“
 Propagation Contract
-   Ã¢â€ â€œ
+   ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“
 OrbitCore SGP4 / SDP4 backend
-   Ã¢â€ â€œ
+   ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“
 Orbit state / pass prediction
-   Ã¢â€ â€œ
+   ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Å“
 Terra visualization
 ```
 
@@ -98,13 +98,13 @@ Horizon shall preserve the best defensible navigation state during GNSS degradat
           + cellular/network evidence
           + last trusted navigation state
           + validated prediction/constraints
-          ↓
+          â†“
     RESILIENCE ENGINE
-          ↓
+          â†“
     Horizon Navigation State
-          ↓
+          â†“
     optional external-location integration
-          ↓
+          â†“
     consumer applications
 
 Hard boundaries:
@@ -119,7 +119,7 @@ The external-delivery roadmap has three separate targets: internal Horizon navig
 
 ---
 
-# 3. COMPLETED WORK Ã¢â‚¬â€ HISTORICAL EXECUTION RECORD
+# 3. COMPLETED WORK ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â HISTORICAL EXECUTION RECORD
 
 ## 3.1 GNSS / Foundation history
 
@@ -164,7 +164,7 @@ These observations predate the Kotlin/Room migration and therefore require fresh
 ## 4.1 Propagation contract extraction
 **Status: VERIFIED**
 
-Created `:propagation-contract` to break the bridge Ã¢â€ â€™ app dependency cycle and establish a clean propagation API boundary.
+Created `:propagation-contract` to break the bridge ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ app dependency cycle and establish a clean propagation API boundary.
 
 Core contract includes:
 
@@ -249,9 +249,9 @@ Reflection tests initially failed because the runtime could not load the require
 
 Architectural decision:
 
-- Kotlin `1.9.24 Ã¢â€ â€™ 2.4.0`
-- AGP `8.9.1 Ã¢â€ â€™ 8.10.1`
-- Room `2.6.1 Ã¢â€ â€™ 2.8.5`
+- Kotlin `1.9.24 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 2.4.0`
+- AGP `8.9.1 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 8.10.1`
+- Room `2.6.1 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 2.8.5`
 - Compose compiler plugin added
 - KSP adopted for Room
 - deprecated Android `kotlinOptions` migrated to Kotlin compiler DSL/JVM 17.
@@ -314,7 +314,7 @@ T1 APK:
 Target:
 
 - device: Hive
-- Android device serial: `R8YY92YWAAF`
+- Android device serial: `[device serial redacted]`
 - model: `SM_A075F`
 - package: `horizon.observatory.debug`
 - target SDK: 36
@@ -354,7 +354,7 @@ MATCH = TRUE.
 
 Workspace copied:
 
-`E:\horizon_stage2` Ã¢â€ â€™ `C:\Horizon\horizon_stage2`
+`E:\horizon_stage2` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ `C:\Horizon\horizon_stage2`
 
 Earlier copy verification:
 
@@ -439,7 +439,7 @@ Repository remains private.
 
 ---
 
-# 9. CURRENT STATE Ã¢â‚¬â€ 2026-10-06
+# 9. CURRENT STATE ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â 2026-10-06
 
 ## VERIFIED
 
@@ -473,7 +473,7 @@ Repository remains private.
 - Full SGP4/SDP4 production integration.
 - Final Terra/GNSS integrated behavior.
 
-## VERIFIED Ã¢â‚¬â€ POST-MIGRATION REGRESSION (2026-10-06)
+## VERIFIED ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â POST-MIGRATION REGRESSION (2026-10-06)
 
 - Real post-Kotlin/Room/KSP GNSS recording completed on target device.
 - Session `fa2c48ec-15e6-40c1-a892-c170bc27cd04` completed with 2,759 persisted observations.
@@ -485,7 +485,7 @@ Repository remains private.
 - Stable exported payload files were byte-identical across the two exports.
 - Built and installed APK SHA-256 matched: `1D0788E88CB59917BD7EA7561229C66707C94DF3C40CA9D40719FEC28D69DA6C`.
 
-## FAILED THEN FIXED Ã¢â‚¬â€ EXPORT DIRECTORY
+## FAILED THEN FIXED ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â EXPORT DIRECTORY
 
 - First post-migration export attempt failed because `mkdirs()` returned false for an already-existing exports directory.
 - `ExportEngine` was corrected to create the directory only when absent and explicitly verify `isDirectory`.
@@ -510,11 +510,11 @@ Repository remains private.
 
 # 10. IMMEDIATE EXECUTION ROADMAP
 
-## PHASE A Ã¢â‚¬â€ POST-MIGRATION REGRESSION
-**Priority: P0**  
-**Status: VERIFIED Ã¢â‚¬â€ CLOSED 2026-10-06**
+## PHASE A ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â POST-MIGRATION REGRESSION
+**Priority: P0**
+**Status: VERIFIED ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â CLOSED 2026-10-06**
 
-### A1 Ã¢â‚¬â€ Clean device launch
+### A1 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Clean device launch
 Acceptance:
 
 - package launches;
@@ -522,7 +522,7 @@ Acceptance:
 - MainActivity resumed;
 - fresh runtime receipt.
 
-### A2 Ã¢â‚¬â€ Start real recording
+### A2 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Start real recording
 Acceptance:
 
 - recording state proven;
@@ -530,7 +530,7 @@ Acceptance:
 - actual observation count > 0;
 - timestamp/epoch evidence captured.
 
-### A3 Ã¢â‚¬â€ Capture GNSS evidence
+### A3 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Capture GNSS evidence
 Acceptance:
 
 - real `GnssMeasurement` observations;
@@ -538,7 +538,7 @@ Acceptance:
 - C/N0 where exposed;
 - raw/normalized provenance retained.
 
-### A4 Ã¢â‚¬â€ Stop recording
+### A4 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Stop recording
 Acceptance:
 
 - stop transition proven;
@@ -546,7 +546,7 @@ Acceptance:
 - no stop race;
 - final observation count recorded.
 
-### A5 Ã¢â‚¬â€ Export regression #1
+### A5 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Export regression #1
 Acceptance:
 
 - export generated;
@@ -555,7 +555,7 @@ Acceptance:
 - counts and metadata checked;
 - hash recorded.
 
-### A6 Ã¢â‚¬â€ Export regression #2
+### A6 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Export regression #2
 Acceptance:
 
 - second export succeeds;
@@ -563,7 +563,7 @@ Acceptance:
 - deterministic/consistent structure;
 - independent hash/metadata receipt.
 
-### A7 Ã¢â‚¬â€ Compare with pre-migration behavior
+### A7 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Compare with pre-migration behavior
 Acceptance:
 
 - no unsupported capability silently regressed;
@@ -571,13 +571,13 @@ Acceptance:
 
 ---
 
-# 11. PHASE B Ã¢â‚¬â€ OBSERVATORY UI / PANEL RECOVERY
+# 11. PHASE B ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â OBSERVATORY UI / PANEL RECOVERY
 
-**Priority: P0 → P1**
+**Priority: P0 â†’ P1**
 
-## B0 — ACTIVE-WORK RECONCILIATION + PANEL RECOVERY FIREWALL
+## B0 â€” ACTIVE-WORK RECONCILIATION + PANEL RECOVERY FIREWALL
 
-**Status: VERIFIED / CLOSED — 2026-10-06**
+**Status: VERIFIED / CLOSED â€” 2026-10-06**
 
 The current Observatory panel is treated as **UNSTABLE**. Recover correctness and runtime stability before visual expansion.
 
@@ -625,13 +625,13 @@ The UI consumes canonical live/persisted state through a stable projection layer
 - raw observations and persistence integrity remain unchanged;
 - real-device evidence demonstrates recovery.
 
-**UI FEATURE FREEZE:** LIFTED after B0 closure. B1–B6 are now the active presentation-only UI lane.
+**UI FEATURE FREEZE:** LIFTED after B0 closure. B1â€“B6 are now the active presentation-only UI lane.
 
 
 
 **Priority: P1**
 
-## B1 Ã¢â‚¬â€ Evidence-preserving satellite identity
+## B1 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Evidence-preserving satellite identity
 
 Use actual `constellationType` + `svid` data.
 
@@ -641,14 +641,14 @@ Acceptance:
 - no invented names;
 - missing identity remains explicitly unavailable.
 
-## B2 Ã¢â‚¬â€ Remove panel-bottom labels
+## B2 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Remove panel-bottom labels
 
 Acceptance:
 
 - redundant labels below panels removed;
 - no loss of semantic identity inside panel.
 
-## B3 Ã¢â‚¬â€ Compact satellite name inside panel
+## B3 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Compact satellite name inside panel
 
 Acceptance:
 
@@ -656,7 +656,7 @@ Acceptance:
 - readable without overlap;
 - stable under dynamic observation updates.
 
-## B4 Ã¢â‚¬â€ Orientation-aware panel layout
+## B4 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Orientation-aware panel layout
 
 Acceptance:
 
@@ -664,7 +664,7 @@ Acceptance:
 - panel arrangement responds only when a valid orientation signal exists;
 - no fake rotation when sensor evidence is unavailable.
 
-## B5 Ã¢â‚¬â€ Skyplot synchronization
+## B5 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Skyplot synchronization
 
 Acceptance:
 
@@ -672,7 +672,7 @@ Acceptance:
 - rotation direction is validated empirically;
 - unavailable heading state remains explicit.
 
-## B6 Ã¢â‚¬â€ UI regression
+## B6 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â UI regression
 
 Acceptance:
 
@@ -683,11 +683,11 @@ Acceptance:
 
 ---
 
-# 12. PHASE C Ã¢â‚¬â€ SCIENTIFIC PROPAGATION VALIDATION
+# 12. PHASE C ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â SCIENTIFIC PROPAGATION VALIDATION
 
 **Priority: P1**
 
-## C1 Ã¢â‚¬â€ Reference-vector acquisition
+## C1 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Reference-vector acquisition
 
 Use authoritative scientific/reference data.
 
@@ -699,7 +699,7 @@ Required:
 - tolerance;
 - source/provenance.
 
-## C2 Ã¢â‚¬â€ SGP4 near-earth validation
+## C2 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â SGP4 near-earth validation
 
 Acceptance:
 
@@ -708,7 +708,7 @@ Acceptance:
 - velocity tolerance;
 - deterministic repeatability.
 
-## C3 Ã¢â‚¬â€ SDP4/deep-space validation
+## C3 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â SDP4/deep-space validation
 
 Acceptance:
 
@@ -717,7 +717,7 @@ Acceptance:
 - explicit classification;
 - no accidental SGP4-only path.
 
-## C4 Ã¢â‚¬â€ Backend contract validation
+## C4 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Backend contract validation
 
 Acceptance:
 
@@ -725,7 +725,7 @@ Acceptance:
 - version/provenance attached;
 - deterministic result serialization.
 
-## C5 Ã¢â‚¬â€ Terra boundary validation
+## C5 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Terra boundary validation
 
 Acceptance:
 
@@ -735,15 +735,15 @@ Acceptance:
 
 ---
 
-# 13. PHASE D Ã¢â‚¬â€ GNSS SCIENTIFIC CORE
+# 13. PHASE D ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â GNSS SCIENTIFIC CORE
 
 **Priority: P2**
 
-## D1 Ã¢â‚¬â€ Canonical immutable raw schema
+## D1 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Canonical immutable raw schema
 
 Retain all Android-exposed evidence without destructive normalization.
 
-## D2 Ã¢â‚¬â€ Capability ledger
+## D2 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Capability ledger
 
 Record actual device capabilities:
 
@@ -760,7 +760,7 @@ Record actual device capabilities:
 
 Never infer from device model alone.
 
-## D3 Ã¢â‚¬â€ Timestamp engine
+## D3 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Timestamp engine
 
 Implement/verify:
 
@@ -771,7 +771,7 @@ Implement/verify:
 - discontinuity detection;
 - epoch identity.
 
-## D4 Ã¢â‚¬â€ Broadcast ephemeris
+## D4 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Broadcast ephemeris
 
 Per actual available constellation:
 
@@ -782,7 +782,7 @@ Per actual available constellation:
 - QZSS;
 - NavIC only where data exists.
 
-## D5 Ã¢â‚¬â€ Geometry engine
+## D5 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Geometry engine
 
 Deterministic:
 
@@ -801,7 +801,7 @@ Every output carries:
 - epoch;
 - algorithm version.
 
-## D6 Ã¢â‚¬â€ Independent WLS/SPP
+## D6 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Independent WLS/SPP
 
 Outputs:
 
@@ -813,7 +813,7 @@ Outputs:
 - GDOP/PDOP/HDOP/VDOP;
 - satellite set.
 
-## D7 Ã¢â‚¬â€ Residual Observatory
+## D7 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Residual Observatory
 
 Expose:
 
@@ -825,20 +825,20 @@ Expose:
 
 ---
 
-# 14. PHASE E Ã¢â‚¬â€ RESEARCH-GRADE EXPORT
+# 14. PHASE E ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â RESEARCH-GRADE EXPORT
 
 **Priority: P2**
 
-## E1 Ã¢â‚¬â€ RINEX 4.01
+## E1 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â RINEX 4.01
 
 Pipeline:
 
 ```
 Raw Android evidence
-Ã¢â€ â€™ canonical observation
-Ã¢â€ â€™ time normalization
-Ã¢â€ â€™ RINEX observation/navigation writer
-Ã¢â€ â€™ validation
+ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ canonical observation
+ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ time normalization
+ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ RINEX observation/navigation writer
+ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ validation
 ```
 
 Acceptance:
@@ -848,7 +848,7 @@ Acceptance:
 - no fabricated observables;
 - unsupported fields remain absent/explicitly unavailable.
 
-## E2 Ã¢â‚¬â€ JSON/CSV/SQLite
+## E2 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â JSON/CSV/SQLite
 
 Acceptance:
 
@@ -858,13 +858,13 @@ Acceptance:
 - timestamp provenance;
 - reproducible export.
 
-## E3 Ã¢â‚¬â€ Deterministic replay package
+## E3 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Deterministic replay package
 
 Every research export should be replayable without the original UI session.
 
 ---
 
-# 15. PHASE F Ã¢â‚¬â€ PRECISE POSITIONING
+# 15. PHASE F ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PRECISE POSITIONING
 
 **Priority: P3 / research target**
 
@@ -882,7 +882,7 @@ No RTK/PPK claim before real reference/base evidence exists.
 
 ---
 
-# 16. PHASE G Ã¢â‚¬â€ PPP / SSR / HAS
+# 16. PHASE G ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PPP / SSR / HAS
 
 **Priority: P3 / research target**
 
@@ -899,9 +899,9 @@ All external correction data must retain source/time/provenance.
 
 ---
 
-# 17. PHASE H Ã¢â‚¬â€ ANTENNA / GNSS-INS / FGO
+# 17. PHASE H ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ANTENNA / GNSS-INS / FGO
 
-**Priority: P3Ã¢â‚¬â€œP4 / research target**
+**Priority: P3ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“P4 / research target**
 
 Sequence:
 
@@ -917,7 +917,7 @@ No unsupported sensor fusion claims.
 
 ---
 
-# 18. PHASE I Ã¢â‚¬â€ INTEGRITY / SPOOFING / RFI
+# 18. PHASE I ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â INTEGRITY / SPOOFING / RFI
 
 **Priority: P4**
 
@@ -936,7 +936,7 @@ A spoofing detector must produce evidence and confidence, not a binary UI claim 
 
 ---
 
-# 19. PHASE J Ã¢â‚¬â€ DETERMINISTIC REPLAY
+# 19. PHASE J ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â DETERMINISTIC REPLAY
 
 **Priority: P4**
 
@@ -953,56 +953,56 @@ Target:
 
 ```
 same evidence + same algorithm version
-Ã¢â€ â€™ same result
+ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ same result
 ```
 
 Any nondeterminism must be measured and documented.
 
 ---
 
-# 19.5. PHASE K — EMERGENCY NAVIGATION / GNSS INTERFERENCE RESILIENCE
+# 19.5. PHASE K â€” EMERGENCY NAVIGATION / GNSS INTERFERENCE RESILIENCE
 
-**Priority: P0 → P3 — FAST TRACK**
+**Priority: P0 â†’ P3 â€” FAST TRACK**
 
 This is now the primary parallel delivery track after B0. It MUST build on verified raw evidence and MUST NOT bypass safety/scientific gates. B4/B5 orientation limitations do not block K software implementation.
 
-## K0 — Capability discovery
+## K0 â€” Capability discovery
 
 Measure target-device availability of raw GNSS, C/N0, AGC, pseudorange/received satellite time, Doppler, ADR/carrier phase where available, navigation messages, multi-constellation/frequency, IMU/orientation, and cellular measurements.
 
-## K1 — Interference evidence
+## K1 â€” Interference evidence
 
 Monitor measurable changes such as C/N0 collapse, AGC behavior where exposed, satellite/used-in-fix changes, constellation/band dropout, Doppler consistency, clock behavior, measurement age, and cross-source disagreement. Produce evidence-backed states such as NORMAL, DEGRADED, JAM-LIKELY, SPOOF-LIKELY, UNKNOWN, and RECOVERY; these are hypotheses, not proof of physical cause.
 
-## K2 — Measurement trust / survivor selection
+## K2 â€” Measurement trust / survivor selection
 
 Rank surviving measurements using signal stability, temporal continuity, freshness, Doppler/ADR consistency where available, geometry/residual consistency, and source agreement. Never destroy raw evidence. Record down-weight/reject decisions and reasons.
 
-## K3 — Navigation continuity state machine
+## K3 â€” Navigation continuity state machine
 
 Use explicit states:
 
-FULL_GNSS → GNSS_DEGRADED → PARTIAL_GNSS → GNSS_LOST → INERTIAL_BRIDGING → CELL_AIDED → MULTI_SOURCE_FUSION → RECOVERY
+FULL_GNSS â†’ GNSS_DEGRADED â†’ PARTIAL_GNSS â†’ GNSS_LOST â†’ INERTIAL_BRIDGING â†’ CELL_AIDED â†’ MULTI_SOURCE_FUSION â†’ RECOVERY
 
 Transitions require evidence. Dead reckoning MUST carry increasing uncertainty and MUST NOT be represented as fresh GNSS.
 
-## K4 — Last-trusted-state / dead-reckoning bridge
+## K4 â€” Last-trusted-state / dead-reckoning bridge
 
 Use last trusted PVT, valid velocity/heading, IMU evidence, cellular evidence where useful, and explicit uncertainty growth. Preserve the last known good state for recovery without rewriting historical observations.
 
-## K5 — Emergency Navigation Mode
+## K5 â€” Emergency Navigation Mode
 
 User-facing mode: EMERGENCY NAVIGATION = ON.
 
 When enabled, maintain the resilience engine and local session according to Android lifecycle/background rules. Target foreground-service resilience, screen-off/background operation where permitted, process/service recovery, continuous local track persistence, automatic state transitions, and automatic recovery when GNSS returns.
 
-## K6 — Reception Optimization profile
+## K6 â€” Reception Optimization profile
 
 User-facing option: RECEPTION OPTIMIZATION = ON/OFF.
 
 This may activate only verified software-side optimizations such as receiver/session persistence, assistance freshness management, stale-measurement handling, survivor weighting, interference-aware filtering, adaptive recovery, and power-aware profiles. It MUST NOT claim physical antenna/RF gain.
 
-## K7 — Horizon Resilient Location Bridge
+## K7 â€” Horizon Resilient Location Bridge
 
 Keep three outputs separate:
 
@@ -1012,7 +1012,7 @@ Keep three outputs separate:
 
 The bridge is explicitly enabled, stoppable, recoverable, provenance-preserving where the receiving interface permits, and must never fabricate an indefensible position. Universal transparent injection into arbitrary third-party production apps is not a release guarantee because Android documents mock-location primarily as a testing mechanism.
 
-## K8 — Real-world validation
+## K8 â€” Real-world validation
 
 Validate open-sky baseline, controlled degradation, GNSS loss, intermittent GNSS, sensor dropout, cellular availability changes, recovery, long-running emergency mode, background/screen-off, and service/application restart.
 
@@ -1134,7 +1134,7 @@ Build/cache folders are excluded from repository checkpoints unless specifically
 
 # 24. FUTURE CHANGE LOG
 
-## 2026-10-06 Ã¢â‚¬â€ Repository baseline
+## 2026-10-06 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Repository baseline
 **VERIFIED**
 
 - Workspace safety backup verified.
@@ -1146,7 +1146,7 @@ Build/cache folders are excluded from repository checkpoints unless specifically
 - Clean baseline pushed to `main`.
 - Commit: `423577893094216aab6e4acc97bd600509ac94c3`.
 
-## 2026-10-06 Ã¢â‚¬â€ Current roadmap initialization
+## 2026-10-06 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Current roadmap initialization
 **THIS CHANGE**
 
 - Master roadmap created.
@@ -1158,9 +1158,9 @@ Build/cache folders are excluded from repository checkpoints unless specifically
 
 ---
 
-# 24.1 CHANGELOG Ã¢â‚¬â€ 2026-10-06 POST-MIGRATION REGRESSION
+# 24.1 CHANGELOG ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â 2026-10-06 POST-MIGRATION REGRESSION
 
-**STATUS: VERIFIED Ã¢â‚¬â€ PHASE A CLOSED**
+**STATUS: VERIFIED ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â PHASE A CLOSED**
 
 - Executed real target-device recording after the Kotlin 2.4 / Room 2.8.5 / KSP migration.
 - Session `fa2c48ec-15e6-40c1-a892-c170bc27cd04` completed with 2,759 observations.
@@ -1176,12 +1176,12 @@ Build/cache folders are excluded from repository checkpoints unless specifically
 - Detailed receipt: `docs/receipts/POST_MIGRATION_REGRESSION_2026-10-06.md`.
 - Phase B Satellite Observatory UI is now the next execution target.
 
-# 24.2 CHANGELOG — 2026-10-06 RESILIENCE SCOPE / UI FIREWALL
+# 24.2 CHANGELOG â€” 2026-10-06 RESILIENCE SCOPE / UI FIREWALL
 
 **STATUS: ROADMAP CONTROL UPDATE**
 
 - Existing Phase A verified baseline is preserved.
-- The unstable Observatory panel is now protected by mandatory B0 recovery before B1–B6 feature work.
+- The unstable Observatory panel is now protected by mandatory B0 recovery before B1â€“B6 feature work.
 - Active-work reconciliation is mandatory before overlapping UI edits.
 - Emergency Navigation / GNSS Interference Resilience is now a first-class roadmap phase.
 - Reception Optimization is defined as software-side optimization only; physical RF/antenna gain is explicitly not claimed.
@@ -1338,16 +1338,16 @@ The agent should choose the fastest path that still leaves:
 
 Until changed by fresh repository evidence:
 
-1. B0 panel recovery firewall — VERIFIED; do not reopen unless regression evidence appears.
-2. K0–K7 Emergency Navigation software fast track — run in parallel with independent UI/scientific work.
-3. B1–B3 UI evidence/polish — parallel when ownership is independent.
-4. Scientific propagation/solver gates — parallel where dependencies permit.
-5. K8 physical/long-run validation — batched after local K work is ready.
+1. B0 panel recovery firewall â€” VERIFIED; do not reopen unless regression evidence appears.
+2. K0â€“K7 Emergency Navigation software fast track â€” run in parallel with independent UI/scientific work.
+3. B1â€“B3 UI evidence/polish â€” parallel when ownership is independent.
+4. Scientific propagation/solver gates â€” parallel where dependencies permit.
+5. K8 physical/long-run validation â€” batched after local K work is ready.
 6. External location delivery and final integration/release verification.
 
 # 24.4 K FAST-TRACK EXECUTION MODE
 
-**STATUS: ACTIVE CONTROL POLICY — 2026-10-06**
+**STATUS: ACTIVE CONTROL POLICY â€” 2026-10-06**
 
 After B0 is verified, K becomes a parallel P0/P1 delivery track.
 
@@ -1365,10 +1365,10 @@ These do NOT block K:
 
 These DO block only the specific claims they concern:
 
-- device capability claims → K0;
-- real interference classification → K1/K8;
-- real-world continuity/accuracy claims → K8;
-- production release claims → final integration.
+- device capability claims â†’ K0;
+- real interference classification â†’ K1/K8;
+- real-world continuity/accuracy claims â†’ K8;
+- production release claims â†’ final integration.
 
 ## Parallel execution matrix
 
@@ -1380,7 +1380,7 @@ These DO block only the specific claims they concern:
 | K3 | After K2 contracts | state-machine tests + replay |
 | K4 | Parallel with K3 | uncertainty/trajectory tests + replay |
 | K5 | After K3/K4 interfaces | lifecycle/service tests + controlled runtime |
-| K6 | Parallel with K2–K5 | configuration + regression tests |
+| K6 | Parallel with K2â€“K5 | configuration + regression tests |
 | K7 | Parallel with K5/K6 | API/bridge tests + supported-device verification |
 | K8 | Prepare continuously | single batched physical-device/long-run verification |
 
@@ -1399,7 +1399,7 @@ Do not return to the user for ordinary sequencing decisions.
 
 K is not COMPLETE until K8 has current reproducible evidence.
 
-A fully implemented K0–K7 is **SOFTWARE COMPLETE / HARDWARE VALIDATION PENDING**, not field verified.
+A fully implemented K0â€“K7 is **SOFTWARE COMPLETE / HARDWARE VALIDATION PENDING**, not field verified.
 
 ## Remote efficiency
 
@@ -1453,12 +1453,12 @@ Always:
 
 ```
 update ROADMAP
-Ã¢â€ â€™ git status
-Ã¢â€ â€™ git diff
-Ã¢â€ â€™ targeted verification
-Ã¢â€ â€™ commit
-Ã¢â€ â€™ push
-Ã¢â€ â€™ verify origin/main
+ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ git status
+ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ git diff
+ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ targeted verification
+ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ commit
+ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ push
+ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ verify origin/main
 ```
 
 The roadmap update MUST be in the same commit as the material change whenever practical.
@@ -1509,9 +1509,9 @@ Horizon Observatory reaches Final Checkpoint only when:
 
 ---
 
-# 28. B0 — ACTIVE-WORK RECONCILIATION + PANEL RECOVERY FIREWALL
+# 28. B0 â€” ACTIVE-WORK RECONCILIATION + PANEL RECOVERY FIREWALL
 
-**STATUS: VERIFIED — 2026-10-06 functional real-device receipt**
+**STATUS: VERIFIED â€” 2026-10-06 functional real-device receipt**
 
 B0 preserved the pre-existing local Satellite Observatory UI work and removed the unbounded live-session observation load from the panel/analysis path. During RECORDING, the UI reads at most the newest 512 persisted observations every 2 seconds. When the session is no longer active, the existing full snapshot path is used. This changes only the UI projection; raw Room evidence remains complete.
 
@@ -1533,7 +1533,7 @@ B0 is therefore closed for functional recovery. B1 is the next gate.
 
 # 28. CURRENT NEXT ACTION
 
-**NEXT EXECUTION TARGET: PHASE B1 — EVIDENCE-PRESERVING SATELLITE IDENTITY**
+**NEXT EXECUTION TARGET: PHASE B1 â€” EVIDENCE-PRESERVING SATELLITE IDENTITY**
 
 Phase A is closed and the post-migration/export baseline is verified. The previous Phase B plan is now gated behind B0 so the unstable panel is repaired before visual expansion.
 
@@ -1541,16 +1541,16 @@ Execution order:
 
 1. inspect the actual working tree and active/unpushed work;
 2. protect overlapping local work with a checkpoint/branch;
-3. diagnose the UI path from canonical state → UI projection → rendering;
+3. diagnose the UI path from canonical state â†’ UI projection â†’ rendering;
 4. make the smallest safe correction;
 5. run targeted UI/unit/build regression;
 6. install and verify on SM-A075F;
-7. only after B0 passes, execute B1–B6;
+7. only after B0 passes, execute B1â€“B6;
 8. continue scientific propagation/solver gates;
 9. execute Phase K Emergency Navigation in dependency order;
 10. implement external-location delivery only after the resilience state itself is verified.
 
-B0 is now verified. Continue immediately with B1–B6 in dependency order:
+B0 is now verified. Continue immediately with B1â€“B6 in dependency order:
 
 1. trace actual `constellationType` + `svid` identity from persisted observations into the satellite panel;
 2. preserve compact evidence-derived identity only; never infer NORAD/catalog identity;
@@ -1578,18 +1578,18 @@ EXECUTION > EXPLANATION
 VERIFICATION > CONFIDENCE
 PRESERVATION > CONVENIENCE
 MINIMAL SAFE CHANGE > UNCONTROLLED REFACTOR
-NO RECEIPT Ã¢â€ â€™ NO EPISTEMIC UPGRADE
-NO VERIFIED END STATE Ã¢â€ â€™ TASK NOT COMPLETE
+NO RECEIPT ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ NO EPISTEMIC UPGRADE
+NO VERIFIED END STATE ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ TASK NOT COMPLETE
 ```
 
 This document is a living engineering ledger, not a marketing roadmap.
 
-# 28.1 PHASE K EXECUTION RECEIPT — 2026-10-06
+# 28.1 PHASE K EXECUTION RECEIPT â€” 2026-10-06
 
 K0 capability contract and K1-K4 deterministic domain engines were implemented and covered by a green JVM regression receipt at the time of this historical receipt. The live-ingress gap described here was subsequently closed by receipt 28.3.
 
 
-# 28.2 K5-K7 RECEIPT — 2026-10-06
+# 28.2 K5-K7 RECEIPT â€” 2026-10-06
 
 - K5: persistent Emergency Navigation mode and existing foreground-service wiring implemented; device lifecycle/background verification remains pending.
 - K6: software-only Reception Optimization policy implemented; no RF/antenna claim.
@@ -1597,7 +1597,7 @@ K0 capability contract and K1-K4 deterministic domain engines were implemented a
 - Historical blocker at the time of this receipt: integrate K1-K4 runtime engines with observation ingress/derived persistence and verify deterministic replay. This was subsequently closed by receipt 28.3.
 
 
-# 28.3 PHASE K INTEGRATION + CONTROLLED LOSS RECEIPT — 2026-10-06
+# 28.3 PHASE K INTEGRATION + CONTROLLED LOSS RECEIPT â€” 2026-10-06
 
 **STATUS: K0-K7 SOFTWARE INTEGRATION VERIFIED / K8 HARDWARE VALIDATION PENDING**
 
@@ -1623,19 +1623,19 @@ Scientific boundary:
 
 **NEXT UNBLOCKED TARGET: K8 batched physical/long-run validation when suitable hardware/control conditions are available.**
 
-# 28.4 K0-K7 RUNTIME HARDENING RECEIPT — 2026-10-06
+# 28.4 K0-K7 RUNTIME HARDENING RECEIPT â€” 2026-10-06
 
 The resilience runtime was hardened after source-level audit. Reception Optimization now derives freshness from measurement age while preserving raw evidence; stale candidates are deterministically rejected; explicit recovery is reachable before NORMAL classification; and unchanged GNSS interference state no longer produces duplicate DERIVED resilience events. Regression and device verification are green.
 
 Receipt: 162 JVM tests / 0 failures / 0 errors / 3 existing reference-vector skips; Android instrumentation 14 finished / 0 reported failures / 2 existing migration skips; APK SHA-256 `2F3C43B74CBFF7D9D79C3415B19E1517E2F8D3ABE59092A9203B89DB797B0AB2`.
 
 K8 physical interference, open-sky truth comparison, long-run background/screen-off and resource/battery validation remain pending.
-## FINAL K RUNTIME HARDENING RECEIPT — 2026-10-06
+## FINAL K RUNTIME HARDENING RECEIPT â€” 2026-10-06
 
 Final source correction after review: interference classification ordering now gives strong JAM/SPOOF/DEGRADED evidence precedence over recovery flags, with explicit recovery remaining reachable before NORMAL. Regression coverage was extended for this precedence boundary.
 
 Final receipt: `:app:testPrimaryDebugUnitTest :app:assemblePrimaryDebug` BUILD SUCCESSFUL; 163 unit tests, 0 failures, 0 errors, 3 existing reference-vector skips. APK SHA-256: `4641C4F855C8EB92E769E404171237CFBC11D2F345F611CBBB6DE92E590DBE0C`. `:app:connectedPrimaryDebugAndroidTest` BUILD SUCCESSFUL; 14 tests finished on SM-A075F / Android 16, 2 existing migration tests skipped. No new K8 physical-interference claim is made.
-## PROPAGATION + EVIDENCE HARDENING RECEIPT — 2026-10-06
+## PROPAGATION + EVIDENCE HARDENING RECEIPT â€” 2026-10-06
 
 Source-audit fixes completed after real-device and OrbitCore regression:
 - OrbitCore adapter now supplies deterministic non-null OMM identity fallbacks for missing object name/ID/classification, matching the library's non-null constructor contract.
@@ -1688,7 +1688,7 @@ Reference fixtures `SGP4-VER.TLE` and `tcppver.out` are vendored from the public
 Gradle 8.11.1 deprecation and SDK XML mismatch warnings remain non-blocking. Do not alter toolchain solely for this checkpoint.
 
 
-# 28.5 ORBITCORE REFERENCE-VECTOR RECEIPT — 2026-10-07
+# 28.5 ORBITCORE REFERENCE-VECTOR RECEIPT â€” 2026-10-07
 
 **STATUS: VERIFIED FOR TWO REPRESENTATIVE CASES / NOT FULL SCIENTIFIC CLOSURE**
 
@@ -1702,3 +1702,7 @@ All five OrbitCore state comparisons passed with position tolerance `1e-6 km` an
 Independent provenance: the CelesTrak/Vallado verification material describes `TCPPVER.OUT` as verification results for the supplied TLE test cases and specifies TEME position/velocity outputs; the same material documents the SGP4/SDP4 verification methodology.
 
 This does **not** close the entire scientific propagation gate. Remaining work includes broader reference-case coverage, epoch-before/after cases, parser-driven fixture execution, and production integration verification.
+
+## Canonical migration status — 2026-10-24
+
+The current implementation is the approved Horizon Parallel tree imported at the repository root on the migration branch. Older roadmap/checkpoint text above is historical. Current variant identities, the two-session GNSS checkpoint, open scientific/release gates, migration provenance, and file-level audit are documented in README.md, ENGINEERING_STATUS.md, docs/architecture/IDENTITY_TABLE.md, and docs/migration/. This note does not close issue #3 or production/scientific acceptance.

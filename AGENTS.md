@@ -183,4 +183,3 @@ Skipping an available design tool without an explicit recorded reason is a UI-ga
 
 Required path:
 `INSPECT → REPRODUCE → DESIGN TOOL → VISUAL REVIEW → IMPLEMENT → TEST → BUILD → DEVICE VERIFY → VISUAL QA → DOCUMENT`
-

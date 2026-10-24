@@ -18,6 +18,7 @@ interface SessionRepository {
         capabilityReportJson: String,
         permissionStateJson: String
     )
+    suspend fun updateSessionDeviceMetadata(sessionId: String, deviceMetadataJson: String)
     suspend fun getSession(sessionId: String): SessionEntity?
     suspend fun getLatestSession(): SessionEntity?
     suspend fun getLatestCompletedSession(): SessionEntity?
@@ -25,6 +26,7 @@ interface SessionRepository {
     fun observeSession(sessionId: String): Flow<SessionEntity?>
     fun getObservations(sessionId: String): Flow<List<ObservationEntity>>
     suspend fun getObservationsSnapshot(sessionId: String): List<ObservationEntity>
+    suspend fun getObservationPage(sessionId: String, afterSequence: Long, limit: Int): List<ObservationEntity>
     suspend fun getRecentObservationsSnapshot(sessionId: String, limit: Int): List<ObservationEntity>
     suspend fun countObservations(sessionId: String): Int
     suspend fun minSequence(sessionId: String): Long?

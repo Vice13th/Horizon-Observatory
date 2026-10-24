@@ -1,4 +1,4 @@
-# Gradle Wrapper Recovery
+﻿# Gradle Wrapper Recovery
 
 This release keeps the standard `gradlew.bat` interface, but it also handles an archive that is missing `gradle/wrapper/gradle-wrapper.jar`.
 

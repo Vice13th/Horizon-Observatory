@@ -39,6 +39,9 @@ interface SessionDao {
     @Query("UPDATE sessions SET lifecycleState = 'CRASH_CLOSED', endTimeMs = :endTimeMs WHERE sessionId = :sessionId AND lifecycleState IN ('READY', 'RECORDING', 'STOPPING')")
     suspend fun markSessionCrashClosed(sessionId: String, endTimeMs: Long): Int
 
+    @Query("UPDATE sessions SET deviceMetadataJson = :deviceMetadataJson WHERE sessionId = :sessionId")
+    suspend fun updateDeviceMetadata(sessionId: String, deviceMetadataJson: String): Int
+
     @Query("UPDATE sessions SET deviceMetadataJson = :deviceMetadataJson, capabilityReportJson = :capabilityReportJson, permissionStateJson = :permissionStateJson WHERE sessionId = :sessionId")
     suspend fun updateMetadata(
         sessionId: String,

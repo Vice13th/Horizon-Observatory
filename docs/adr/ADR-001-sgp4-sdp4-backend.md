@@ -1,4 +1,4 @@
-# ADR-001: SGP4/SDP4 backend for orbit prediction
+﻿# ADR-001: SGP4/SDP4 backend for orbit prediction
 
 **Status:** Accepted (owner confirmed 2026-10-01); implementation BLOCKED on OrbitCore API access
 **Date:** 2026-10-01

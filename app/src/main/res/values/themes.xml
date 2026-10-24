@@ -15,4 +15,11 @@
         <item name="windowSplashScreenAnimationDuration">300</item>
         <item name="postSplashScreenTheme">@style/Theme.Horizon</item>
     </style>
+
+    <style name="Theme.Horizon.ParallelStarting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/horizon_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/horizon_parallel_launcher_art</item>
+        <item name="windowSplashScreenAnimationDuration">300</item>
+        <item name="postSplashScreenTheme">@style/Theme.Horizon</item>
+    </style>
 </resources>

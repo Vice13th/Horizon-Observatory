@@ -1,4 +1,4 @@
-# HORIZON — Session STOP Race Fix
+﻿# HORIZON â€” Session STOP Race Fix
 
 ## Failure that triggered the fix
 

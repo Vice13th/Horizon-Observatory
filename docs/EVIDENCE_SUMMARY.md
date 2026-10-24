@@ -1,4 +1,4 @@
-# HORIZON — Latest Session Evidence Summary
+﻿# HORIZON â€” Latest Session Evidence Summary
 
 Two session ZIPs are preserved in `evidence/sessions/`.
 
@@ -27,7 +27,7 @@ Cellular:
 
 - 18 `REQUEST_CELL_INFO_UPDATE`
 - 9 `TELEPHONY_CALLBACK`
-- source age: 7–5014 ms
+- source age: 7â€“5014 ms
 
 Integrity:
 

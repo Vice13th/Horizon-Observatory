@@ -1,4 +1,4 @@
-# HORIZON CHECKPOINT — 2026-10-07 FINAL
+﻿# HORIZON CHECKPOINT â€” 2026-10-07 FINAL
 
 ## Repository
 - Repository: Vice13th/Horizon-Observatory
@@ -56,7 +56,7 @@
 3. Address remaining gates only with fresh evidence: export/readback reconciliation, satellite identity resolution, UTC/timestamp edge cases, and long-run/interference validation.
 4. Keep propagation/scientific foundations frozen unless a new reproducible defect is demonstrated.
 
-## Fresh Device Verification Addendum � 2026-10-07
+## Fresh Device Verification Addendum — 2026-10-07
 
 - Repository: `main` at `3ed4f007e5c21a561d0449e1a55003f93b92396b`, matching `origin/main`.
 - Unit test `:app:testPrimaryDebugUnitTest`: PASS, exit 0.
@@ -75,14 +75,14 @@
 - NORAD, UTC, OrbitCore, physical orientation, and K8 remain open scientific gates.
 
 
-## Evidence-Closure Addendum — 2026-10-07
+## Evidence-Closure Addendum â€” 2026-10-07
 
 The remaining device evidence gaps were closed using the existing completed session `7f9066a6-17c6-4307-ac48-4274379742ec` and existing `ExportEngine`; no production/source/scientific behavior was changed.
 
 - Export SUCCESS: `2341` observations.
 - Counts reconciled: Room/runtime `2341`; manifest `2341`; `observations.json` `2341`; `observations.csv` `2341`.
 - Sequence range `1..2341`; manifest and direct exported-JSON audit both show contiguous sequence numbers.
-- Direct sequence advancement evidence: `394 → 448 → 485` in the same persisted session.
+- Direct sequence advancement evidence: `394 â†’ 448 â†’ 485` in the same persisted session.
 - Direct ingestion timestamp ordering audit: non-decreasing across all `2341` observations.
 - Archive checksum: `7CFEC70335EA78788109DB6E64316E0A5D1E8F0024C645CC328633AD73D5556C`.
 - Independent second ADB readback produced the identical archive SHA-256; checksum MATCH.
@@ -98,7 +98,7 @@ Evidence status: SEQUENCE VERIFIED; SVID VERIFIED; CONSTELLATION VERIFIED as obs
 NORAD, UTC edge cases, OrbitCore reference accuracy, physical heading/orientation, and K8 remain open scientific gates.
 
 
-## Visual Device Evidence Addendum — 2026-10-07
+## Visual Device Evidence Addendum â€” 2026-10-07
 
 A real physical-device screenshot was captured from the verified Samsung SM-A075F / Android 16 / API 36 while HORIZON Observatory was the resumed foreground activity.
 
@@ -107,7 +107,7 @@ A real physical-device screenshot was captured from the verified Samsung SM-A075
 - Orientation text in the captured UI explicitly states north-up recorded data and that live orientation was not applied; no physical-heading claim is made.
 - Raw device capture timestamp: 2026-10-07 03:04:29 +0330.
 - Hero image: `docs/assets/horizon-observatory-device-verified.png`.
-- Image dimensions: 720 × 1446 pixels; the crop removes only the Android status/navigation chrome and does not alter application content.
+- Image dimensions: 720 Ã— 1446 pixels; the crop removes only the Android status/navigation chrome and does not alter application content.
 - Hero image SHA-256: `A6BE2027F07881245F8545A0C9FA067EB832050A2C397B66B435109A4751AFD5`.
 - The screenshot was taken directly from the running application via the authorized physical-device ADB framebuffer capture path; no generated or synthetic UI/data was used.
 - No scientific values, satellite identities, geometry, orientation claims, or telemetry were edited.

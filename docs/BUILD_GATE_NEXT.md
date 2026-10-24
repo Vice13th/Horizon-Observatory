@@ -1,10 +1,10 @@
-# HORIZON — Next Build Gate / UI Phase
+﻿# HORIZON â€” Next Build Gate / UI Phase
 
 ## Current checkpoint
 
 HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED
 
-The GNSS acquisition → Observation Bus → Room → readback → export → semantic-normalization evidence chain is already VERIFIED/CLOSED. Do not rerun it merely as ceremony when no relevant source surface changed.
+The GNSS acquisition â†’ Observation Bus â†’ Room â†’ readback â†’ export â†’ semantic-normalization evidence chain is already VERIFIED/CLOSED. Do not rerun it merely as ceremony when no relevant source surface changed.
 
 ## Active next gate: UI / Observatory presentation
 
@@ -40,4 +40,4 @@ Required sequence:
 - Device-specific UTC edge case: UNVERIFIED.
 - K8 physical interference / long-run validation: PENDING.
 
-No receipt → no epistemic upgrade.
+No receipt â†’ no epistemic upgrade.

@@ -1,0 +1,9 @@
+id,type,title,url
+SRC-001,official,Android GNSS developer documentation,https://developer.android.com/develop/sensors-and-location/sensors/gnss
+SRC-002,official,GPSTest project / logging documentation,https://github.com/barbeau/gpstest
+SRC-003,official,IGS products and access,https://connect.igs.org/products-access/
+SRC-004,official,ESA Galileo HAS / Navipedia,https://gssc.esa.int/navipedia/index.php/Galileo_High_Accuracy_Service_%28HAS%29
+SRC-005,research,NSGRX / University of Nottingham research output,https://nottingham-repository.worktribe.com/output/70323219
+SRC-006,research,Robust Android GNSS positioning using tightly coupled GNSS/INS EKF,https://experts.umn.edu/en/publications/robust-android-gnss-positioning-using-single-differenced-tightly-/
+SRC-007,research,GNSS-PPK + PDR + FGO smartphone research,https://pmc.ncbi.nlm.nih.gov/articles/PMC11433767/
+SRC-008,research,Android GNSS / RFI monitoring research,https://www.mdpi.com/2673-4591/126/1/4

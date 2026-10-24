@@ -20,6 +20,24 @@ class ResilienceEngineTest {
         assertEquals(InterferenceState.UNKNOWN, a.state)
     }
 
+    @Test fun interferenceEngine_marksInsufficientComparableSignals_unknown_notNormal() {
+        val a = InterferenceEvidenceEngine().assess(InterferenceSnapshot(
+            cn0MedianDbHz = 30.0, trackedSatelliteCount = 8, usedInFixSatelliteCount = 5
+        ))
+        assertEquals(InterferenceState.UNKNOWN, a.state)
+        assertEquals("UNKNOWN", a.evidence.single { it.name == "CN0_COLLAPSE" }.value)
+        assertEquals("UNKNOWN", a.evidence.single { it.name == "SATELLITE_DROP" }.value)
+    }
+
+    @Test fun interferenceEngine_scoresOnlyComparableEvidence_notUnknownPlaceholders() {
+        val partial = InterferenceEvidenceEngine().assess(InterferenceSnapshot(
+            cn0MedianDbHz = 20.0, baselineCn0MedianDbHz = 35.0
+        ))
+        assertEquals(InterferenceState.UNKNOWN, partial.state)
+        assertEquals(1.0, partial.score, 0.000001)
+        assertEquals("UNKNOWN", partial.evidence.single { it.name == "SATELLITE_DROP" }.value)
+    }
+
     @Test fun interferenceEngine_detectsJamLikely_fromStrongMultiSignalCollapse() {
         val a = InterferenceEvidenceEngine().assess(InterferenceSnapshot(
             cn0MedianDbHz = 20.0, baselineCn0MedianDbHz = 35.0,
@@ -60,15 +78,18 @@ class ResilienceEngineTest {
     }
 
     @Test fun deadReckoning_growsUncertainty_andNeverClaimsFreshGnss() {
-        val last = TrustedPvt(50.0, 8.0, 100.0, 10.0, null, 1_000_000_000L, 5.0, 8.0)
-        val a = DeadReckoningBridge().estimate(BridgeInput(last, 10.0, headingDeg = null, imuAvailable = true))
+        val last = TrustedPvt(50.0, 8.0, 100.0, 10.0, 90.0, 1_000_000_000L, 5.0, 8.0)
+        val a = (DeadReckoningBridge().estimate(BridgeInput(last, 10.0, imuAvailable = true)) as CoastingResult.Estimate).estimate
         assertEquals("DEAD_RECKONED_FROM_LAST_TRUSTED_PVT", a.provenance)
         assertEquals(NavigationState.INERTIAL_BRIDGING, a.navigationState)
         assertTrue(a.horizontalUncertaintyM > last.horizontalUncertaintyM)
         val lastVerticalUncertaintyM = checkNotNull(last.verticalUncertaintyM)
         val actualVerticalUncertaintyM = checkNotNull(a.verticalUncertaintyM)
         assertTrue(actualVerticalUncertaintyM > lastVerticalUncertaintyM)
-        assertEquals(last.latitudeDeg, a.latitudeDeg, 0.000001)
+        assertEquals(last.latitudeDeg, a.latitudeDeg, 0.0001)
+        assertTrue(a.longitudeDeg > last.longitudeDeg)
+        val noHeading = DeadReckoningBridge().estimate(BridgeInput(last.copy(headingDeg = null), 10.0, imuAvailable = true))
+        assertEquals(CoastingRejection.HEADING_UNAVAILABLE_WHILE_MOVING, (noHeading as CoastingResult.Rejected).reason)
     }
 
     @Test fun interferenceEngine_reportsRecovery_beforeNormal_whenExplicitRecoveryEvidenceExists() {

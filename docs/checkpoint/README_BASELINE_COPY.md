@@ -1,4 +1,4 @@
-# HORIZON Observatory — Final Engineering Baseline
+﻿# HORIZON Observatory â€” Final Engineering Baseline
 
 Horizon is a local-first Android scientific observation platform. The application preserves raw observations and provenance first; derived analysis and UI are downstream.
 

@@ -18,6 +18,9 @@ enum class ObservationType {
     SENSOR_PRESSURE,
     SENSOR_STEP,
     SENSOR_GENERIC,
+    /** Raw receiver clock fields (GnssClock + event-level extras), one row per measurements event. Needed for
+     *  replay and clock-continuity diagnostics; absent fields are JSON null, never zero. */
+    GNSS_CLOCK,
     SYSTEM_EVENT,
     ERROR_EVENT,
     /** GNSS assistance/context evidence -- NOT a GNSS observation. See domain.assistance

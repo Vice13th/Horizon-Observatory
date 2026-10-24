@@ -27,38 +27,67 @@ data class IntegrityAuditResult(
 
 object IntegrityAudit {
     fun audit(observations: List<RawObservationView>): IntegrityAuditResult {
-        val ordered = observations.sortedBy { it.sequenceNumber }
-        val first = ordered.firstOrNull()?.sequenceNumber
-        val last = ordered.lastOrNull()?.sequenceNumber
-
-        var contiguous = true
-        ordered.forEachIndexed { index, row ->
-            val expected = (index + 1).toLong()
-            if (row.sequenceNumber != expected) contiguous = false
-        }
-
-        val ingestionTimestamps = ordered.mapNotNull { it.ingestionMonotonicTimestampNs }
-        val ingestionMonotonic = ingestionTimestamps.zipWithNext().all { (a, b) -> b >= a }
-
-        var sourceRegressions = 0
-        var previousSource: Long? = null
-        ordered.forEach { row ->
-            val current = row.sourceMonotonicTimestampNs ?: return@forEach
-            if (previousSource != null && current < previousSource!!) sourceRegressions++
-            previousSource = current
-        }
-
-        return IntegrityAuditResult(
-            observationCount = ordered.size,
-            firstSequence = first,
-            lastSequence = last,
-            sequenceContiguous = contiguous,
-            ingestionTimestampsNonDecreasing = ingestionMonotonic,
-            ingestionTimestampedObservationCount = ingestionTimestamps.size,
-            sourceTimestampRegressions = sourceRegressions,
-            sourceTimestampedObservationCount = ordered.count { it.sourceMonotonicTimestampNs != null }
-        )
+        val builder = IncrementalIntegrityAudit()
+        observations.sortedBy { it.sequenceNumber }.forEach(builder::append)
+        return builder.finish()
     }
+}
+
+/**
+ * One-pass integrity accumulator for ordered database pages.
+ *
+ * Rows must be provided in strictly increasing sequence order, as emitted by
+ * ObservationDao.getObservationPage(). It retains counters and prior clock values only,
+ * rather than a second list of all observations.
+ */
+class IncrementalIntegrityAudit {
+    private var count = 0
+    private var first: Long? = null
+    private var last: Long? = null
+    private var contiguous = true
+    private var previousIngestion: Long? = null
+    private var ingestionNonDecreasing = true
+    private var ingestionCount = 0
+    private var previousSource: Long? = null
+    private var sourceRegressions = 0
+    private var sourceCount = 0
+
+    fun append(row: RawObservationView) {
+        val priorSequence = last
+        require(priorSequence == null || row.sequenceNumber > priorSequence) {
+            "Incremental integrity audit requires strictly increasing sequence numbers: prior=" + priorSequence + " next=" + row.sequenceNumber
+        }
+
+        count += 1
+        if (first == null) first = row.sequenceNumber
+        last = row.sequenceNumber
+        if (row.sequenceNumber != count.toLong()) contiguous = false
+
+        row.ingestionMonotonicTimestampNs?.let { timestamp ->
+            val previous = previousIngestion
+            if (previous != null && timestamp < previous) ingestionNonDecreasing = false
+            previousIngestion = timestamp
+            ingestionCount += 1
+        }
+
+        row.sourceMonotonicTimestampNs?.let { timestamp ->
+            val previous = previousSource
+            if (previous != null && timestamp < previous) sourceRegressions += 1
+            previousSource = timestamp
+            sourceCount += 1
+        }
+    }
+
+    fun finish(): IntegrityAuditResult = IntegrityAuditResult(
+        observationCount = count,
+        firstSequence = first,
+        lastSequence = last,
+        sequenceContiguous = contiguous,
+        ingestionTimestampsNonDecreasing = ingestionNonDecreasing,
+        ingestionTimestampedObservationCount = ingestionCount,
+        sourceTimestampRegressions = sourceRegressions,
+        sourceTimestampedObservationCount = sourceCount
+    )
 }
 
 data class RawObservationView(

@@ -1,4 +1,4 @@
-# HORIZON — UI/UX RADICAL REDESIGN DIRECTIVE — 2026-10-06
+﻿# HORIZON â€” UI/UX RADICAL REDESIGN DIRECTIVE â€” 2026-10-06
 
 ## Status
 AUTHORIZED / PRESENTATION-LAYER ONLY
@@ -105,13 +105,13 @@ Keep the existing 512-observation live UI projection boundary unless new evidenc
 
 ## Architecture
 Preferred:
-RAW EVIDENCE → DOMAIN STATE → DERIVED STATE → BOUNDED UI PROJECTION → VISUALIZATION
+RAW EVIDENCE â†’ DOMAIN STATE â†’ DERIVED STATE â†’ BOUNDED UI PROJECTION â†’ VISUALIZATION
 
 Never make composables scientific sources of truth.
 Do not move scientific computation into UI for convenience.
 
 ## Execution
-INSPECT → REPRODUCE → DESIGN → IMPLEMENT → TEST → BUILD → DEVICE VERIFY → QA → DOCUMENT
+INSPECT â†’ REPRODUCE â†’ DESIGN â†’ IMPLEMENT â†’ TEST â†’ BUILD â†’ DEVICE VERIFY â†’ QA â†’ DOCUMENT
 
 Do not make tiny cosmetic patches merely to claim progress.
 Replace weak component structures when necessary.
@@ -143,7 +143,7 @@ It must also make observed vs derived vs predicted state unmistakable.
 This redesign is **design-first, not Compose-first**.
 
 Before substantial implementation, the agent must inspect the current runtime's available design/prototyping capabilities and use the strongest relevant one. Preferred:
-Figma → MagicPath → tldraw.
+Figma â†’ MagicPath â†’ tldraw.
 
 Canva/Adobe are optional asset-production tools only when actually available and useful.
 

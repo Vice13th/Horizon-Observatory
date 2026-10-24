@@ -1,4 +1,4 @@
-# HORIZON — Checkpoint Changelog
+﻿# HORIZON â€” Checkpoint Changelog
 
 ## Pre-existing engineering foundations
 
@@ -42,7 +42,7 @@
 
 The first Next Phase compile exposed a symbol mismatch in `SessionAnalysisEngine.kt` (`latestStatus`). A focused fix was applied; the user then reported successful `compileDebugKotlin`.
 
-## 2026-09-24 — GNSS Domain Automation Completion
+## 2026-09-24 â€” GNSS Domain Automation Completion
 
 Completed source-level automation after the GNSS domain foundation:
 
@@ -55,7 +55,7 @@ Completed source-level automation after the GNSS domain foundation:
 - Expanded GNSS correlation tests.
 
 External build/device verification remains the next gate.
-## 2026-09-24 — STOP Race / Import Repair Checkpoint
+## 2026-09-24 â€” STOP Race / Import Repair Checkpoint
 
 - Added `SessionLifecycleState` import to `ObservatoryService.kt`.
 - Restored missing coroutine/domain/acquisition/storage imports from the source tree.
@@ -66,7 +66,7 @@ External build/device verification remains the next gate.
 - Latest manual run reported no crash; slight end-of-run slowness remains under investigation.
 
 
-## 2026-10-07 — First Device-Verified APK Release
+## 2026-10-07 â€” First Device-Verified APK Release
 
 Published the first device-verified HORIZON Observatory APK as GitHub Release v1.0.0-observatory.
 
@@ -80,7 +80,7 @@ Published the first device-verified HORIZON Observatory APK as GitHub Release v1
 - Open gates remain NORAD mapping, UTC edge cases, OrbitCore reference-vector accuracy, physical orientation, and K8 long-duration/interference validation.
 
 
-## 2026-10-07 — Physical-Device Visual Evidence
+## 2026-10-07 â€” Physical-Device Visual Evidence
 
 A real physical-device framebuffer capture was added as the repository's primary product screenshot.
 
@@ -88,7 +88,7 @@ A real physical-device framebuffer capture was added as the repository's primary
 - Device: Samsung SM-A075F / Android 16 / API 36
 - Capture state: completed OBSERVED SKY session; COMPLETED / IDLE
 - Observed SKY / Observation Bus UI count: 58
-- Dimensions: 720 × 1446
+- Dimensions: 720 Ã— 1446
 - SHA-256: A6BE2027F07881245F8545A0C9FA067EB832050A2C397B66B435109A4751AFD5
 - Authenticity: real physical-device framebuffer capture; no generated UI, synthetic telemetry, or scientific-value alteration
 - Orientation wording remains explicitly north-up recorded data; no physical-heading claim is made.

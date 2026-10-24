@@ -1,4 +1,4 @@
-# HORIZON — CHECKPOINT 2026-10-06 / GNSS FOUNDATION VERIFIED
+﻿# HORIZON â€” CHECKPOINT 2026-10-06 / GNSS FOUNDATION VERIFIED
 
 Checkpoint ID: HORIZON_CHECKPOINT_2026-10-06_GNSS_FOUNDATION_VERIFIED
 Repository: Vice13th/Horizon-Observatory
@@ -12,7 +12,7 @@ VERIFIED / CLOSED
 
 The current GNSS measurement evidence chain is closed for:
 
-GNSS acquisition → Observation Bus → persistence → Room readback → export → checksum/readback → semantic normalization
+GNSS acquisition â†’ Observation Bus â†’ persistence â†’ Room readback â†’ export â†’ checksum/readback â†’ semantic normalization
 
 This checkpoint does not claim final GNSS scientific completion, final orbital accuracy, NORAD identity resolution, device-specific UTC edge-case closure, or K8 physical interference validation.
 
@@ -58,9 +58,9 @@ This is retained as a diagnostic observation. It is not classified as a sequence
 
 ## 6. Open gates
 
-### NORAD mapping — UNKNOWN
+### NORAD mapping â€” UNKNOWN
 
-The resolver is intentionally an empty table. No constellation/SVID→NORAD mapping is fabricated or guessed.
+The resolver is intentionally an empty table. No constellation/SVIDâ†’NORAD mapping is fabricated or guessed.
 
 Required next evidence:
 - authoritative mapping source,
@@ -68,14 +68,14 @@ Required next evidence:
 - explicit lookup provenance,
 - deterministic resolver tests.
 
-### Device-specific UTC edge case — UNVERIFIED
+### Device-specific UTC edge case â€” UNVERIFIED
 
 Required next evidence:
 - dedicated target-device instrumentation around the relevant timestamp conversions,
 - explicit edge-case receipt,
 - no reuse of generic documentation as device proof.
 
-### K8 hardware / long-run — PENDING
+### K8 hardware / long-run â€” PENDING
 
 Physical interference/degradation and long-run background/resource validation remain separate gates.
 

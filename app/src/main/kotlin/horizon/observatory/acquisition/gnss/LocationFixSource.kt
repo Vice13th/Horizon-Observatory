@@ -141,12 +141,19 @@ class LocationFixSource(private val context: Context) : ObservationSource {
         return if (providerEnabled) SourceStatus.AVAILABLE else SourceStatus.UNAVAILABLE
     }
 
+    @Suppress("DEPRECATION")
+    private fun Location.mockFlag(): Any =
+        if (android.os.Build.VERSION.SDK_INT >= 31) isMock else isFromMockProvider
+
     private fun Location.toRawObservation(): RawObservation {
         val payload = JSONObject().apply {
             put("latitude", latitude)
             put("longitude", longitude)
             put("altitude", if (hasAltitude()) altitude else JSONObject.NULL)
             put("accuracyMeters", if (hasAccuracy()) accuracy else JSONObject.NULL)
+            // Additive keys (Location Continuity pack): never 0 when Android did not supply them.
+            put("verticalAccuracyMeters", if (hasVerticalAccuracy()) verticalAccuracyMeters else JSONObject.NULL)
+            put("isMock", mockFlag())
             put("bearingDegrees", if (hasBearing()) bearing else JSONObject.NULL)
             put("speedMetersPerSecond", if (hasSpeed()) speed else JSONObject.NULL)
             put("provider", provider ?: JSONObject.NULL)

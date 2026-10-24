@@ -22,39 +22,81 @@ class GnssCorrelationEngine(
     private val statusMatchWindowNs: Long = 2_000_000_000L,
     private val navigationMatchWindowNs: Long = 5_000_000_000L
 ) {
-    fun buildSnapshot(observations: List<ObservationEntity>): GnssDomainSnapshot {
-        val statusRows = observations
-            .asSequence()
-            .filter { it.type == "GNSS_STATUS" }
-            .flatMap { parseStatus(it).orEmpty().asSequence() }
-            .toList()
+    fun buildSnapshot(observations: List<ObservationEntity>): GnssDomainSnapshot =
+        buildSnapshotParsed(parseObservations(observations))
 
-        val rawRows = observations
-            .asSequence()
-            .filter { it.type == "GNSS_RAW_MEASUREMENT" }
-            .mapNotNull(::parseRaw)
-            .toList()
+    /**
+     * Export-only path: consume source entities one at a time. Removing each row immediately after
+     * parsing drops its large raw/normalized JSON references before the complete derived snapshot
+     * is assembled, reducing peak overlap between source payloads and typed correlation records.
+     */
+    fun buildSnapshotAndRelease(observations: MutableList<ObservationEntity>): GnssDomainSnapshot =
+        buildSnapshotParsed(parseAndConsumeObservations(observations))
 
-        val navRows = observations
-            .asSequence()
-            .filter { it.type == "GNSS_NAVIGATION_MESSAGE" }
-            .mapNotNull(::parseNav)
-            .toList()
+    private data class ParsedObservations(
+        val statusRows: List<StatusRecord>,
+        val rawRows: List<RawRecord>,
+        val navRows: List<NavRecord>,
+        val antenna: List<GnssAntennaEvidence>
+    )
 
-        val antenna = observations
-            .asSequence()
-            .filter { it.type == "GNSS_ANTENNA_INFO" }
-            .map(::parseAntenna)
-            .toList()
+    private inner class ParsedObservationAccumulator {
+        val statusRows = ArrayList<StatusRecord>()
+        val rawRows = ArrayList<RawRecord>()
+        val navRows = ArrayList<NavRecord>()
+        val antenna = ArrayList<GnssAntennaEvidence>()
+
+        fun append(row: ObservationEntity) {
+            when (row.type) {
+                "GNSS_STATUS" -> statusRows.addAll(parseStatus(row).orEmpty())
+                "GNSS_RAW_MEASUREMENT" -> parseRaw(row)?.let(rawRows::add)
+                "GNSS_NAVIGATION_MESSAGE" -> parseNav(row)?.let(navRows::add)
+                "GNSS_ANTENNA_INFO" -> antenna.add(parseAntenna(row))
+            }
+        }
+
+        fun finish() = ParsedObservations(statusRows, rawRows, navRows, antenna)
+    }
+
+    private fun parseObservations(observations: Iterable<ObservationEntity>): ParsedObservations {
+        val accumulator = ParsedObservationAccumulator()
+        observations.forEach(accumulator::append)
+        return accumulator.finish()
+    }
+
+    private fun parseAndConsumeObservations(observations: MutableList<ObservationEntity>): ParsedObservations {
+        val accumulator = ParsedObservationAccumulator()
+        val iterator = observations.iterator()
+        while (iterator.hasNext()) {
+            accumulator.append(iterator.next())
+            iterator.remove()
+        }
+        return accumulator.finish()
+    }
+
+    private fun buildSnapshotParsed(parsed: ParsedObservations): GnssDomainSnapshot {
+        val statusRows = parsed.statusRows
+        val rawRows = parsed.rawRows
+        val navRows = parsed.navRows
+        val antenna = parsed.antenna
 
         val statusByBaseKey = statusRows.groupBy { BaseKey(it.constellationType, it.svid) }
+        // Navigation messages do not carry a persisted constellation identity. Index both streams
+        // by SVID once so each raw measurement only examines plausible candidates, not every row.
+        val statusBySvid = statusRows.groupBy { it.svid }
+        val navBySvid = navRows.groupBy { it.svid }
         val latestStatusByBaseKey = latestStatus(statusRows)
+        val rawTimesByBaseKey = rawRows
+            .asSequence()
+            .filter { it.monotonicTimestampNs != null }
+            .groupBy { BaseKey(it.constellationType, it.svid) }
+            .mapValues { (_, rows) -> rows.mapNotNull { it.monotonicTimestampNs } }
         val matchedRawSequences = mutableSetOf<Long>()
         val evidence = mutableListOf<SatelliteEvidence>()
 
         rawRows.sortedBy { it.sequenceNumber }.forEach { raw ->
             val candidate = selectBestStatus(statusByBaseKey[BaseKey(raw.constellationType, raw.svid)].orEmpty(), raw)
-            val nav = associateNavigation(raw, candidate, statusRows, navRows)
+            val nav = associateNavigation(raw, candidate, statusBySvid, navBySvid)
             if (candidate != null) matchedRawSequences += raw.sequenceNumber
 
             evidence += SatelliteEvidence(
@@ -86,13 +128,11 @@ class GnssCorrelationEngine(
         // Preserve a current status view for satellites that have no raw measurement in the same
         // bounded window. This is still observed status data, not a synthesized measurement.
         latestStatusByBaseKey.values.forEach { status ->
-            val hasRecentRaw = evidence.any {
-                it.constellationType == status.constellationType &&
-                    it.svid == status.svid &&
-                    status.monotonicTimestampNs != null &&
-                    it.observationMonotonicTimestampNs != null &&
-                    timeDistance(status.monotonicTimestampNs, it.observationMonotonicTimestampNs) <= statusMatchWindowNs
-            }
+            val statusTime = status.monotonicTimestampNs
+            val hasRecentRaw = statusTime != null &&
+                rawTimesByBaseKey[BaseKey(status.constellationType, status.svid)]
+                    .orEmpty()
+                    .any { timeDistance(statusTime, it) <= statusMatchWindowNs }
             if (!hasRecentRaw) {
                 evidence += SatelliteEvidence(
                     key = SatelliteCorrelationKey(status.constellationType, status.svid, status.carrierFrequencyHz?.roundToLongSafe()),
@@ -227,22 +267,23 @@ class GnssCorrelationEngine(
     private fun associateNavigation(
         raw: RawRecord,
         selectedStatus: StatusRecord?,
-        allStatusRows: List<StatusRecord>,
-        navRows: List<NavRecord>
+        statusBySvid: Map<Int, List<StatusRecord>>,
+        navBySvid: Map<Int, List<NavRecord>>
     ): NavigationMatch {
-        if (navRows.isEmpty()) return NavigationMatch(0, NavigationAssociation.NOT_ASSOCIATED, null)
+        val navCandidates = navBySvid[raw.svid].orEmpty()
+        if (navCandidates.isEmpty()) return NavigationMatch(0, NavigationAssociation.NOT_ASSOCIATED, null)
         val referenceTime = raw.monotonicTimestampNs ?: selectedStatus?.monotonicTimestampNs
             ?: return NavigationMatch(0, NavigationAssociation.NOT_ASSOCIATED, null)
-        val candidates = navRows.filter {
-            it.svid == raw.svid && timeDistance(it.monotonicTimestampNs, referenceTime) <= navigationMatchWindowNs
+        val candidates = navCandidates.filter {
+            timeDistance(it.monotonicTimestampNs, referenceTime) <= navigationMatchWindowNs
         }
         if (candidates.isEmpty()) return NavigationMatch(0, NavigationAssociation.NOT_ASSOCIATED, null)
 
         // GnssNavigationMessage does not expose constellation identity in our persisted payload.
         // Resolve only when the surrounding status evidence gives a single constellation for this SVID.
-        val constellationCandidates = allStatusRows
+        val constellationCandidates = statusBySvid[raw.svid].orEmpty()
             .asSequence()
-            .filter { it.svid == raw.svid && timeDistance(it.monotonicTimestampNs, referenceTime) <= navigationMatchWindowNs }
+            .filter { timeDistance(it.monotonicTimestampNs, referenceTime) <= navigationMatchWindowNs }
             .map { it.constellationType }
             .distinct()
             .toList()

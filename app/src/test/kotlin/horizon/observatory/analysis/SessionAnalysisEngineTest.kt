@@ -39,6 +39,7 @@ class SessionAnalysisEngineTest {
 
         val a = SessionAnalysisEngine().analyze(rows)
         assertEquals("EXACTLY_CONSTANT", a.agcState)
+        assertEquals("LEGACY_MEASUREMENT", a.agcSource)
         assertEquals(2, a.agcSampleCount)
         assertEquals(0.0, a.agcSpreadDb!!, 0.0)
         assertEquals(1, a.navigationMessageCount)
@@ -61,5 +62,38 @@ class SessionAnalysisEngineTest {
         assertEquals(2, a.freshCellRequestSamples)
         assertEquals(1, a.cellularCallbackSamples)
         assertTrue(a.latestCellAgeMs!! <= 80L)
+    }
+
+    @Test
+    fun eventLevelAgcPopulatesSummaryWhenLegacyMeasurementAgcIsMissing() {
+        val rows = listOf(
+            row(1, "GNSS_RAW_MEASUREMENT", payload = "{\"cn0DbHz\":36.0,\"automaticGainControlLevelDb\":null}"),
+            row(2, "GNSS_CLOCK", payload = "{\"eventElapsedRealtimeNanos\":1000000,\"eventExtras\":{\"agcApi\":\"EVENT_LEVEL\",\"agcEvents\":[{\"levelDb\":11.5,\"constellationType\":1,\"carrierFrequencyHz\":1575420000.0},{\"levelDb\":12.5,\"constellationType\":1,\"carrierFrequencyHz\":1575420000.0}]}}"),
+        )
+
+        val a = SessionAnalysisEngine().analyze(rows)
+        assertEquals("EVENT_LEVEL", a.agcSource)
+        assertEquals(2, a.agcSampleCount)
+        assertEquals(11.5, a.agcMinDb!!, 0.0)
+        assertEquals(12.5, a.agcMaxDb!!, 0.0)
+        assertEquals(1.0, a.agcSpreadDb!!, 0.0)
+        assertEquals("VARYING", a.agcState)
+    }
+
+    @Test
+    fun eventLevelAgcTakesPrecedenceOverLegacyValuesWhenBothExist() {
+        val rows = listOf(
+            row(1, "GNSS_RAW_MEASUREMENT", payload = "{\"automaticGainControlLevelDb\":-60.0}"),
+            row(2, "GNSS_RAW_MEASUREMENT", payload = "{\"automaticGainControlLevelDb\":-61.0}"),
+            row(3, "GNSS_CLOCK", payload = "{\"eventElapsedRealtimeNanos\":1000000,\"eventExtras\":{\"agcEvents\":[{\"levelDb\":10.0,\"constellationType\":1,\"carrierFrequencyHz\":1575420000.0}]}}"),
+        )
+
+        val a = SessionAnalysisEngine().analyze(rows)
+        assertEquals("EVENT_LEVEL", a.agcSource)
+        assertEquals(1, a.agcSampleCount)
+        assertEquals(10.0, a.agcMinDb!!, 0.0)
+        assertEquals(10.0, a.agcMaxDb!!, 0.0)
+        assertEquals(0.0, a.agcSpreadDb!!, 0.0)
+        assertEquals("EXACTLY_CONSTANT", a.agcState)
     }
 }

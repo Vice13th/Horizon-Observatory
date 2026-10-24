@@ -1,4 +1,4 @@
-# HORIZON — Automation Boundary
+﻿# HORIZON â€” Automation Boundary
 
 Date: 2026-09-24
 

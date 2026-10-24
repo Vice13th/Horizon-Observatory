@@ -1,0 +1,9 @@
+# SGP4 reference vectors are immutable raw bytes; do not normalize line endings.
+app/src/test/resources/sgp4/SGP4-VER.TLE -text
+app/src/test/resources/sgp4/tcppver.out -text
+orbitcore-bridge/src/test/resources/sgp4/SGP4-VER.TLE -text
+orbitcore-bridge/src/test/resources/sgp4/tcppver.out -text
+app/src/test/resources/sgp4/SGP4-VER.TLE -whitespace
+app/src/test/resources/sgp4/tcppver.out -whitespace
+orbitcore-bridge/src/test/resources/sgp4/SGP4-VER.TLE -whitespace
+orbitcore-bridge/src/test/resources/sgp4/tcppver.out -whitespace

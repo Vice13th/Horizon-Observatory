@@ -1,4 +1,4 @@
-# Horizon Live Sky + Startup UI B4 Verification — 2026-10-07
+﻿# Horizon Live Sky + Startup UI B4 Verification â€” 2026-10-07
 
 ## Satellite-count root cause
 
@@ -33,8 +33,8 @@ FC66EBA0E34A296D84BF60EBBF20573826A398A26B02AA7556EC18D79B5527FA
 Verified on-device:
 
 - Overview showed 60 latest satellites.
-- Overview satellite panel showed 60 OBSERVED · 60 SHOWN.
-- GNSS screen showed latest satellite evidence · correlated=60.
+- Overview satellite panel showed 60 OBSERVED Â· 60 SHOWN.
+- GNSS screen showed latest satellite evidence Â· correlated=60.
 - GNSS Live Sky showed 60 latest satellites.
 - No take(18) or 18 latest satellites remains in Kotlin source.
 - The displayed count is therefore no longer locked to 18 and is sourced from the live correlated observed state.
@@ -62,13 +62,13 @@ This verifies that the cold-start frame used the coordinated dark Horizon backgr
 
 ## Build
 
-:app:assemblePrimaryDebug — PASS.
+:app:assemblePrimaryDebug â€” PASS.
 
 Gradle emitted existing environment warnings about Gradle 8.11.1 being deprecated for future Kotlin 2.5 and an SDK XML version mismatch; these did not block the build.
 
 ## Unit tests
 
-:app:testPrimaryDebugUnitTest — FAIL, unchanged pre-existing compilation error:
+:app:testPrimaryDebugUnitTest â€” FAIL, unchanged pre-existing compilation error:
 
 app/src/test/kotlin/horizon/observatory/resilience/ResilienceEngineTest.kt:68
 

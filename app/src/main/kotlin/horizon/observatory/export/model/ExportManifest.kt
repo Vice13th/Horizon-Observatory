@@ -21,5 +21,6 @@ data class DatasetManifest(
     val ingestionTimestampedObservationCount: Int,
     val sourceTimestampRegressions: Int,
     val sourceTimestampedObservationCount: Int,
-    val provenanceNote: String = "Source measurement time and HORIZON ingestion time are preserved separately. Source timestamps may arrive out of order across asynchronous producers; ingestion order is the integrity clock."
+    val provenanceNote: String = "Source measurement time and HORIZON ingestion time are preserved separately. Source timestamps may arrive out of order across asynchronous producers; ingestion order is the integrity clock.",
+    val gnssDeliveryDiagnosticsJson: String = "{}"
 )

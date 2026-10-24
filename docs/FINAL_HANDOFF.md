@@ -1,4 +1,4 @@
-# HORIZON — Engineering Handoff / Checkpoint Package
+﻿# HORIZON â€” Engineering Handoff / Checkpoint Package
 
 ## Frozen state
 
@@ -38,7 +38,7 @@ Use this checkpoint as the source of truth for the next cycle. Re-run:
 1. unit tests
 2. assembleDebug
 3. install on SM-A075F
-4. one controlled 2–5 minute session
+4. one controlled 2â€“5 minute session
 5. repeated STOP test
 6. memory/PSS trend capture
 7. export/readback/integrity verification

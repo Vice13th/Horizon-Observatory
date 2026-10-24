@@ -1,5 +1,5 @@
-# HORIZON UI B1 — LIVE GNSS + COMPACT SATELLITE PANEL RECEIPT
-## 2026-10-06 — live elevation correction
+﻿# HORIZON UI B1 â€” LIVE GNSS + COMPACT SATELLITE PANEL RECEIPT
+## 2026-10-06 â€” live elevation correction
 
 STATE: IMPLEMENTED / BUILD VERIFIED / DEVICE RUNTIME VERIFIED
 
@@ -28,11 +28,11 @@ GnssCorrelationEngine derives latestSatelliteEvidence from those persisted obser
 ObservedSkyState and SatellitePanelField consume that derived evidence.
 
 ## Device runtime evidence
-Device: Samsung SM-A075F / R8YY92YWAAF / Android 16 API 36.
+Device: Samsung SM-A075F / [device serial redacted] / Android 16 API 36.
 Foreground ObservatoryService was observed with `isForeground=true`.
 Fresh HorizonHealth evidence showed an active RECORDING session with observationCount=24601 and acquisitionRunning=true before the final rebuild/install cycle.
 After installing the corrected APK, a RECORDING session was observed with raw GNSS and GNSS STATUS counts increasing in the UI.
-GNSS UI hierarchy contained the live SATELLITES panel and elevation values such as G13 EL 83°, G19 EL 7°, G21 EL 27°, G24 EL 21°, G25 EL 57°, G28 EL 14°.
+GNSS UI hierarchy contained the live SATELLITES panel and elevation values such as G13 EL 83Â°, G19 EL 7Â°, G21 EL 27Â°, G24 EL 21Â°, G25 EL 57Â°, G28 EL 14Â°.
 
 ## Build / install
 - git diff --check: PASS

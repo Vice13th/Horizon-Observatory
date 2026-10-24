@@ -78,3 +78,13 @@ Thumbs.db
 
 # Large/generated evidence archives are intentionally ignored; metadata remains trackable.
 /evidence/**/*.zip
+# Canonical project generated outputs and local evidence
+**/artifacts/release/
+**/test-results/
+**/reports/
+local-evidence/
+private-evidence/
+*.apk.sha256
+*.aab.sha256
+*.jks
+*.keystore

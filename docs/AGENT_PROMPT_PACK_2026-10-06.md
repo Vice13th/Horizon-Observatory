@@ -1,4 +1,4 @@
-# HORIZON — AGENT PROMPT PACK / 2026-10-06
+﻿# HORIZON â€” AGENT PROMPT PACK / 2026-10-06
 
 Copy/paste this block into the next engineering agent session.
 
@@ -78,7 +78,7 @@ Priority:
 ## ENGINEERING CONTRACT
 
 Use:
-INSPECT → RECONCILE → PLAN → IMPLEMENT → TEST → BUILD → VERIFY → DOCUMENT → NEXT GATE
+INSPECT â†’ RECONCILE â†’ PLAN â†’ IMPLEMENT â†’ TEST â†’ BUILD â†’ VERIFY â†’ DOCUMENT â†’ NEXT GATE
 
 Rules:
 - correctness > speed;
@@ -86,7 +86,7 @@ Rules:
 - smallest safe change;
 - preserve behavior;
 - no fabricated telemetry/identity/orientation;
-- observed ≠ derived ≠ predicted ≠ dead-reckoned;
+- observed â‰  derived â‰  predicted â‰  dead-reckoned;
 - no loops;
 - no repeated blind retries;
 - no destructive cleanup;
@@ -136,10 +136,10 @@ Finish only when:
 Final report format:
 VERIFIED / MEASURED / UNVERIFIED / BLOCKED / COMMIT
 
-No receipt → no epistemic upgrade.
+No receipt â†’ no epistemic upgrade.
 
 
-# UI/UX RADICAL REDESIGN OVERRIDE — 2026-10-06
+# UI/UX RADICAL REDESIGN OVERRIDE â€” 2026-10-06
 
 The current Horizon UI is considered substantially underdeveloped relative to the engineering underneath it.
 
@@ -251,14 +251,14 @@ Keep live UI projections bounded. Preserve the existing 512-observation live pro
 ## Architecture
 
 Preferred:
-RAW EVIDENCE → DOMAIN STATE → DERIVED STATE → BOUNDED UI PROJECTION → VISUALIZATION
+RAW EVIDENCE â†’ DOMAIN STATE â†’ DERIVED STATE â†’ BOUNDED UI PROJECTION â†’ VISUALIZATION
 
 Never make composables the source of scientific truth.
 Do not move scientific computation into the UI merely for convenience.
 
 ## Execution
 
-INSPECT → REPRODUCE → DESIGN → IMPLEMENT → TEST → BUILD → DEVICE VERIFY → QA → DOCUMENT
+INSPECT â†’ REPRODUCE â†’ DESIGN â†’ IMPLEMENT â†’ TEST â†’ BUILD â†’ DEVICE VERIFY â†’ QA â†’ DOCUMENT
 
 Do not make tiny cosmetic patches only to claim progress.
 If the component hierarchy is weak, replace it.
@@ -291,7 +291,7 @@ If either condition fails, the redesign is not finished.
 
 ---
 
-# UI TOOL-FIRST EXECUTION OVERRIDE — CANONICAL
+# UI TOOL-FIRST EXECUTION OVERRIDE â€” CANONICAL
 
 For B1/B2, do not implement the visual redesign directly from imagination before producing a real visual design/prototype.
 
@@ -299,10 +299,10 @@ Read and follow:
 `docs/TOOL_FIRST_UI_DESIGN_EXECUTION_CONTRACT_2026-10-06.md`
 
 Mandatory order:
-INSPECT → REPRODUCE → DESIGN TOOL → VISUAL REVIEW → IMPLEMENT → TEST → BUILD → DEVICE VERIFY → VISUAL QA → DOCUMENT
+INSPECT â†’ REPRODUCE â†’ DESIGN TOOL â†’ VISUAL REVIEW â†’ IMPLEMENT â†’ TEST â†’ BUILD â†’ DEVICE VERIFY â†’ VISUAL QA â†’ DOCUMENT
 
 Preferred design-tool order:
-Figma → MagicPath → tldraw → Canva/Adobe (assets only) → image generation (assets only).
+Figma â†’ MagicPath â†’ tldraw â†’ Canva/Adobe (assets only) â†’ image generation (assets only).
 
 Use only tools actually exposed by the current runtime. Never claim unavailable or unused tools.
 

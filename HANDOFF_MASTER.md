@@ -1,6 +1,6 @@
 ﻿# Horizon Observatory — Master Handoff
 
-**Checkpoint:** 2026-10-24 canonical migration candidate. **Status:** review branch; not merged; not production-ready.
+**Checkpoint:** 2026-10-24 canonical migration merged. **Status:** merged into `main` at `e6dd76b1ee99e3767c08eed2ce7a41f65732d9a6`; engineering/field-test candidate, not production-ready.
 
 ## Canonical source and migration provenance
 
@@ -9,6 +9,8 @@
 - Source publication/checkpoint SHA: `498cbdf28ec4a06734b172b8ade84d28a441265a`
 - Destination base SHA: `37cecf9d874052b598a1cb64a706119838377b99`
 - Migration branch: `migration/horizon-parallel-canonical-2026-10-24`
+- Merge PR: https://github.com/Vice13th/Horizon-Observatory/pull/9 (merged 2026-10-24)
+- Canonical `main` merge commit: `e6dd76b1ee99e3767c08eed2ce7a41f65732d9a6`
 - Destination project root: repository root (not `source/Horizon-Parallel/`).
 
 ## What changed
@@ -21,10 +23,10 @@ Two controlled live GNSS sessions on 2026-10-24 passed archive-integrity and acc
 
 ## Required next steps
 
-1. Review `docs/migration/DOCUMENTATION_MIGRATION_REPORT.md` and every row of `docs/migration/DOCUMENTATION_AUDIT_MATRIX.csv`.
-2. Review the migration branch diff and CI results; do not merge if any acceptance gate or public-disclosure decision is unresolved.
-3. Keep raw session archives, local screenshots/XML, device serials, and machine paths out of public artifacts.
-4. Preserve issue #3 and all scientific/release blockers until independent evidence closes them.
+1. Treat PR #9 as merged; do not repeat the migration merge.
+2. Keep raw session archives, local screenshots/XML, device serials, and machine paths out of public artifacts.
+3. Preserve issue #3 and all scientific/release blockers until independent evidence closes them.
+4. Before a release, close or explicitly accept the scientific, persistence, device-matrix, production-signing, and clean-machine reproducibility gates.
 
 ## Rollback
 

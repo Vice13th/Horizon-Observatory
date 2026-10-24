@@ -10,7 +10,9 @@ Horizon Observatory is a local-first Android scientific observation platform. Th
 - Source code/build provenance: `0cb51ed64540c4ec12079d1fe6c68c6b6b6769ed`
 - Source checkpoint publication: `498cbdf28ec4a06734b172b8ade84d28a441265a`
 - Destination migration base: `37cecf9d874052b598a1cb64a706119838377b99`
-- Current migration branch: `migration/horizon-parallel-canonical-2026-10-24`
+- Canonical main merge commit: `e6dd76b1ee99e3767c08eed2ce7a41f65732d9a6`
+- Migration PR: [#9 — merged](https://github.com/Vice13th/Horizon-Observatory/pull/9)
+- Historical migration branch: `migration/horizon-parallel-canonical-2026-10-24`
 
 ## Installation variants
 

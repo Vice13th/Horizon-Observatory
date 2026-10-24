@@ -2,7 +2,7 @@
 
 ## Disposition
 
-**Migration candidate on a dedicated branch; not merged.** Canonical project source is imported at destination root. PR [#9](https://github.com/Vice13th/Horizon-Observatory/pull/9) is open and Ready for review at the 2026-10-24 checkpoint below. Destination `main` remains at the recorded base unless a later checkpoint states otherwise.
+**VERIFIED merged:** PR [#9](https://github.com/Vice13th/Horizon-Observatory/pull/9) was merged into canonical `main` on 2026-10-24. Merge commit: `e6dd76b1ee99e3767c08eed2ce7a41f65732d9a6`; merged PR head: `48a4cb4b5a7ba522a3d97d11bdc51aeeca71a1e8`. The canonical project source is at the repository root. This is engineering integration, not scientific or production release approval.
 
 - **VERIFIED local:** Primary/Parallel unit tests and OrbitCore bridge tests passed after restoring immutable SGP4 bytes. Fresh XML: primary 380 tests / 0 failures / 0 errors / 3 skipped; Parallel 380 / 0 / 0 / 3; bridge 8 / 0 / 0 / 0. `propagation-contract` has no test sources.
 - **VERIFIED local:** All four debug and four release APK variants assembled. All four debug APKs pass `apksigner verify` with APK Signature Scheme v2 true. Release APKs remain unsigned until production signing.
@@ -10,12 +10,12 @@
 - **VERIFIED CI:** Run [40125524916](https://github.com/Vice13th/Horizon-Observatory/actions/runs/40125524916) completed successfully on commit `d8285af426b820fc4b18cd208c0742089deac749`: Android SDK setup, package checks, primary/Parallel/core tests, primary/Parallel debug assembly, and TS/T1 compilation all succeeded. The workflow fixes the obsolete SDK package request and preserves immutable SGP4 raw bytes.
 
 This migration is not production or scientific release approval. Known GNSS persistence, authentic Room v5/v6, device matrix, RF validation, and production signing gates remain open.
-## Current GitHub checkpoint — 2026-10-24
+## Historical pre-merge checkpoint — 2026-10-24
 
 - **VERIFIED / OBSERVED:** Migration branch `migration/horizon-parallel-canonical-2026-10-24`; checked head `400a5a29ac97b0cbaa0440c452304d0145b96326`.
 - **VERIFIED:** Source application/build commit `0cb51ed64540c4ec12079d1fe6c68c6b6b6769ed`; source checkpoint publication commit `498cbdf28ec4a06734b172b8ade84d28a441265a`. These are distinct Git identities.
 - **VERIFIED:** Destination `main` base at preflight/checkpoint `37cecf9d874052b598a1cb64a706119838377b99`.
-- **OBSERVED:** PR [#9](https://github.com/Vice13th/Horizon-Observatory/pull/9) was open, Ready for review (`draft=false`), not merged, with no submitted reviews returned by the review API at the time checked on 2026-10-24.
+- **OBSERVED at that historical checkpoint:** PR [#9](https://github.com/Vice13th/Horizon-Observatory/pull/9) was open, Ready for review (`draft=false`), not merged, with no submitted reviews returned by the review API. This was superseded by the merge recorded above.
 - **VERIFIED CI:** [Run 40125938239](https://github.com/Vice13th/Horizon-Observatory/actions/runs/40125938239) completed successfully (`conclusion=success`) for head `400a5a29ac97b0cbaa0440c452304d0145b96326`. This run validates only that exact head; it must not be represented as validating any later documentation commit. Earlier runs remain listed in the chronological CI history below.
 - This is a dated checkpoint, not a prediction of future PR status. Following commits, review submissions, or a merge require a new remote read and a new checkpoint.
 ## Verified repository identities and method
@@ -133,3 +133,11 @@ The eight APK files currently present in `app/build/outputs/apk/` were measured 
 ## Rollback
 
 Destination pre-migration base: 37cecf9d874052b598a1cb64a706119838377b99. Before merge, record migration branch head and PR URL. After merge, revert migration commit(s) with ordinary git revert on a new branch and submit a rollback PR. Do not reset or rewrite main; keep the source repository and its history intact.
+
+
+## Post-merge verification — 2026-10-24
+
+- **VERIFIED:** GitHub reports PR #9 `merged=true`, state `closed`, merge timestamp `2026-10-24T20:26:05Z`, merge commit `e6dd76b1ee99e3767c08eed2ce7a41f65732d9a6`.
+- **VERIFIED:** Fetching `app/build.gradle.kts` from `main` confirms namespace and base application ID `horizon.observatory`, with the `primary` flavor label `Horizon Observatory`; `settings.gradle.kts` keeps root project name `HorizonObservatory`.
+- **UNVERIFIED:** No workflow run was returned by the connector for the merge commit SHA at the time of this check. The PR-head CI passed on `48a4cb4b5a7ba522a3d97d11bdc51aeeca71a1e8` (run 40128890937). Do not interpret the absence of a merge-commit run as a failure or as a pass.
+- Scientific, device, production-signing, and clean-machine reproducibility gates remain open.

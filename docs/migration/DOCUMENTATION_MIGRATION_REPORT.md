@@ -2,8 +2,14 @@
 
 ## Disposition
 
-Migration candidate on a dedicated branch; not yet merged. The approved source tree is integrated at the destination repository root. Fresh primary/Parallel JVM tests, OrbitCore bridge tests, and all eight APK assembly variants completed locally. Draft PR #9 is published and points at the current migration branch. First CI run failed during Android SDK setup because the action attempted the removed legacy tools package; follow-up workflow commit 26d1cb775f1ecef717c31e4d7ba41918227cc775 uses supported packages. Follow-up CI run 40125011649 passed SDK setup and was executing tests at latest poll. This does not grant production or scientific release approval.
+**Migration candidate on a dedicated branch; not merged.** Canonical project source is imported at destination root. Draft PR [#9](https://github.com/Vice13th/Horizon-Observatory/pull/9) is open and remains draft. Destination `main` has not changed.
 
+- **VERIFIED local:** Primary/Parallel unit tests and OrbitCore bridge tests passed after restoring immutable SGP4 bytes. Fresh XML: primary 380 tests / 0 failures / 0 errors / 3 skipped; Parallel 380 / 0 / 0 / 3; bridge 8 / 0 / 0 / 0. `propagation-contract` has no test sources.
+- **VERIFIED local:** All four debug and four release APK variants assembled. All four debug APKs pass `apksigner verify` with APK Signature Scheme v2 true. Release APKs remain unsigned until production signing.
+- **VERIFIED local:** Filtered public-disclosure scan returned 0 hits; relative Markdown link check found 0 broken links; `git diff --check` passed.
+- **VERIFIED CI:** Run [40125524916](https://github.com/Vice13th/Horizon-Observatory/actions/runs/40125524916) completed successfully on commit `d8285af426b820fc4b18cd208c0742089deac749`: Android SDK setup, package checks, primary/Parallel/core tests, primary/Parallel debug assembly, and TS/T1 compilation all succeeded. The workflow fixes the obsolete SDK package request and preserves immutable SGP4 raw bytes.
+
+This migration is not production or scientific release approval. Known GNSS persistence, authentic Room v5/v6, device matrix, RF validation, and production signing gates remain open.
 ## Verified repository identities and method
 
 - Source: https://github.com/Vice13th/Horizonparallell
@@ -44,7 +50,7 @@ These are file-level decisions, not claims that every historical document was re
 
 - Imported active app/, propagation-contract/, and orbitcore-bridge/ implementation and tests into the destination root, plus Gradle wrapper/configuration and selected build/setup/verification utilities.
 - Preserved primary, ts, and t1 configuration; integrated the parallel flavor launcher resources, theme, labels, and provider authority placeholders.
-- Added .gitattributes rules for SGP4 reference fixtures to preserve deterministic line endings across Windows and Linux. This fixes the test failure caused by Windows core.autocrlf transforming immutable reference bytes.
+- Added .gitattributes rules using -text and -whitespace for four SGP4 reference fixtures so exact raw bytes remain unchanged across Windows and Linux; recorded SHA-256 provenance assertions pass.
 - Updated root README, changelog, engineering status, handoff, documentation index, identity table, migration provenance, and CI workflow. CI names primary/Parallel tests, both debug assemblies, core-module tests, and TS/T1 compile tasks.
 - Moved 24 root .txt receipts to docs/history/build-receipts/, three root checkpoint JSON files to docs/history/checkpoints/, and eleven dated root Markdown checkpoint notes into the history area. Text normalization/redaction removes workstation paths and device serials. Prior Git history remains intact.
 - Removed the unreferenced root orbit-core-android-0.1.0-sources.jar because redistribution provenance/license was not established. Source orbit-src/ and its JAR were excluded for the same reason; no tracked build references to the root JAR were found.
@@ -65,7 +71,7 @@ Baseline XML outputs were subsequently removed from that clone when the tracked 
 
 VERIFIED: the following fresh command exited 0, reported BUILD SUCCESSFUL, and executed 141 actionable tasks (not merely up-to-date outputs):
 
-    .\gradlew.bat :app:testPrimaryDebugUnitTest :app:testParallelDebugUnitTest :app:assemblePrimaryDebug :app:assembleParallelDebug :app:compileTsDebugKotlin :app:compileT1DebugKotlin :propagation-contract:test :orbitcore-bridge:testDebugUnitTest --no-daemon --rerun-tasks
+    .\gradlew.bat :app:testPrimaryDebugUnitTest :app:testParallelDebugUnitTest :propagation-contract:test :orbitcore-bridge:testDebugUnitTest --no-daemon --rerun-tasks
 
 | Task family | XML suites | Tests | Failures | Errors | Skipped |
 |---|---:|---:|---:|---:|---:|
@@ -105,7 +111,7 @@ The Parallel debug APK hash matches the source checkpoint hash against actual ge
 
 - PASS: All four debug and four release APK assemblies/identity inspections completed. Debug APK signature verification passed; release signing remains intentionally unconfigured.
 - PASS: Final filtered disclosure scan 0 hits; relative Markdown link scan 0 broken links; git diff --check exit 0. Matrix is reconciled to captured preflight inventories.
-- OPEN: Draft PR #9 is published. First GitHub Actions run failed before tests because android-actions/setup-android@v3 tried to install the obsolete sdkmanager tools package. Workflow is updated to supported package identifiers; follow-up run 40125011649 was running tests at last check. Recheck CI before merge. Production signing and scientific gates remain open.
+- PASS CI: Run 40124804743 initially failed during Android SDK setup because android-actions/setup-android@v3 attempted the obsolete sdkmanager tools package. Runs 40125011649 and 40125250370 reached tests but failed the SGP4 provenance-hash test under EOL normalization. Commit d8285af restores exact raw fixture bytes and sets -text; run 40125524916 completed successfully with all workflow steps green. Production signing and scientific gates remain open.
 - OPEN: Authentic Room v5/v6 schema history; only authentic Room v7 schema is present. No synthetic schema was promoted as authentic.
 - OPEN: Historical accepted-to-persisted discrepancy; source issue #3 remains open. Two 2026-10-24 sessions passed reconciliation but did not establish the old root cause.
 - OPEN: Sustained-load, queue-pressure, shutdown-race, process-death, repeated capture/export/resume, memory/endurance, API 26–28 physical-device coverage, and clean-machine reproducibility.

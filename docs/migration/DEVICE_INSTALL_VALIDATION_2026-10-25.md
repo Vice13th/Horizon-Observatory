@@ -18,7 +18,7 @@ Install the current canonical `main` debug build on the connected Samsung SM-A07
 - No release APK was installed; release APK variants are unsigned pending production signing.
 - No destructive operation: existing app data was not cleared; no package uninstall, database reset, live GNSS capture, or RF transmission was performed.
 - No full interactive UI walkthrough or scientific accuracy/ground-truth test was performed. Startup/resumed activity is only a launch smoke test.
-- GitHub workflow/status API returned no status records for main HEAD `57d177adaade025fd8d2a85809f08fd808a43d0b` or the documentation-only validation commit `ec1f97b09c8a5ab9429243c27e18727fff059c51`; therefore CI for these exact heads remains **UNVERIFIED**. Prior PR-head CI passing is not substituted for these commits.
+- GitHub workflow/status API returned no status records for main HEAD `57d177adaade025fd8d2a85809f08fd808a43d0b` or the documentation-only validation commit `e2b80417881bf6eeab4ecfc8b8c84d6898120d33`; therefore CI for these exact heads remains **UNVERIFIED**. Prior PR-head CI passing is not substituted for these commits.
 - Device battery was observed at approximately 11% during the install session; further endurance/GNSS tests should wait until charging is stable.
 
 ## Result
